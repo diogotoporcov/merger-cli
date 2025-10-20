@@ -1,0 +1,33 @@
+[project]
+name = "merger-cli"
+version = "1.0.0"
+description = "Merger is a tool that scans a directory, filters files using customizable patterns, and merges readable content into a single output file."
+keywords = ["merger", "file system", "concatenation", "automation", "development"]
+authors = [
+    { name = "Diogo Toporcov", email = "diogotoporcov@gmail.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "chardet>=5.2.0"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+
+[project.urls]
+Homepage = "https://github.com/diogotoporcov/merger-cli"
+Documentation = "https://github.com/diogotoporcov/merger-cli"
+
+[build-system]
+requires = ["setuptools>=80.9.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+merger = "merger.cli:main"
