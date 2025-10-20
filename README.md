@@ -11,11 +11,12 @@ Merger is a command-line utility for developers that scans a directory, filters 
 
 1. [Core Features](#core-features)
 2. [Dependencies](#dependencies)
-3. [Installation](#installation)
-4. [Usage](#usage)
-5. [Custom Readers](#custom-readers)
-6. [CLI Options](#cli-options)
-7. [License](#license)
+3. [Installation with PyPI ](#install-directly-from-pypi)
+4. [Build and Install Locally](#clone-and-build-locally)
+5. [Usage](#usage)
+6. [Custom Readers](#custom-readers)
+7. [CLI Options](#cli-options)
+8. [License](#license)
 
 ---
 
@@ -40,9 +41,18 @@ All dependencies are listed in [`requirements.txt`](requirements.txt).
 
 ---
 
-## Installation
+# Install directly from PyPI
+```bash
+pip install merger-cli
+```
 
+# Clone and build locally
 ### 1. Clone the repository
+
+```bash
+git clone https://github.com/diogotoporcov/merger-cli.git
+cd merger-cli
+```
 
 ```bash
 git clone https://github.com/diogotoporcov/merger-cli.git
