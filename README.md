@@ -41,12 +41,12 @@ All dependencies are listed in [`requirements.txt`](requirements.txt).
 
 ---
 
-# Install directly from PyPI
+## Install directly from PyPI
 ```bash
 pip install merger-cli
 ```
 
-# Clone and build locally
+## Clone and build locally
 ### 1. Clone the repository
 
 ```bash
