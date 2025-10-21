@@ -35,8 +35,8 @@ def register_reader(extension: str, module_path: str):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        expected_all = ["reader", "validator"]
-        actual_all = getattr(module, "__all__", None)
+        expected_all = {"reader", "validator"}
+        actual_all = set(getattr(module, "__all__", {}))
 
         if actual_all != expected_all:
             raise ValueError(f"Invalid module: __all__ must be exactly {expected_all}, got {actual_all}")
