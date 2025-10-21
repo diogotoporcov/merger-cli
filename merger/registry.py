@@ -118,19 +118,3 @@ def load_installed_readers() -> Tuple[Dict[str, Callable], Dict[str, Callable]]:
 
     return readers, validators
 
-
-def load_custom_readers(module_path: Path) -> Tuple[Dict[str, Callable], Dict[str, Callable]]:
-    logger.debug(f"Loading custom readers from: {module_path}")
-    try:
-        spec = importlib.util.spec_from_file_location("custom_readers_module", module_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        readers = getattr(module, "readers", {})
-        validators = getattr(module, "validators", {})
-        logger.info(f"Custom readers loaded successfully from: {module_path}")
-        return readers, validators
-
-    except Exception as e:
-        logger.error(f"Failed to load custom readers from {module_path}: {e}")
-        raise

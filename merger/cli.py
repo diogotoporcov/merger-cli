@@ -5,7 +5,7 @@ from pathlib import Path
 from .utils import parse_escape_chars
 from .files import merge, read_ignore_file
 from .logger import logger, setup_logger
-from .registry import register_reader, unregister_reader, list_readers, load_installed_readers, load_custom_readers
+from .registry import register_reader, unregister_reader, list_readers, load_installed_readers
 
 
 def main():
@@ -44,10 +44,6 @@ def main():
     parser.add_argument(
         "-f", "--ignore-file", type=Path,
         help="File containing glob-style patterns to ignore (default: <input_dir>/merger.ignore)")
-
-    # Custom reader overrides
-    parser.add_argument("--overrides", type=Path,
-                        help="Path to Python module with `validators` and `readers` dictionaries for custom overrides")
 
     parser.add_argument("--empty", action="store_true", default=False,
                         help="Include empty files in the merged output")
@@ -119,11 +115,6 @@ def main():
         ignore_patterns.extend(read_ignore_file(args.ignore_file))
 
     readers, validators = load_installed_readers()
-
-    if args.overrides:
-        r, v = load_custom_readers(args.overrides)
-        readers.update(r)
-        validators.update(v)
 
     merge(
         dir_path=args.input_dir,
