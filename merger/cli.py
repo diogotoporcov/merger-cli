@@ -2,6 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
+from .utils import parse_escape_chars
 from .files import merge, read_ignore_file
 from .logger import logger, setup_logger
 from .registry import register_reader, unregister_reader, list_readers, load_installed_readers, load_custom_readers
@@ -131,8 +132,8 @@ def main():
         validation_func_override=validators,
         read_func_override=readers,
         write_if_empty=args.empty,
-        prefix_format=args.prefix,
-        suffix_format=args.suffix,
+        prefix_format=parse_escape_chars(args.prefix),
+        suffix_format=parse_escape_chars(args.suffix),
         include_tree=not args.no_tree
     )
 
