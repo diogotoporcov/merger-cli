@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Final, Callable
+from typing import Callable
 
 import chardet
 
@@ -75,8 +75,8 @@ def extract_ipynb_content(file_path: Path, include_markdown: bool = True, includ
     return "\n\n".join(result)
 
 
-validator: Final[Callable[[Path], bool]] = is_ipynb_file
-reader: Final[Callable[[Path], str]] = extract_ipynb_content
+validator: Callable[[Path], bool] = is_ipynb_file
+reader: Callable[[Path], str] = extract_ipynb_content
 
 
 __all__ = ["validator", "reader"]
