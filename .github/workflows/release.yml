@@ -1,0 +1,47 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate tag version
+        run: |
+          CURRENT=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
+          TAG_VERSION=${{ steps.version.outputs.version }}
+          if [ "$(printf '%s\n%s' "$CURRENT" "$TAG_VERSION" | sort -V | tail -n1)" != "$TAG_VERSION" ]; then
+            echo "Tag version ($TAG_VERSION) <= current ($CURRENT)"
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Set version in pyproject.toml
+        run: |
+          sed -i "s/^version = .*/version = \"${{ steps.version.outputs.version }}\"/" pyproject.toml
+          echo "Version updated to ${{ steps.version.outputs.version }}"
+
+      - name: Install build and publish tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build and publish
+        env:
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m build
+          python -m twine upload dist/*
