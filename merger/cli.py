@@ -2,10 +2,10 @@ import argparse
 import logging
 from pathlib import Path
 
-from .utils import parse_escape_chars
 from .files import merge, read_ignore_file
 from .logger import logger, setup_logger
 from .registry import register_reader, unregister_reader, list_readers, load_installed_readers
+from .utils import parse_escape_chars, get_version
 
 
 def main():
@@ -27,6 +27,14 @@ def main():
 
     parser.add_argument("--list-installed", action="store_true",
                         help="List all installed custom readers")
+
+    # Version
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {get_version()}",
+        help="Show program version and exit"
+    )
 
     # Logging
     parser.add_argument(

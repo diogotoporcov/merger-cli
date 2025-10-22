@@ -173,6 +173,7 @@ An example `.ipynb` reader can be found in
 | `-i, --install`         | Install a custom reader for an extension.                                      |
 | `-u, --uninstall`       | Remove a custom reader (`*` removes all).                                      |
 | `--list-installed`      | Show installed readers.                                                        |
+| `--version`             | Display current installed version.                                             |
 | `-l, --log-level`       | Set logging verbosity (`DEBUG`, `INFO`, etc.).                                 |
 | `--empty`               | Include empty files in merged output.                                          |
 | `--prefix` / `--suffix` | Customize file delimiters in output.                                           |
