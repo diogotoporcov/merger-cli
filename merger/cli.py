@@ -62,6 +62,14 @@ def main():
         help="Do not include the generated directory tree in the output file"
     )
 
+    # Header
+    parser.add_argument(
+        "--no-header",
+        action="store_true",
+        default=False,
+        help="Do not include the watermark header in the output file"
+    )
+
     # CLI Logic
     args = parser.parse_args()
 
@@ -125,7 +133,8 @@ def main():
         write_if_empty=args.empty,
         prefix_format=parse_escape_chars(args.prefix),
         suffix_format=parse_escape_chars(args.suffix),
-        include_tree=not args.no_tree
+        include_tree=not args.no_tree,
+        include_watermark=not args.no_header
     )
 
     logger.info(f"Saved to {args.output_file}")

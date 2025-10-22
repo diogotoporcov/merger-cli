@@ -178,7 +178,7 @@ An example `.ipynb` reader can be found in
 | `--prefix` / `--suffix` | Customize file delimiters in output.                                           |
 | `--overrides`           | Load override reader definitions from a Python module.                         |
 | `--no-tree`             | Do not include the generated directory tree in the output file.                |
-
+| `--no-header`           | Do not include the watermark header in the output file.                        |
 
 ---
 
