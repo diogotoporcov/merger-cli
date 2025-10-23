@@ -6,7 +6,7 @@
 
 
 
-Merger is a command-line utility for developers that scans a directory, filters files using customizable ignore patterns, and merges all readable content into a single structured output file. It supports custom file readers and validators, making it easily extendable for formats such as `.ipynb`, `.pdf`, or any specific format.
+Merger is a command-line utility for developers that scans a directory, filters files using customizable ignore patterns, and merges all readable content into a single structured output file. It supports custom file readers and validators, making it easily extendable for formats such as `.pdf` or any specific format.
 
 ---
 
@@ -135,10 +135,10 @@ You can extend Merger to handle new file formats.
 ### Installing a custom reader
 
 ```bash
-merger --install .ipynb path/to/ipynb.py
+merger --install .pdf path/to/pdf.py
 ```
 
-Where `ipynb.py` must define:
+Where `pdf.py` must define:
 
 *   ```python
     validator: Callable[[Path], bool]
@@ -150,7 +150,7 @@ Where `ipynb.py` must define:
 To uninstall:
 
 ```bash
-merger --uninstall .ipynb
+merger --uninstall .pdf
 ```
 
 List installed readers:
@@ -159,8 +159,8 @@ List installed readers:
 merger --list-installed
 ```
 
-An example `.ipynb` reader can be found in
-[`examples/custom_readers/ipynb.py`](examples/custom_readers/ipynb.py).
+An example `.pdf` reader can be found in
+[`examples/custom_readers/pdf.py`](examples/custom_readers/pdf.py).
 
 ---
 
