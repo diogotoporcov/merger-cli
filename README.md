@@ -30,7 +30,7 @@ Merger is a command-line utility for developers that scans a directory, filters 
 * **Automatic encoding detection**.
 * **Custom file readers and validators** for non-text formats.
 * **CLI support** for installation, removal, and listing of custom readers.
-* **Human-readable merged output**, including a directory tree header and file delimiters.
+* **Human- and AI-readable merged output**, including a directory tree header and file delimiters.
 
 ---
 
