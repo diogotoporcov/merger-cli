@@ -24,7 +24,6 @@ def read_merger_ignore_file(filepath: Path) -> Set[str]:
 
 
 def write_tree(tree, path: Path) -> None:
-    print(path.resolve())
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
