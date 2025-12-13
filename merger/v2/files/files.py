@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Optional, Set
 
@@ -20,3 +21,19 @@ def read_merger_ignore_file(filepath: Path) -> Set[str]:
                 patterns.add(line)
 
     return patterns
+
+
+def write_tree(tree, path: Path) -> None:
+    print(path.resolve())
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "tree": str(tree),
+                "contents": tree.to_json_dict()
+            },
+            indent=2,
+            ensure_ascii=False
+        ),
+        encoding="utf-8"
+    )
