@@ -5,10 +5,10 @@ from typing import Union, Tuple, Optional
 import chardet
 import filetype
 
-from .reader import Reader
+from .parser import Parser
 
 
-class DefaultReader(Reader):
+class DefaultParser(Parser):
     TEXT_CONFIDENCE_THRESHOLD = 0.8
     MAX_BINARY_RATIO = 0.30
 
@@ -46,7 +46,7 @@ class DefaultReader(Reader):
             for byte in file_chunk
         )
 
-        return (non_printable / max(len(file_chunk), 1)) > DefaultReader.MAX_BINARY_RATIO
+        return (non_printable / max(len(file_chunk), 1)) > DefaultParser.MAX_BINARY_RATIO
 
     @classmethod
     def validate(
@@ -89,7 +89,7 @@ class DefaultReader(Reader):
             return False
 
     @classmethod
-    def get_content(
+    def parse(
         cls,
         file_bytes: Union[bytes, bytearray],
         *,
