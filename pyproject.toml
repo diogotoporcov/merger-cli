@@ -11,7 +11,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "chardet>=5.2.0",
-    "python-magic>=0.4.27"
+    "filetype>=1.2.0"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
