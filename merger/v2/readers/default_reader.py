@@ -1,34 +1,11 @@
 import logging
-from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Tuple, Optional, Union
+from typing import Union, Tuple, Optional
 
 import chardet
 import magic
 
-
-class Reader(ABC):
-    @classmethod
-    @abstractmethod
-    def validate(
-            cls,
-            file_chunk: Union[bytes, bytearray],
-            *,
-            file_path: Optional[Path],
-            logger: Optional[logging.Logger]
-    ) -> bool:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def get_content(
-            cls,
-            file_bytes: Union[bytes, bytearray],
-            *,
-            file_path: Optional[Path],
-            logger: Optional[logging.Logger]
-    ) -> str:
-        pass
+from .reader import Reader
 
 
 class DefaultReader(Reader):
@@ -54,6 +31,7 @@ class DefaultReader(Reader):
     def guess_mime_type(file_chunk: Union[bytes, bytearray]) -> Optional[str]:
         try:
             return magic.from_buffer(file_chunk, mime=True)
+
         except Exception:
             return None
 
@@ -74,8 +52,8 @@ class DefaultReader(Reader):
         cls,
         file_chunk: Union[bytes, bytearray],
         *,
-        file_path: Optional[Path],
-        logger: Optional[logging.Logger]
+        file_path: Optional[Path] = None,
+        logger: Optional[logging.Logger] = None
     ) -> bool:
         mime_type = cls.guess_mime_type(file_chunk)
 
@@ -114,8 +92,8 @@ class DefaultReader(Reader):
         cls,
         file_bytes: Union[bytes, bytearray],
         *,
-        file_path: Optional[Path],
-        logger: Optional[logging.Logger]
+        file_path: Optional[Path] = None,
+        logger: Optional[logging.Logger] = None
     ) -> str:
         encoding, _ = cls.guess_encoding(file_bytes[:1024])
 
