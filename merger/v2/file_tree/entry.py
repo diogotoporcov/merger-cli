@@ -1,13 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import auto, StrEnum
 from pathlib import Path
 from typing import Dict
 
-
-class FileTreeEntryType(StrEnum):
-    FILE = auto()
-    DIRECTORY = auto()
+from .type import FileTreeEntryType
 
 
 class FileTreeEntry(ABC):
