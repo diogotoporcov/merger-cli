@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union, Tuple, Optional
 
 import chardet
-import magic
+import filetype
 
 from .reader import Reader
 
@@ -30,7 +30,8 @@ class DefaultReader(Reader):
     @staticmethod
     def guess_mime_type(file_chunk: Union[bytes, bytearray]) -> Optional[str]:
         try:
-            return magic.from_buffer(file_chunk, mime=True)
+            kind = filetype.guess(file_chunk)
+            return kind.mime if kind else None
 
         except Exception:
             return None
