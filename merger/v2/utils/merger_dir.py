@@ -20,4 +20,6 @@ def get_merger_dir() -> Path:
 
 
 def get_parsers_dir() -> Path:
-    return get_merger_dir() / "parsers"
+    merger_dir = get_merger_dir() / "parsers"
+    merger_dir.mkdir(parents=True, exist_ok=True)
+    return merger_dir
