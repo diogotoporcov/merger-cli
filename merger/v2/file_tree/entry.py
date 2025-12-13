@@ -17,11 +17,11 @@ class FileTreeEntry(ABC):
 
     @abstractmethod
     def to_dict(self) -> dict:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def to_json_dict(self) -> dict:
-        raise NotImplementedError
+        pass
 
     @staticmethod
     def _serialize_path(path: Path) -> str:
