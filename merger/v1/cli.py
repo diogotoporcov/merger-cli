@@ -16,7 +16,7 @@ def main():
     # Required positional args
     parser.add_argument("input_dir", type=Path, nargs="?", help="Root directory to scan for files")
     parser.add_argument("output_file", type=Path, nargs="?",
-                        help="File to save merged output (default: <input_dir>/merger.txt)")
+                        help="FileTreeEntry to save merged output (default: <input_dir>/merger.txt)")
 
     # Reader management
     parser.add_argument("-i", "--install", nargs=2, metavar=("EXT", "MODULE_PATH"),
@@ -51,7 +51,7 @@ def main():
 
     parser.add_argument(
         "-f", "--ignore-file", type=Path,
-        help="File containing glob-style patterns to ignore (default: <input_dir>/merger.ignore)")
+        help="FileTreeEntry containing glob-style patterns to ignore (default: <input_dir>/merger.ignore)")
 
     parser.add_argument("--empty", action="store_true", default=False,
                         help="Include empty files in the merged output")
@@ -62,7 +62,7 @@ def main():
     parser.add_argument("--suffix", type=str, default="\n<<FILE_END: {path}>>\n\n",
                         help="Format string for file end marker (set empty string to disable)")
 
-    # Tree
+    # FileTree
     parser.add_argument(
         "--no-tree",
         action="store_true",

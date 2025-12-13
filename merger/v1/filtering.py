@@ -2,7 +2,7 @@ from pathlib import Path
 import fnmatch
 from typing import List
 
-from .logger import logger  # Importa o logger customizado
+from .logger import logger
 
 
 def filter_files_by_patterns(dir_path: Path, ignore_patterns: List[str], recursive: bool) -> List[Path]:
@@ -10,7 +10,7 @@ def filter_files_by_patterns(dir_path: Path, ignore_patterns: List[str], recursi
     Filters files and directories under a root directory, excluding any that match ignore patterns.
 
     Args:
-        dir_path (Path): Directory to scan files from.
+        dir_path (Path): DirectoryEntry to scan files from.
         ignore_patterns (List[str]): List of glob-style patterns to exclude files and directories.
         recursive (bool): Whether to scan directories recursively.
 
