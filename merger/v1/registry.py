@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 from typing import Tuple, Dict, Callable
 
-from .logger import logger  # Adiciona o logger
+from .logger import logger
 
 
 def get_readers_folder() -> Path:
