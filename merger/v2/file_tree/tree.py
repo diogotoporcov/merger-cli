@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Self, Dict, List, Optional
 
 from .entry import DirectoryEntry, FileTreeEntry, FileEntry
+from ..files.files import read_file_bytes
+from ..parsers.parsers import get_parser
 from ..utils.patterns import matches_any_pattern
 
 
@@ -32,24 +34,30 @@ class FileTree:
         rel_path = Path(".") if path == root else Path(".") / path.relative_to(root)
         children: Dict[Path, FileTreeEntry] = {}
 
-        for path_ in path.iterdir():
-            path_relative = Path(".") / path_.relative_to(root)
+        for entry_path in path.iterdir():
+            path_relative = Path(".") / entry_path.relative_to(root)
 
             if ignore_patterns and matches_any_pattern(f"./{path_relative.as_posix()}", ignore_patterns):
                 continue
 
-            if path_.is_dir():
-                children[path_relative] = cls._build_tree(path_, root, ignore_patterns)
+            if entry_path.is_dir():
+                children[path_relative] = cls._build_tree(entry_path, root, ignore_patterns)
+
             else:
+                parser = get_parser(path.name)
+                if not parser.validate(read_file_bytes(entry_path, 1024)):
+                    continue
+
                 children[path_relative] = FileEntry(
-                    name=path_.name,
+                    name=entry_path.name,
                     path=path_relative,
+                    content=parser.parse(read_file_bytes(entry_path))
                 )
 
         return DirectoryEntry(
             name=path.name,
             path=rel_path,
-            children=children,
+            children=children
         )
 
     def to_dict(self) -> dict:
