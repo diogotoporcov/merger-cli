@@ -33,12 +33,14 @@ class FileEntry(FileTreeEntry):
     type = FileTreeEntryType.FILE
     name: str
     path: Path
+    content: str
 
     def to_dict(self) -> dict:
         return {
             "type": self.type,
             "name": self.name,
             "path": self.path,
+            "content": self.content
         }
 
     def to_json_dict(self) -> dict:
@@ -46,11 +48,12 @@ class FileEntry(FileTreeEntry):
             "type": self.type.value,
             "name": self.name,
             "path": self._serialize_path(self.path),
+            "content": self.content
         }
 
 
 @dataclass(frozen=True)
-class DirectoryEntry(FileEntry):
+class DirectoryEntry(FileTreeEntry):
     type = FileTreeEntryType.DIRECTORY
     name: str
     path: Path
