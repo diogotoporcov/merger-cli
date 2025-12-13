@@ -1,11 +1,14 @@
 import importlib.util
+import os
 import re
+import shutil
 from inspect import isclass
 from pathlib import Path
 from types import ModuleType
-from typing import Iterable, Type, Dict
+from typing import Iterable, Type, Dict, List
 
 from .default_parser import DefaultParser
+from ..exceptions.exceptions import InvalidParserFile
 from ..logging.logger import logger
 from .parser import Parser
 from ..utils.merger_dir import get_parsers_dir
@@ -82,29 +85,31 @@ def validate_module(module: ModuleType) -> bool:
     return True
 
 
+def load_module_from_path(path: Path) -> ModuleType | None:
+    module_name = f"_parser_{path.stem}"
+    logger.debug(f"Attempting to load parser module from {path}")
+
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        logger.warning(f"Failed to create spec for parser module: {path}")
+        return None
+
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+
+    except Exception:
+        logger.exception(f"Exception while loading parser module: {path}")
+        return None
+
+    return module
+
+
 def load_parsers() -> Dict[str, Type[Parser]]:
     parsers: Dict[str, Type[Parser]] = {}
     parsers_dir = get_parsers_dir()
 
     logger.debug(f"Loading parsers from directory: {parsers_dir}")
-
-    def load_module_from_path(path: Path) -> ModuleType | None:
-        module_name = f"_parser_{path.stem}"
-        logger.debug(f"Attempting to load parser module from {path}")
-
-        spec = importlib.util.spec_from_file_location(module_name, path)
-        if spec is None or spec.loader is None:
-            logger.warning(f"Failed to create spec for parser module: {path}")
-            return None
-
-        module = importlib.util.module_from_spec(spec)
-        try:
-            spec.loader.exec_module(module)
-        except Exception:
-            logger.exception(f"Exception while loading parser module: {path}")
-            return None
-
-        return module
 
     for path in parsers_dir.glob("*.py"):
         if path.name == "__init__.py":
@@ -137,6 +142,8 @@ def load_parsers() -> Dict[str, Type[Parser]]:
                     f"({parsers[extension].__name__} vs {parser_cls.__name__})"
                 )
 
+            extension = extension.lower()
+
             parsers[extension] = parser_cls
             logger.info(
                 f"Registered parser {parser_cls.__name__} for extension '{extension}'"
@@ -151,7 +158,81 @@ _PARSERS = load_parsers()
 
 def get_parser(filename: str) -> Type[Parser]:
     for extension, parser in _PARSERS.values():
-        if filename.endswith(extension):
+        if filename.lower().endswith(extension.lower()):
             return parser
 
     return DefaultParser
+
+
+def import_parser(path: Path) -> None:
+    if not path.exists() or not path.is_file():
+        raise FileNotFoundError(f"File not found: {path}")
+
+    module = load_module_from_path(path)
+    if not module or not validate_module(module):
+        raise InvalidParserFile(f"Invalid parser file: {path}")  # TODO
+
+    shutil.copy(path, get_parsers_dir())
+
+
+def remove_parser(extension: str) -> None:
+    if extension not in _PARSERS:
+        logger.warning(f"No parser registered for extension '{extension}'")
+        raise ValueError(f"No parser found for extension '{extension}'")
+
+    parser_cls = _PARSERS.pop(extension)
+    logger.info(f"Removed parser '{parser_cls.__name__}' for extension '{extension}'")
+
+    parsers_dir = get_parsers_dir()
+    parser_file = None
+    for path in parsers_dir.glob("*.py"):
+        if path.name == "__init__.py":
+            continue
+
+        module = load_module_from_path(path)
+        if module and hasattr(module, "EXTENSIONS") and extension in module.EXTENSIONS:
+            parser_file = path
+            break
+
+    if parser_file:
+        try:
+            os.remove(parser_file)
+            logger.info(f"Removed parser module file: {parser_file}")
+
+        except Exception as e:
+            logger.error(f"Failed to remove parser module file '{parser_file}': {e}")
+            raise ValueError(f"Failed to remove parser module file for extension '{extension}'")
+    else:
+        logger.warning(f"No parser module file found for extension '{extension}'")
+
+
+def list_installed_parsers() -> Dict[str, List[str]]:
+    installed: Dict[str, List[str]] = {}
+    parsers_dir = get_parsers_dir()
+
+    logger.debug(f"Listing installed parsers from directory: {parsers_dir}")
+
+    for path in parsers_dir.glob("*.py"):
+        if path.name == "__init__.py":
+            continue
+
+        module = load_module_from_path(path)
+        if module is None:
+            logger.debug(f"Skipping {path.name}: failed to load")
+            continue
+
+        if not validate_module(module):
+            logger.warning(f"Skipping {path.name}: invalid parser module")
+            continue
+
+        module_name = path.stem
+        extensions = list(module.EXTENSIONS)
+
+        installed[str(path)] = extensions
+
+        logger.debug(
+            f"Found parser '{module_name}' handling extensions: {extensions}"
+        )
+
+    logger.debug(f"Total installed custom parsers found: {len(installed)}")
+    return installed
