@@ -10,16 +10,9 @@ def get_version() -> str:
     except PackageNotFoundError:
         pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
         try:
-            with pyproject_path.open("rb") as f:
-                data = tomllib.load(f)
+            with pyproject_path.open("rb") as file:
+                data = tomllib.load(file)
             return data["project"]["version"]
+
         except Exception:
             return "unknown"
-
-
-def parse_escape_chars(text: str) -> str:
-    return (
-        text
-        .replace("\\n", "\n")
-        .replace("\\t", "\t")
-    )

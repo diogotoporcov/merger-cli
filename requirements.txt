@@ -1,1 +1,2 @@
 chardet>=5.2.0
+filetype>=1.2.0

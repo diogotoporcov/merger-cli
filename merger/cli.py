@@ -2,150 +2,167 @@ import argparse
 import logging
 from pathlib import Path
 
-from .files import merge, read_ignore_file
-from .logger import logger, setup_logger
-from .registry import register_reader, unregister_reader, list_readers, load_installed_readers
-from .utils import parse_escape_chars, get_version
+from .parsing.modules import (
+    install_module,
+    uninstall_module,
+    list_modules,
+)
+from .file_tree.tree import FileTree
+from .logging.logger import setup_logger, logger
+from .utils.version import get_version
+from .utils.files import read_merger_ignore_file, write_tree
 
 
 def main():
+    # Args
     parser = argparse.ArgumentParser(
-        description="Merge readable files in a directory with support for ignore patterns and custom file readers."
+        description="Merge files from a directory into a structured JSON output."
     )
 
-    # Required positional args
-    parser.add_argument("input_dir", type=Path, nargs="?", help="Root directory to scan for files")
-    parser.add_argument("output_file", type=Path, nargs="?",
-                        help="File to save merged output (default: <input_dir>/merger.txt)")
+    parser.add_argument(
+        "input_dir",
+        type=Path,
+        nargs="?",
+        help="Root directory to scan for files",
+    )
 
-    # Reader management
-    parser.add_argument("-i", "--install", nargs=2, metavar=("EXT", "MODULE_PATH"),
-                        help="Install a custom reader for a given extension (e.g., .pdf)")
+    parser.add_argument(
+        "output_path",
+        type=Path,
+        nargs="?",
+        default=Path("./merger.json"),
+        help="Path to save merged output (default: ./merger.json)",
+    )
 
-    parser.add_argument("-u", "--uninstall", metavar="EXT",
-                        help="Uninstall a custom reader by extension (use '*' to remove all)")
+    module_group = parser.add_mutually_exclusive_group()
 
-    parser.add_argument("--list-installed", action="store_true",
-                        help="List all installed custom readers")
+    module_group.add_argument(
+        "-i",
+        "--install-module",
+        type=Path,
+        metavar="MODULE_PATH",
+        help="Install a custom parser module",
+    )
 
-    # Version
+    module_group.add_argument(
+        "-u",
+        "--uninstall-module",
+        metavar="MODULE_ID",
+        help="Uninstall a module by ID (use '*' to remove all)",
+    )
+
+    module_group.add_argument(
+        "-l",
+        "--list-modules",
+        action="store_true",
+        help="List all installed parser modules",
+    )
+
     parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {get_version()}",
-        help="Show program version and exit"
+        help="Show program version and exit",
     )
 
-    # Logging
     parser.add_argument(
-        "-l", "--log-level",
+        "--log-level",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
-        help="Set the logging level (default: INFO)"
+        help="Set the logging level (default: INFO)",
     )
 
-    # Ignore logic
-    parser.add_argument("--ignore", nargs="*", default=[],
-                        help="Glob-style patterns to ignore (e.g., '*.log', '__pycache__')")
-
     parser.add_argument(
-        "-f", "--ignore-file", type=Path,
-        help="File containing glob-style patterns to ignore (default: <input_dir>/merger.ignore)")
-
-    parser.add_argument("--empty", action="store_true", default=False,
-                        help="Include empty files in the merged output")
-
-    parser.add_argument("--prefix", type=str, default="<<FILE_START: {path}>>\n",
-                        help="Format string for file start marker (set empty string to disable)")
-
-    parser.add_argument("--suffix", type=str, default="\n<<FILE_END: {path}>>\n\n",
-                        help="Format string for file end marker (set empty string to disable)")
-
-    # Tree
-    parser.add_argument(
-        "--no-tree",
-        action="store_true",
-        default=False,
-        help="Do not include the generated directory tree in the output file"
+        "--ignore",
+        nargs="+",
+        metavar="GLOB_PATTERN",
+        default=[],
+        help="Glob-style patterns to ignore (e.g., '*.log', '__pycache__', './data/')",
     )
 
-    # Header
     parser.add_argument(
-        "--no-header",
-        action="store_true",
-        default=False,
-        help="Do not include the watermark header in the output file"
+        "--merger-ignore",
+        type=Path,
+        default=Path("./merger.ignore"),
+        metavar="IGNORE_PATTERNS_PATH",
+        help="File containing glob-style patterns to ignore (default: ./merger.ignore)",
     )
 
-    # CLI Logic
     args = parser.parse_args()
-
     setup_logger(level=getattr(logging, args.log_level.upper()))
 
-    if args.install:
-        ext, path = args.install
-        register_reader(ext, path)
-        logger.info(f"Installed reader for '{ext}' from '{path}'")
+    # Install module
+    if args.install_module:
+        try:
+            install_module(args.install_module)
+            logger.info("Module installed successfully.")
+
+        except Exception as e:
+            logger.error(f"Could not install module: {e}")
+
         return
 
-    if args.uninstall:
-        if args.uninstall == "*":
-            installed = list_readers()
-            if not installed:
-                logger.info("No custom readers to uninstall.")
+    # Uninstall module(s)
+    if args.uninstall_module:
+        try:
+            uninstall_module(args.uninstall_module)
+            if args.uninstall_module == "*":
+                logger.info("All modules uninstalled.")
+
             else:
-                for ext in list(installed.keys()):
-                    unregister_reader(ext)
-                    logger.info(f"Uninstalled reader for '{ext}'")
-        else:
-            unregister_reader(args.uninstall)
-            logger.info(f"Uninstalled reader for '{args.uninstall}'")
+                logger.info(f"Module '{args.uninstall_module}' uninstalled.")
+
+        except Exception as e:
+            logger.error(f"Could not uninstall module: {e}")
+
         return
 
-    if args.list_installed:
-        installed = list_readers()
-        if not installed:
-            logger.info("No custom readers installed.")
-        else:
-            logger.info("Installed Custom Readers:")
-            for ext, mod_path in installed.items():
-                logger.info(f"  {ext}: {mod_path}")
+    # List installed modules
+    if args.list_modules:
+        modules = list_modules()
+
+        if not modules:
+            logger.info("No modules installed.")
+            return
+
+        logger.info("Installed modules:")
+        for module_id, meta in modules.items():
+            name = meta.get("original_name", "unknown")
+            extensions = ", ".join(meta.get("extensions", []))
+            logger.info(f"  {module_id} ({name}) -> {extensions}")
+
         return
 
-    # Handle default output file
+    # Require input_dir for normal operation
     if not args.input_dir:
-        parser.error("input_dir is required unless installing/uninstalling/listing readers.")
+        parser.error(
+            "input_dir is required unless installing, uninstalling, or listing modules."
+        )
 
-    if not args.output_file:
-        args.output_file = args.input_dir / "merger.txt"
-
-    if not args.ignore_file and args.input_dir:
-        default_ignore = args.input_dir / "merger.ignore"
-        if default_ignore.exists():
-            args.ignore_file = default_ignore
-            logger.info("Found default ignore file 'merger.ignore' in input directory. Using it for ignore patterns.")
-
+    # Ignore patterns
     ignore_patterns = args.ignore.copy()
-    if args.ignore_file:
-        ignore_patterns.extend(read_ignore_file(args.ignore_file))
+    merger_ignore_path: Path = args.merger_ignore
 
-    readers, validators = load_installed_readers()
+    if merger_ignore_path:
+        if not merger_ignore_path.exists():
+            parser.error(f"'{merger_ignore_path}' does not exist.")
 
-    merge(
-        dir_path=args.input_dir,
-        ignore_patterns=ignore_patterns,
-        output_path=args.output_file,
-        validation_func_override=validators,
-        read_func_override=readers,
-        write_if_empty=args.empty,
-        prefix_format=parse_escape_chars(args.prefix),
-        suffix_format=parse_escape_chars(args.suffix),
-        include_tree=not args.no_tree,
-        include_watermark=not args.no_header
-    )
+        if not merger_ignore_path.is_file():
+            parser.error(f"'{merger_ignore_path}' exists but is not a file.")
 
-    logger.info(f"Saved to {args.output_file}")
+        logger.info("Using merger ignore file.")
+        ignore_patterns.extend(
+            read_merger_ignore_file(merger_ignore_path)
+        )
+
+    ignore_patterns = list(set(ignore_patterns))
+
+    args.output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    tree = FileTree.from_path(args.input_dir, ignore_patterns)
+    write_tree(tree, args.output_path)
+    logger.info(f"Saved to {args.output_path}")
 
 
 if __name__ == "__main__":
