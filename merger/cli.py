@@ -2,7 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
-from .parsers.modules import (
+from .parsing.modules import (
     install_module,
     uninstall_module,
     list_modules,

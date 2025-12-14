@@ -3,7 +3,7 @@ from typing import Self, Dict, List, Optional
 
 from .entry import DirectoryEntry, FileTreeEntry, FileEntry
 from ..logging.logger import logger
-from ..parsers.modules import get_parser
+from ..parsing.modules import get_parser
 from ..utils.patterns import matches_any_pattern
 from ..utils.files import read_file_bytes
 

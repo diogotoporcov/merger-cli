@@ -4,7 +4,7 @@ from typing import Union, Optional, Any, Set, Type
 
 import fitz
 
-from merger.parsers.parser import Parser
+from merger.parsing.parser import Parser
 
 
 class PdfParser(Parser):

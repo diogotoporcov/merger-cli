@@ -6,7 +6,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Type, Dict, Any, Set
 
-from merger.parsers.default_parser import DefaultParser
+from merger.parsing.default_parser import DefaultParser
 from merger.utils.hash import hash_from_file
 from merger.utils.json import write_json
 from .parser import Parser

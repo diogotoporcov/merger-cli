@@ -6,7 +6,7 @@ from typing import Optional, Union, Set
 
 class Parser(ABC):
     """
-    Abstract base class for stateless file parsers.
+    Abstract base class for stateless file parsing.
 
     Attributes:
         EXTENSIONS: File extensions supported by this parser. Must contain at least one value.
