@@ -9,7 +9,7 @@ from merger.parsing.parser import Parser
 
 class PdfParser(Parser):
     EXTENSIONS: Set[str] = {".pdf"}
-    CHUNK_BYTES_FOR_VALIDATION: Optional[int] = None
+    MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
     @classmethod
     def validate(

@@ -46,12 +46,12 @@ class FileTree:
 
             else:
                 parser = get_parser(entry_path.name)
-                file_bytes = read_file_bytes(entry_path, parser.CHUNK_BYTES_FOR_VALIDATION)
+                file_bytes = read_file_bytes(entry_path, parser.MAX_BYTES_FOR_VALIDATION)
 
                 if not parser.validate(file_bytes, file_path=entry_path, logger=logger):
                     continue
 
-                if parser.CHUNK_BYTES_FOR_VALIDATION is not None:
+                if parser.MAX_BYTES_FOR_VALIDATION is not None:
                     file_bytes = read_file_bytes(entry_path, None)
 
                 children[path_relative] = FileEntry(

@@ -140,7 +140,7 @@ from merger.parsing.parser import Parser
 Required structure:
 
 * `EXTENSIONS: Set[str]`
-* `CHUNK_BYTES_FOR_VALIDATION: Optional[int]`
+* `MAX_BYTES_FOR_VALIDATION: Optional[int]`
 * `validate(cls, file_chunk_bytes, *, file_path=None, logger=None) -> bool`
 * `parse(cls, file_bytes, *, file_path=None, logger=None) -> str`
 
@@ -186,15 +186,15 @@ from merger.parsing.parser import Parser
 
 class PdfParser(Parser):
     EXTENSIONS: Set[str] = {".pdf"}
-    CHUNK_BYTES_FOR_VALIDATION: Optional[int] = None
+    MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
     @classmethod
     def validate(
-        cls,
-        file_chunk_bytes: Union[bytes, bytearray],
-        *,
-        file_path: Optional[Path] = None,
-        logger: Optional[logging.Logger] = None
+            cls,
+            file_chunk_bytes: Union[bytes, bytearray],
+            *,
+            file_path: Optional[Path] = None,
+            logger: Optional[logging.Logger] = None
     ) -> bool:
         """
         Validate that the given file represents a readable PDF document.
@@ -217,11 +217,11 @@ class PdfParser(Parser):
 
     @classmethod
     def parse(
-        cls,
-        file_bytes: Union[bytes, bytearray],
-        *,
-        file_path: Optional[Path] = None,
-        logger: Optional[logging.Logger] = None,
+            cls,
+            file_bytes: Union[bytes, bytearray],
+            *,
+            file_path: Optional[Path] = None,
+            logger: Optional[logging.Logger] = None,
     ) -> str:
         """
         Extracts and concatenates text from all pages of a PDF file.
