@@ -1,10 +1,11 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Set
 
 
 class Parser(ABC):
+    EXTENSIONS: Set[str]  # Must have at least one extension
     MAX_CHUNK_BYTES_FOR_VALIDATION: Optional[int] = 1024  # None = Must read all bytes
 
     def __new__(cls, *args, **kwargs):
