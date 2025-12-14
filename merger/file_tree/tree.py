@@ -57,7 +57,7 @@ class FileTree:
                 children[path_relative] = FileEntry(
                     name=entry_path.name,
                     path=path_relative,
-                    content=parser.parse(file_bytes)
+                    content=parser.parse(file_bytes, file_path=entry_path, logger=logger)
                 )
 
         return DirectoryEntry(
