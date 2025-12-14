@@ -69,4 +69,4 @@ class PdfParser(Parser):
         return full_text
 
 
-parser: Type[Parser] = PdfParser
+parser_cls: Type[Parser] = PdfParser

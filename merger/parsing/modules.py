@@ -50,7 +50,7 @@ def module_from_path(path: Path, name: str) -> ModuleType:
 
 def get_parser_cls_from_module(module: ModuleType) -> Type[Parser]:
     try:
-        parser_cls = getattr(module, "parser")
+        parser_cls = getattr(module, "parser_cls")
 
     except AttributeError as e:
         raise InvalidModule(
