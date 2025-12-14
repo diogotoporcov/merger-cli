@@ -45,7 +45,7 @@ class FileTree:
                 children[path_relative] = cls._build_tree(entry_path, root, ignore_patterns)
 
             else:
-                parser = get_parser(path.name)
+                parser = get_parser(entry_path.name)
                 file_bytes = read_file_bytes(entry_path, parser.MAX_CHUNK_BYTES_FOR_VALIDATION)
 
                 if not parser.validate(file_bytes, file_path=entry_path, logger=logger):
