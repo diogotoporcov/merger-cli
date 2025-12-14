@@ -11,7 +11,7 @@ from merger.utils.hash import hash_from_file
 from merger.utils.json import write_json
 from .parser import Parser
 from ..exceptions.exceptions import InvalidModule, ModuleAlreadyInstalled
-from ..utils.config import get_parsers_dir, get_config, get_config_path
+from ..utils.config import get_or_create_parsers_dir, get_or_create_config, get_config_path
 
 _EXTENSION_REGEX_STR = r"\.[a-z0-9.]+$"
 _EXTENSION_REGEX = re.compile(_EXTENSION_REGEX_STR, re.IGNORECASE)
@@ -115,7 +115,7 @@ def get_extensions_and_parser_cls(module: ModuleType) -> Tuple[FrozenSet[str], T
 
 
 def install_module(path: Path) -> None:
-    config = get_config()
+    config = get_or_create_config()
     modules = config.setdefault("modules", {})
 
     file_hash = hash_from_file(path, 8)
@@ -139,7 +139,7 @@ def install_module(path: Path) -> None:
             f"Extensions already installed: {', '.join(sorted(overlapping))}"
         )
 
-    module_path = get_parsers_dir() / filename
+    module_path = get_or_create_parsers_dir() / filename
     shutil.copy(path, module_path)
 
     modules[file_hash] = {
@@ -152,13 +152,13 @@ def install_module(path: Path) -> None:
 
 
 def list_modules() -> Dict[str, Dict[str, Any]]:
-    config = get_config()
+    config = get_or_create_config()
     modules = config.setdefault("modules", {})
     return modules.copy()
 
 
 def uninstall_module(module_id: str) -> None:
-    config = get_config()
+    config = get_or_create_config()
     modules = config.setdefault("modules", {})
 
     if module_id == "*":
@@ -194,7 +194,7 @@ def uninstall_module(module_id: str) -> None:
 
 
 def load_parsers() -> Dict[str, Type[Parser]]:
-    config = get_config()
+    config = get_or_create_config()
     modules = config.get("modules", {})
 
     parsers: Dict[str, Type[Parser]] = {}

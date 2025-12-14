@@ -22,7 +22,7 @@ def get_merger_dir() -> Path:
             return Path(base) / DIR_NAME
 
 
-def get_parsers_dir() -> Path:
+def get_or_create_parsers_dir() -> Path:
     merger_dir = get_merger_dir() / "parsers"
     merger_dir.mkdir(parents=True, exist_ok=True)
     return merger_dir
@@ -32,7 +32,7 @@ def get_config_path() -> Path:
     return get_merger_dir() / "config.json"
 
 
-def get_config() -> Dict[str, Dict[str, Any]]:
+def get_or_create_config() -> Dict[str, Dict[str, Any]]:
     config_path = get_config_path()
     if config_path.exists() and config_path.is_file():
         return load_json(config_path)
