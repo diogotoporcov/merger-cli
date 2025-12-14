@@ -9,7 +9,7 @@ class Parser(ABC):
     Abstract base class for stateless file parsing.
 
     Attributes:
-        EXTENSIONS: File extensions supported by this parser. Must contain at least one value.
+        EXTENSIONS: Must contain at least one value.
         CHUNK_BYTES_FOR_VALIDATION: Number of bytes required to validate a file.
             If None, the entire file must be read for validation.
     """
