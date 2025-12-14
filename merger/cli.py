@@ -34,7 +34,9 @@ def main():
         help="Path to save merged output (default: ./merger.json)",
     )
 
-    parser.add_argument(
+    module_group = parser.add_mutually_exclusive_group()
+
+    module_group.add_argument(
         "-i",
         "--install-module",
         type=Path,
@@ -42,14 +44,14 @@ def main():
         help="Install a custom parser module",
     )
 
-    parser.add_argument(
+    module_group.add_argument(
         "-u",
         "--uninstall-module",
         metavar="MODULE_ID",
         help="Uninstall a module by ID (use '*' to remove all)",
     )
 
-    parser.add_argument(
+    module_group.add_argument(
         "-l",
         "--list-modules",
         action="store_true",
@@ -64,7 +66,6 @@ def main():
     )
 
     parser.add_argument(
-        "-ll",
         "--log-level",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -74,7 +75,7 @@ def main():
 
     parser.add_argument(
         "--ignore",
-        nargs="*",
+        nargs="+",
         default=[],
         help="Glob-style patterns to ignore (e.g., '*.log', '__pycache__', './data/')",
     )
@@ -91,23 +92,25 @@ def main():
     setup_logger(level=getattr(logging, args.log_level.upper()))
 
     # Install module
-    if args.install:
+    if args.install_module:
         try:
-            install_module(args.install)
+            install_module(args.install_module)
             logger.info("Module installed successfully.")
+
         except Exception as e:
             logger.error(f"Could not install module: {e}")
+
         return
 
     # Uninstall module(s)
-    if args.uninstall:
+    if args.uninstall_module:
         try:
-            uninstall_module(args.uninstall)
-            if args.uninstall == "*":
+            uninstall_module(args.uninstall_module)
+            if args.uninstall_module == "*":
                 logger.info("All modules uninstalled.")
 
             else:
-                logger.info(f"Module '{args.uninstall}' uninstalled.")
+                logger.info(f"Module '{args.uninstall_module}' uninstalled.")
 
         except Exception as e:
             logger.error(f"Could not uninstall module: {e}")
@@ -115,7 +118,7 @@ def main():
         return
 
     # List installed modules
-    if args.list_installed:
+    if args.list_modules:
         modules = list_modules()
 
         if not modules:
