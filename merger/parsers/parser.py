@@ -5,7 +5,7 @@ from typing import Optional, Union
 
 
 class Parser(ABC):
-    MAX_CHUNK_BYTES: Optional[int] = 1024  # None = Must read all bytes
+    MAX_CHUNK_BYTES_FOR_VALIDATION: Optional[int] = 1024  # None = Must read all bytes
 
     def __new__(cls, *args, **kwargs):
         raise TypeError(f"{cls.__name__} is a stateless strategy and must not be instantiated")
