@@ -4,7 +4,7 @@ import shutil
 from inspect import isclass
 from pathlib import Path
 from types import ModuleType
-from typing import Type, FrozenSet, Iterable, Tuple, Dict, Any
+from typing import Type, Dict, Any, Set
 
 from merger.parsers.default_parser import DefaultParser
 from merger.utils.hash import hash_from_file
@@ -48,43 +48,39 @@ def module_from_path(path: Path, name: str) -> ModuleType:
     return module
 
 
-def get_extensions_and_parser_cls(module: ModuleType) -> Tuple[FrozenSet[str], Type[Parser]]:
-    module_all = getattr(module, "__all__", None)
-
-    if not isinstance(module_all, (list, tuple)):
-        raise InvalidModule(
-            module.__file__,
-            "__all__ missing or invalid",
-        )
-
-    if len(module_all) != 2:
-        raise InvalidModule(
-            module.__file__,
-            "__all__ must contain exactly 2 items",
-        )
-
+def get_parser_cls_from_module(module: ModuleType) -> Type[Parser]:
     try:
-        attributes = {
-            attribute: getattr(module, attribute)
-            for attribute in module_all
-        }
+        parser_cls = getattr(module, "parser")
+
     except AttributeError as e:
         raise InvalidModule(
             module.__file__,
-            f"failed to resolve __all__ exports ({e})",
+            "parser attribute not provided",
         ) from e
 
-    if "EXTENSIONS" not in attributes:
+    if not isclass(parser_cls) or not issubclass(parser_cls, Parser):
         raise InvalidModule(
             module.__file__,
-            "EXTENSIONS not provided",
+            "parser is not a subclass of Parser",
         )
 
-    extensions = attributes["EXTENSIONS"]
-    if not isinstance(extensions, Iterable):
+    extensions = getattr(parser_cls, "EXTENSIONS", None)
+    if extensions is None:
         raise InvalidModule(
             module.__file__,
-            "EXTENSIONS is not iterable",
+            "parser does not contain EXTENSIONS attribute",
+        )
+
+    if not isinstance(extensions, Set):
+        raise InvalidModule(
+            module.__file__,
+            "parser EXTENSIONS attribute is not a set",
+        )
+
+    if not extensions:
+        raise InvalidModule(
+            module.__file__,
+            "parser EXTENSSIONS attribute must contain at least one file extension"
         )
 
     for extension in extensions:
@@ -100,18 +96,7 @@ def get_extensions_and_parser_cls(module: ModuleType) -> Tuple[FrozenSet[str], T
                 f"extension {extension!r} does not match regex ({_EXTENSION_REGEX_STR})",
             )
 
-    parser_cls = next(
-        value for key, value in attributes.items()
-        if key != "EXTENSIONS"
-    )
-
-    if not isclass(parser_cls) or not issubclass(parser_cls, Parser):
-        raise InvalidModule(
-            module.__file__,
-            "exported parser is not a subclass of Parser",
-        )
-
-    return frozenset(extensions), parser_cls
+    return parser_cls
 
 
 def install_module(path: Path) -> None:
@@ -125,7 +110,7 @@ def install_module(path: Path) -> None:
         raise ModuleAlreadyInstalled(path.resolve().as_posix())
 
     module = module_from_path(path, file_hash)
-    extensions, _ = get_extensions_and_parser_cls(module)
+    parser_cls = get_parser_cls_from_module(module)
 
     installed_extensions = {
         ext
@@ -133,7 +118,7 @@ def install_module(path: Path) -> None:
         for ext in module_entry.get("extensions", [])
     }
 
-    overlapping = extensions & installed_extensions
+    overlapping = parser_cls.EXTENSIONS & installed_extensions
     if overlapping:
         raise ModuleAlreadyInstalled(
             f"Extensions already installed: {', '.join(sorted(overlapping))}"
@@ -143,7 +128,7 @@ def install_module(path: Path) -> None:
     shutil.copy(path, module_path)
 
     modules[file_hash] = {
-        "extensions": list(extensions),
+        "extensions": list(parser_cls.EXTENSIONS),
         "path": module_path.as_posix(),
         "original_name": path.name,
     }
@@ -213,9 +198,9 @@ def load_parsers() -> Dict[str, Type[Parser]]:
             )
 
         module = module_from_path(module_path, module_id)
-        extensions, parser_cls = get_extensions_and_parser_cls(module)
+        parser_cls = get_parser_cls_from_module(module)
 
-        for extension in extensions:
+        for extension in parser_cls.EXTENSIONS:
             if extension in parsers:
                 raise InvalidModule(
                     module_path.as_posix(),
@@ -229,7 +214,3 @@ def load_parsers() -> Dict[str, Type[Parser]]:
 
 
 _PARSERS = load_parsers()
-
-
-if __name__ == '__main__':
-    install_module(Path(r"P:\mgr\examples\custom_readers\pdf2.py"))
