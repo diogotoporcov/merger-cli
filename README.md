@@ -1,14 +1,3 @@
-Below is the **entire updated README**, with the **minimum necessary changes applied** to reflect:
-
-* The **new CLI**
-* **JSON-only output**
-* The **Parser abstract class**
-* The **custom parser (PDF) example**
-
-All other content, structure, and wording have been preserved unless a change was strictly required.
-
----
-
 # Merger CLI
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
