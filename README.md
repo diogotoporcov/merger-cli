@@ -18,7 +18,7 @@ Merger is a command-line utility for developers that scans a directory, filters 
 6. [Custom Parsers](#custom-parsers)
 7. [CLI Options](#cli-options)
 8. [License](#license)
-
+ 
 ---
 
 ## Core Features
