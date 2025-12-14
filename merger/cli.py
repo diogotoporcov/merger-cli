@@ -8,9 +8,9 @@ from .parsers.modules import (
     list_modules,
 )
 from .file_tree.tree import FileTree
-from .files.files import read_merger_ignore_file, write_tree
 from .logging.logger import setup_logger, logger
 from .utils.version import get_version
+from .utils.files import read_merger_ignore_file, write_tree
 
 
 def main():
