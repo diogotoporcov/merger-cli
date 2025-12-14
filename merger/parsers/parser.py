@@ -5,6 +5,8 @@ from typing import Optional, Union
 
 
 class Parser(ABC):
+    MAX_CHUNK_BYTES: Optional[int] = 1024  # None = Must read all bytes
+
     def __new__(cls, *args, **kwargs):
         raise TypeError(f"{cls.__name__} is a stateless strategy and must not be instantiated")
 
@@ -12,7 +14,7 @@ class Parser(ABC):
     @abstractmethod
     def validate(
             cls,
-            file_chunk: Union[bytes, bytearray],
+            file_chunk_bytes: Union[bytes, bytearray],
             *,
             file_path: Optional[Path] = None,
             logger: Optional[logging.Logger] = None
