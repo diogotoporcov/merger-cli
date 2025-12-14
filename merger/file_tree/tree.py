@@ -3,7 +3,7 @@ from typing import Self, Dict, List, Optional
 
 from .entry import DirectoryEntry, FileTreeEntry, FileEntry
 from ..files.files import read_file_bytes
-from ..parsers.parsers import get_parser
+from ..parsers.modules import get_parser
 from ..utils.patterns import matches_any_pattern
 
 
@@ -45,7 +45,7 @@ class FileTree:
 
             else:
                 parser = get_parser(path.name)
-                if not parser.validate(read_file_bytes(entry_path, 1024)):
+                if not parser.validate(read_file_bytes(entry_path, parser.MAX_CHUNK_BYTES)):
                     continue
 
                 children[path_relative] = FileEntry(
