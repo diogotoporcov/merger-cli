@@ -278,7 +278,7 @@ The merged result is a single JSON file containing:
 | `--ignore`               | Glob-style ignore patterns                                 |
 | `-mi, --merger-ignore`   | Ignore file (default: `./merger.ignore`)                   |
 | `--version`              | Show installed version                                     |
-| `-ll, --log-level`       | Set logging verbosity                                      |
+| `--log-level`            | Set logging verbosity                                      |
 
 ---
 
