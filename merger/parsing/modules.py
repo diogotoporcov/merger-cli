@@ -100,6 +100,12 @@ def get_parser_cls_from_module(module: ModuleType) -> Type[Parser]:
 
 
 def install_module(path: Path) -> None:
+    if not path.exists():
+        raise FileNotFoundError(f"Path does not exist: {path}")
+
+    if not path.is_file():
+        raise IsADirectoryError(f"Path exists but is not a file: {path}")
+
     config = get_or_create_config()
     modules = config.setdefault("modules", {})
 

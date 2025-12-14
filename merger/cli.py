@@ -76,15 +76,16 @@ def main():
     parser.add_argument(
         "--ignore",
         nargs="+",
+        metavar="GLOB_PATTERN",
         default=[],
         help="Glob-style patterns to ignore (e.g., '*.log', '__pycache__', './data/')",
     )
 
     parser.add_argument(
-        "-mi",
         "--merger-ignore",
         type=Path,
         default=Path("./merger.ignore"),
+        metavar="IGNORE_PATTERNS_PATH",
         help="File containing glob-style patterns to ignore (default: ./merger.ignore)",
     )
 
@@ -143,11 +144,14 @@ def main():
     ignore_patterns = args.ignore.copy()
     merger_ignore_path: Path = args.merger_ignore
 
-    if merger_ignore_path.exists():
+    if merger_ignore_path:
+        if not merger_ignore_path.exists():
+            parser.error(f"'{merger_ignore_path}' does not exist.")
+
         if not merger_ignore_path.is_file():
             parser.error(f"'{merger_ignore_path}' exists but is not a file.")
 
-        logger.info("Found default ignore patterns file.")
+        logger.info("Using merger ignore file.")
         ignore_patterns.extend(
             read_merger_ignore_file(merger_ignore_path)
         )
