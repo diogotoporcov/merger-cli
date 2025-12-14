@@ -9,6 +9,8 @@ from .parser import Parser
 
 
 class DefaultParser(Parser):
+    MAX_CHUNK_BYTES: Optional[int] = 1024
+
     TEXT_CONFIDENCE_THRESHOLD = 0.8
     MAX_BINARY_RATIO = 0.30
 
@@ -51,12 +53,12 @@ class DefaultParser(Parser):
     @classmethod
     def validate(
         cls,
-        file_chunk: Union[bytes, bytearray],
+        file_chunk_bytes: Union[bytes, bytearray],
         *,
         file_path: Optional[Path] = None,
         logger: Optional[logging.Logger] = None
     ) -> bool:
-        mime_type = cls.guess_mime_type(file_chunk)
+        mime_type = cls.guess_mime_type(file_chunk_bytes)
 
         if mime_type:
             is_text_mime = (
@@ -69,12 +71,12 @@ class DefaultParser(Parser):
                     logger.debug(f"Rejected by MIME type: {mime_type}")
                 return False
 
-        if cls.looks_binary(file_chunk):
+        if cls.looks_binary(file_chunk_bytes):
             if logger:
                 logger.debug("Binary signature detected")
             return False
 
-        encoding, confidence = cls.guess_encoding(file_chunk)
+        encoding, confidence = cls.guess_encoding(file_chunk_bytes)
 
         if confidence < cls.TEXT_CONFIDENCE_THRESHOLD and logger:
             logger.debug(
@@ -82,7 +84,7 @@ class DefaultParser(Parser):
             )
 
         try:
-            file_chunk.decode(encoding)
+            file_chunk_bytes.decode(encoding)
             return True
 
         except UnicodeDecodeError:
