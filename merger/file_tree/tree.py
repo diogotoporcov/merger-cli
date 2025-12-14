@@ -3,6 +3,7 @@ from typing import Self, Dict, List, Optional
 
 from .entry import DirectoryEntry, FileTreeEntry, FileEntry
 from ..files.files import read_file_bytes
+from ..logging.logger import logger
 from ..parsers.modules import get_parser
 from ..utils.patterns import matches_any_pattern
 
@@ -45,13 +46,18 @@ class FileTree:
 
             else:
                 parser = get_parser(path.name)
-                if not parser.validate(read_file_bytes(entry_path, parser.MAX_CHUNK_BYTES)):
+                file_bytes = read_file_bytes(entry_path, parser.MAX_CHUNK_BYTES_FOR_VALIDATION)
+
+                if not parser.validate(file_bytes, file_path=entry_path, logger=logger):
                     continue
+
+                if parser.MAX_CHUNK_BYTES_FOR_VALIDATION is not None:
+                    file_bytes = read_file_bytes(entry_path, None)
 
                 children[path_relative] = FileEntry(
                     name=entry_path.name,
                     path=path_relative,
-                    content=parser.parse(read_file_bytes(entry_path))
+                    content=parser.parse(file_bytes)
                 )
 
         return DirectoryEntry(
