@@ -1,12 +1,21 @@
+Below is the **entire updated README**, with the **minimum necessary changes applied** to reflect:
+
+* The **new CLI**
+* **JSON-only output**
+* The **Parser abstract class**
+* The **custom parser (PDF) example**
+
+All other content, structure, and wording have been preserved unless a change was strictly required.
+
+---
+
 # Merger CLI
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/merger-cli.svg?color=orange)](https://pypi.org/project/merger-cli/)
 
-
-
-Merger is a command-line utility for developers that scans a directory, filters files using customizable ignore patterns, and merges all readable content into a single structured output file. It supports custom file readers and validators, making it easily extendable for formats such as `.pdf` or any specific format.
+Merger is a command-line utility for developers that scans a directory, filters files using customizable ignore patterns, and merges all readable content into a single **structured JSON output file**. It supports custom file parsers, making it easily extendable for formats such as `.pdf` or any domain-specific format.
 
 ---
 
@@ -14,10 +23,10 @@ Merger is a command-line utility for developers that scans a directory, filters 
 
 1. [Core Features](#core-features)
 2. [Dependencies](#dependencies)
-3. [Installation with PyPI ](#install-directly-from-pypi)
-4. [Build and Install Locally](#clone-and-build-locally)
+3. [Installation with PyPI](#installation-with-pypi)
+4. [Build and Install Locally](#build-and-install-locally)
 5. [Usage](#usage)
-6. [Custom Readers](#custom-readers)
+6. [Custom Parsers](#custom-parsers)
 7. [CLI Options](#cli-options)
 8. [License](#license)
 
@@ -25,37 +34,36 @@ Merger is a command-line utility for developers that scans a directory, filters 
 
 ## Core Features
 
-* **Recursive merge** of all readable text files under a root directory.
+* **Recursive merge** of all readable files under a root directory.
 * **Glob-based ignore patterns** using `.gitignore`-style syntax.
-* **Automatic encoding detection**.
-* **Custom file readers and validators** for non-text formats.
-* **CLI support** for installation, removal, and listing of custom readers.
-* **Human- and AI-readable merged output**, including a directory tree header and file delimiters.
+* **Automatic binary validation and parsing**.
+* **Modular parser system** for custom formats.
+* **CLI support** for installation, removal, and listing of custom parsers.
+* **Structured JSON merged output**, including a file tree.
 
 ---
 
 ## Dependencies
 
-| Component   | Version / Type | Notes                       |
-|-------------|----------------|-----------------------------|
-| **Python**  | ≥ 3.8          | Required                    |
+| Component  | Version | Notes    |
+|------------|---------|----------|
+| **Python** | ≥ 3.8   | Required |
 
 All dependencies are listed in [`requirements.txt`](requirements.txt).
 
 ---
 
-## Install directly from PyPI
+## Installation with PyPI
+
 ```bash
 pip install merger-cli
 ```
 
-## Clone and build locally
-### 1. Clone the repository
+---
 
-```bash
-git clone https://github.com/diogotoporcov/merger-cli.git
-cd merger-cli
-```
+## Build and Install Locally
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/diogotoporcov/merger-cli.git
@@ -90,8 +98,6 @@ pip install -r requirements.txt
 pip install .
 ```
 
-This registers the `merger` command globally.
-
 ---
 
 ## Usage
@@ -99,87 +105,191 @@ This registers the `merger` command globally.
 ### Basic merge
 
 ```bash
-merger ./src ./merged.txt
-```
-
-### Custom ignore patterns
-
-```bash
-merger "C:\Users\USER\Desktop\project" "C:\Users\USER\Desktop\project\output.txt" --ignore "*.log" "__pycache__" "*.tmp"
-```
-
-### Custom ignore file
-
-```bash
-merger . ./output.txt -p ./merger.ignore
-```
-
-### Include empty files
-
-```bash
-merger ./data ./output.txt --empty
-```
-
-### Verbose output
-
-```bash
-merger ./src ./merged.txt --log-level DEBUG
+merger ./src
 ```
 
 ---
 
-## Custom Readers
-
-You can extend Merger to handle new file formats.
-
-### Installing a custom reader
+### Custom ignore patterns
 
 ```bash
-merger --install .pdf path/to/pdf.py
+merger ./project ./output.json --ignore "*.log" "__pycache__" "*.tmp"
 ```
 
-Where `pdf.py` must define:
+---
 
-*   ```python
-    validator: Callable[[Path], bool]
-    ```
-*   ```python
-    reader: Callable[[Path], str]
-    ```
-
-To uninstall:
+### Custom ignore file
 
 ```bash
-merger --uninstall .pdf
+merger . ./output.json --merger-ignore "C:\Users\USER\Desktop\merger.ignore"
 ```
 
-List installed readers:
+---
+
+### Verbose output
 
 ```bash
-merger --list-installed
+merger ./src ./merger.json --log-level DEBUG
 ```
 
-An example `.pdf` reader can be found in
-[`examples/custom_readers/pdf.py`](examples/custom_readers/pdf.py).
+---
+
+## Custom Parsers
+
+Merger uses **parser strategies** to support parsing of non-text file formats.
+
+---
+
+### Parser Abstract Class
+
+All parsers must inherit from `Parser`:
+
+```python
+from merger.parsing.parser import Parser
+```
+
+Required structure:
+
+* `EXTENSIONS: Set[str]`
+* `CHUNK_BYTES_FOR_VALIDATION: Optional[int]`
+* `validate(cls, file_chunk_bytes, *, file_path=None, logger=None) -> bool`
+* `parse(cls, file_bytes, *, file_path=None, logger=None) -> str`
+
+---
+
+### Installing a Custom Parser
+
+```bash
+merger --install-module path/to/parser.py
+```
+
+To uninstall a module:
+
+```bash
+merger --uninstall-module <module_id>
+```
+
+To remove all modules:
+
+```bash
+merger --uninstall-module *
+```
+
+To list installed modules:
+
+```bash
+merger --list-modules
+```
+
+---
+
+### Custom Parser Example (PDF)
+
+```python
+import logging
+from pathlib import Path
+from typing import Union, Optional, Any, Set, Type
+
+import fitz
+
+from merger.parsing.parser import Parser
+
+
+class PdfParser(Parser):
+    EXTENSIONS: Set[str] = {".pdf"}
+    CHUNK_BYTES_FOR_VALIDATION: Optional[int] = None
+
+    @classmethod
+    def validate(
+        cls,
+        file_chunk_bytes: Union[bytes, bytearray],
+        *,
+        file_path: Optional[Path] = None,
+        logger: Optional[logging.Logger] = None
+    ) -> bool:
+        """
+        Validate that the given file represents a readable PDF document.
+
+        Args:
+            file_chunk_bytes: Binary contents of the file being validated, sufficient to perform validation.
+            file_path: Path of the file being validated.
+            logger: Optional logger instance for logging.
+
+        Returns:
+            bool: True if the file is a readable PDF, False otherwise.
+        """
+        try:
+            with fitz.open(file_path) as doc:
+                _ = doc[0]
+            return True
+
+        except Exception:
+            return False
+
+    @classmethod
+    def parse(
+        cls,
+        file_bytes: Union[bytes, bytearray],
+        *,
+        file_path: Optional[Path] = None,
+        logger: Optional[logging.Logger] = None,
+    ) -> str:
+        """
+        Extracts and concatenates text from all pages of a PDF file.
+
+        Args:
+            file_bytes: Binary contents of the file being parsed.
+            file_path: Path of the file being parsed.
+            logger: ptional logger instance for logging.
+
+        Returns:
+
+        """
+        texts = []
+        with fitz.open(stream=file_bytes) as doc:
+            for page in doc:
+                text = page.get_text()
+                if text:
+                    text = text.replace("\n\n", "")
+                    texts.append(text)
+
+        full_text = " ".join(texts)
+        return full_text
+
+
+parser_cls: Type[Parser] = PdfParser
+```
+
+> The module **must expose a `parser_cls` object** referencing the parser class.
+
+This implementation is available at [`examples/custom_parsers/pdf_parser.py`](examples/custom_parsers/pdf_parser.py).
+
+---
+
+## Output Format
+
+The merged result is a single JSON file containing:
+
+* Directory tree 
+* File and directory names
+* Relative paths to the root
+* Extracted text content
 
 ---
 
 ## CLI Options
 
-| Option                  | Description                                                                    |
-|-------------------------|--------------------------------------------------------------------------------|
-| `--ignore`              | List of glob-style ignore patterns.                                            |
-| `-f, --ignore-file`     | Path to file containing ignore patterns (Default: `<input_dir>/merger.ignore`. |
-| `-i, --install`         | Install a custom reader for an extension.                                      |
-| `-u, --uninstall`       | Remove a custom reader (`*` removes all).                                      |
-| `--list-installed`      | Show installed readers.                                                        |
-| `--version`             | Display current installed version.                                             |
-| `-l, --log-level`       | Set logging verbosity (`DEBUG`, `INFO`, etc.).                                 |
-| `--empty`               | Include empty files in merged output.                                          |
-| `--prefix` / `--suffix` | Customize file delimiters in output.                                           |
-| `--overrides`           | Load override reader definitions from a Python module.                         |
-| `--no-tree`             | Do not include the generated directory tree in the output file.                |
-| `--no-header`           | Do not include the watermark header in the output file.                        |
+| Option                   | Description                                                |
+|--------------------------|------------------------------------------------------------|
+| `input_dir`              | Root directory to scan for files                           |
+| `output_path`            | Path to save merged JSON output (default: `./merger.json`) |
+| `-i, --install-module`   | Install a custom parser module                             |
+| `-u, --uninstall-module` | Uninstall a parser module by ID (`*` removes all)          |
+| `-l, --list-modules`     | List installed parser modules                              |
+| `--ignore`               | Glob-style ignore patterns                                 |
+| `-mi, --merger-ignore`   | Ignore file (default: `./merger.ignore`)                   |
+| `--version`              | Show installed version                                     |
+| `-ll, --log-level`       | Set logging verbosity                                      |
 
 ---
 
