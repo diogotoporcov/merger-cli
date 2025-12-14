@@ -10,12 +10,12 @@ class Parser(ABC):
 
     Attributes:
         EXTENSIONS: File extensions supported by this parser. Must contain at least one value.
-        MAX_CHUNK_BYTES_FOR_VALIDATION: Maximum number of bytes required to validate a file.
+        CHUNK_BYTES_FOR_VALIDATION: Number of bytes required to validate a file.
             If None, the entire file must be read for validation.
     """
 
     EXTENSIONS: Set[str]
-    MAX_CHUNK_BYTES_FOR_VALIDATION: Optional[int] = 1024
+    CHUNK_BYTES_FOR_VALIDATION: Optional[int] = 1024
 
     def __new__(cls, *args, **kwargs):
         raise TypeError(f"{cls.__name__} is a stateless strategy and must not be instantiated")
