@@ -100,15 +100,15 @@ class DefaultParser(Parser):
         file_path: Optional[Path] = None,
         logger: Optional[logging.Logger] = None
     ) -> str:
-        encoding, _ = cls.guess_encoding(file_bytes[:1024])
+        encoding, _ = cls.guess_encoding(file_bytes[:2048])
 
         try:
             return file_bytes.decode(encoding)
 
         except UnicodeDecodeError:
             if logger:
-                logger.warning(
+                logger.debug(
                     f"Decoding failed for {file_path}, falling back to utf-8"
                 )
 
-            return file_bytes.decode("utf-8", errors="replace")
+            return file_bytes.decode("utf-8", errors="backslashreplace")
