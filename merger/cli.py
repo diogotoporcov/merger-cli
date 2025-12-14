@@ -36,7 +36,7 @@ def main():
 
     parser.add_argument(
         "-i",
-        "--install",
+        "--install-module",
         type=Path,
         metavar="MODULE_PATH",
         help="Install a custom parser module",
@@ -44,13 +44,14 @@ def main():
 
     parser.add_argument(
         "-u",
-        "--uninstall",
+        "--uninstall-module",
         metavar="MODULE_ID",
         help="Uninstall a module by ID (use '*' to remove all)",
     )
 
     parser.add_argument(
-        "--list-installed",
+        "-l",
+        "--list-modules",
         action="store_true",
         help="List all installed parser modules",
     )
@@ -63,7 +64,7 @@ def main():
     )
 
     parser.add_argument(
-        "-l",
+        "-ll",
         "--log-level",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -84,13 +85,6 @@ def main():
         type=Path,
         default=Path("./merger.ignore"),
         help="File containing glob-style patterns to ignore (default: ./merger.ignore)",
-    )
-
-    parser.add_argument(
-        "--no-tree",
-        action="store_true",
-        default=False,
-        help="Do not include the generated directory tree in the output file",
     )
 
     args = parser.parse_args()
