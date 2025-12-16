@@ -167,6 +167,7 @@ def main():
         )
 
     ignore_patterns = list(set(ignore_patterns))
+    ignore_patterns = [pattern.replace("\\", "/") for pattern in ignore_patterns]
 
     tree = FileTree.from_path(args.input_dir, ignore_patterns)
     exporter = get_exporter_strategy(args.exporter.upper())

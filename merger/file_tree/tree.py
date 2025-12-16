@@ -40,7 +40,8 @@ class FileTree:
             path_relative = Path(".") / entry_path.relative_to(root)
 
             if ignore_patterns and matches_any_pattern(
-                f"./{path_relative.as_posix()}",
+                entry_path,
+                root,
                 ignore_patterns
             ):
                 continue
@@ -60,9 +61,9 @@ class FileTree:
             )
 
             if not parser.validate(
-                file_bytes,
-                file_path=entry_path,
-                logger=logger
+                    file_bytes,
+                    file_path=entry_path,
+                    logger=logger
             ):
                 continue
 
