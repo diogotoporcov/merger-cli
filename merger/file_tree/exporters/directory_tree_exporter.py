@@ -1,6 +1,6 @@
 from ..tree import FileTree
 
-from .exporter import TreeExporter
+from .tree_exporter import TreeExporter
 from ..entry import DirectoryEntry, FileTreeEntry
 
 

@@ -1,6 +1,6 @@
 from typing import Dict, Type, List
 
-from .exporter import TreeExporter
+from .tree_exporter import TreeExporter
 from .json_exporter import JsonExporter
 from .directory_tree_exporter import DirectoryTreeExporter
 from .plain_text_exporter import PlainTextExporter

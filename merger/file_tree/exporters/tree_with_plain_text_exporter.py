@@ -1,5 +1,5 @@
 from .directory_tree_exporter import DirectoryTreeExporter
-from .exporter import TreeExporter
+from .tree_exporter import TreeExporter
 from .plain_text_exporter import PlainTextExporter
 
 
