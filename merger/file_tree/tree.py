@@ -5,7 +5,6 @@ from .entry import DirectoryEntry, FileTreeEntry, FileEntry
 from ..logging.logger import logger
 from ..parsing.modules import get_parser
 from ..utils.patterns import matches_any_pattern
-from ..utils.files import read_file_bytes
 
 
 class FileTree:
@@ -32,66 +31,56 @@ class FileTree:
             root: Path,
             ignore_patterns: Optional[List[str]] = None
     ) -> DirectoryEntry:
+        from ..utils.files import read_file_bytes
+
         rel_path = Path(".") if path == root else Path(".") / path.relative_to(root)
         children: Dict[Path, FileTreeEntry] = {}
 
         for entry_path in path.iterdir():
             path_relative = Path(".") / entry_path.relative_to(root)
 
-            if ignore_patterns and matches_any_pattern(f"./{path_relative.as_posix()}", ignore_patterns):
+            if ignore_patterns and matches_any_pattern(
+                f"./{path_relative.as_posix()}",
+                ignore_patterns
+            ):
                 continue
 
             if entry_path.is_dir():
-                children[path_relative] = cls._build_tree(entry_path, root, ignore_patterns)
-
-            else:
-                parser = get_parser(entry_path.name)
-                file_bytes = read_file_bytes(entry_path, parser.MAX_BYTES_FOR_VALIDATION)
-
-                if not parser.validate(file_bytes, file_path=entry_path, logger=logger):
-                    continue
-
-                if parser.MAX_BYTES_FOR_VALIDATION is not None:
-                    file_bytes = read_file_bytes(entry_path, None)
-
-                children[path_relative] = FileEntry(
-                    name=entry_path.name,
-                    path=path_relative,
-                    content=parser.parse(file_bytes, file_path=entry_path, logger=logger)
+                children[path_relative] = cls._build_tree(
+                    entry_path,
+                    root,
+                    ignore_patterns
                 )
+                continue
+
+            parser = get_parser(entry_path.name)
+            file_bytes = read_file_bytes(
+                entry_path,
+                parser.MAX_BYTES_FOR_VALIDATION
+            )
+
+            if not parser.validate(
+                file_bytes,
+                file_path=entry_path,
+                logger=logger
+            ):
+                continue
+
+            if parser.MAX_BYTES_FOR_VALIDATION is not None:
+                file_bytes = read_file_bytes(entry_path, None)
+
+            children[path_relative] = FileEntry(
+                name=entry_path.name,
+                path=path_relative,
+                content=parser.parse(
+                    file_bytes,
+                    file_path=entry_path,
+                    logger=logger
+                )
+            )
 
         return DirectoryEntry(
             name=path.name,
             path=rel_path,
             children=children
         )
-
-    def to_dict(self) -> dict:
-        return self.root.to_dict()
-
-    def to_json_dict(self) -> dict:
-        return self.root.to_json_dict()
-
-    def __str__(self) -> str:
-        def format_name(entry: FileTreeEntry) -> str:
-            return f"{entry.name}/" if isinstance(entry, DirectoryEntry) else entry.name
-
-        lines: List[str] = [format_name(self.root)]
-
-        def walk(entry: DirectoryEntry, prefix: str = "") -> None:
-            children = sorted(
-                entry.children.values(),
-                key=lambda e: (isinstance(e, FileTreeEntry), e.name.lower())
-            )
-
-            for index, child in enumerate(children):
-                is_last = index == len(children) - 1
-                connector = "└── " if is_last else "├── "
-                lines.append(prefix + connector + format_name(child))
-
-                if isinstance(child, DirectoryEntry):
-                    extension = "    " if is_last else "│   "
-                    walk(child, prefix + extension)
-
-        walk(self.root)
-        return "\n".join(lines)

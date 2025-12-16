@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/merger-cli.svg?color=orange)](https://pypi.org/project/merger-cli/)
 
-Merger is a command-line utility for developers that scans a directory, filters files using customizable ignore patterns, and merges all readable content into a single **structured JSON output file**. It supports custom file parsers, making it easily extendable for formats such as `.pdf` or any domain-specific format.
+Merger is a **command-line utility** for developers that **scans a directory**, **filters files** using customizable ignore patterns, and **merges all readable content** into a **single output file**. It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** for formats, such as `.pdf`.
 
 ---
 
@@ -15,10 +15,11 @@ Merger is a command-line utility for developers that scans a directory, filters 
 3. [Installation with PyPI](#installation-with-pypi)
 4. [Build and Install Locally](#build-and-install-locally)
 5. [Usage](#usage)
-6. [Custom Parsers](#custom-parsers)
-7. [CLI Options](#cli-options)
-8. [License](#license)
- 
+6. [Output Formats](#output-formats)
+7. [Custom Parsers](#custom-parsers)
+8. [CLI Options](#cli-options)
+9. [License](#license)
+
 ---
 
 ## Core Features
@@ -28,7 +29,7 @@ Merger is a command-line utility for developers that scans a directory, filters 
 * **Automatic binary validation and parsing**.
 * **Modular parser system** for custom formats.
 * **CLI support** for installation, removal, and listing of custom parsers.
-* **Structured JSON merged output**, including a file tree.
+* **Multiple export formats**.
 
 ---
 
@@ -94,7 +95,41 @@ pip install .
 ### Basic merge
 
 ```bash
-merger ./src
+merger .
+```
+
+This writes a file named `merger.txt` in the current directory.
+
+---
+
+### Save output to a specific directory
+
+```bash
+merger ./project ./out
+```
+
+This writes `./out/merger.txt` (or `./out/merger.json`, depending on the exporter).
+
+---
+
+### Pick an output format
+
+Use `-e` or `--exporter` to select the output format:
+
+```bash
+merger ./src --exporter JSON
+```
+
+```bash
+merger ./src --exporter DIRECTORY_TREE
+```
+
+```bash
+merger ./src --exporter PLAIN_TEXT
+```
+
+```bash
+merger ./src --exporter TREE_PLAIN_TEXT
 ```
 
 ---
@@ -102,7 +137,7 @@ merger ./src
 ### Custom ignore patterns
 
 ```bash
-merger ./project ./output.json --ignore "*.log" "__pycache__" "*.tmp"
+merger ./project --ignore "*.log" "__pycache__" "*.tmp"
 ```
 
 ---
@@ -110,7 +145,7 @@ merger ./project ./output.json --ignore "*.log" "__pycache__" "*.tmp"
 ### Custom ignore file
 
 ```bash
-merger . ./output.json --merger-ignore "C:\Users\USER\Desktop\merger.ignore"
+merger . --merger-ignore "C:\Users\USER\Desktop\ignore.txt"
 ```
 
 ---
@@ -118,8 +153,21 @@ merger . ./output.json --merger-ignore "C:\Users\USER\Desktop\merger.ignore"
 ### Verbose output
 
 ```bash
-merger ./src ./merger.json --log-level DEBUG
+merger ./src --log-level DEBUG
 ```
+
+---
+
+## Output Formats
+
+Merger writes **one output file** to the output directory, named `merger.<ext>` based on the selected exporter.
+
+| Exporter Name     | File Extension | Description                                                                            |
+|-------------------|----------------|----------------------------------------------------------------------------------------|
+| `PLAIN_TEXT`      | `.txt`         | Plain-text merged file contents with `<<FILE_START>>` / `<<FILE_END>>` file delimiter. |
+| `DIRECTORY_TREE`  | `.txt`         | Directory tree only.                                                                   |
+| `TREE_PLAIN_TEXT` | `.txt`         | Directory tree + plain-text merged file contents (**default**).                        |
+| `JSON`            | `.json`        | Structured JSON representing the directory tree and file contents.                     |
 
 ---
 
@@ -172,7 +220,7 @@ merger --list-modules
 
 ---
 
-### Custom Parser Example (PDF)
+### Custom Parser Implementation Example (PDF)
 
 ```python
 import logging
@@ -255,30 +303,20 @@ This implementation is available at [`examples/custom_parsers/pdf_parser.py`](ex
 
 ---
 
-## Output Format
-
-The merged result is a single JSON file containing:
-
-* Directory tree 
-* File and directory names
-* Relative paths to the root
-* Extracted text content
-
----
-
 ## CLI Options
 
-| Option                   | Description                                                |
-|--------------------------|------------------------------------------------------------|
-| `input_dir`              | Root directory to scan for files                           |
-| `output_path`            | Path to save merged JSON output (default: `./merger.json`) |
-| `-i, --install-module`   | Install a custom parser module                             |
-| `-u, --uninstall-module` | Uninstall a parser module by ID (`*` removes all)          |
-| `-l, --list-modules`     | List installed parser modules                              |
-| `--ignore`               | Glob-style ignore patterns                                 |
-| `-mi, --merger-ignore`   | Ignore file (default: `./merger.ignore`)                   |
-| `--version`              | Show installed version                                     |
-| `--log-level`            | Set logging verbosity                                      |
+| Option                   | Description                                                                                 |
+|--------------------------|---------------------------------------------------------------------------------------------|
+| `input_dir`              | Root directory to scan for files.                                                           |
+| `output_path`            | Output directory where the tool writes `merger.<ext>` (default: current directory).         |
+| `-e, --exporter`         | Output exporter strategy (e.g., `TREE_PLAIN_TEXT`, `PLAIN_TEXT`, `DIRECTORY_TREE`, `JSON`). |
+| `-i, --install-module`   | Install a custom parser module.                                                             |
+| `-u, --uninstall-module` | Uninstall a parser module by ID (`*` removes all).                                          |
+| `-l, --list-modules`     | List installed parser modules.                                                              |
+| `--ignore`               | Glob-style ignore patterns.                                                                 |
+| `--merger-ignore`        | File containing glob-style patterns to ignore (default: `./merger.ignore`).                 |
+| `--version`              | Show installed version.                                                                     |
+| `--log-level`            | Set logging verbosity.                                                                      |
 
 ---
 

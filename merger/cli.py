@@ -2,27 +2,27 @@ import argparse
 import logging
 from pathlib import Path
 
-from .parsing.modules import (
-    install_module,
-    uninstall_module,
-    list_modules,
-)
+from merger.file_tree.exporters.tree_with_plain_text_exporter import TreeWithPlainTextExporter
+from .file_tree.exporters.strategy import get_exporter_strategy, get_exporter_strategy_names
 from .file_tree.tree import FileTree
 from .logging.logger import setup_logger, logger
+from .parsing.modules import install_module, uninstall_module, list_modules
+
+from .utils.files import read_merger_ignore_file
 from .utils.version import get_version
-from .utils.files import read_merger_ignore_file, write_tree
 
 
 def main():
     # Args
     parser = argparse.ArgumentParser(
-        description="Merge files from a directory into a structured JSON output."
+        description="Merge files from a directory into a structured output."
     )
 
     parser.add_argument(
         "input_dir",
         type=Path,
         nargs="?",
+        metavar="INPUT_DIR_PATH",
         help="Root directory to scan for files",
     )
 
@@ -30,8 +30,18 @@ def main():
         "output_path",
         type=Path,
         nargs="?",
-        default=Path("./merger.json"),
-        help="Path to save merged output (default: ./merger.json)",
+        default=Path("."),
+        metavar="OUTPUT_FILE_DIR_PATH",
+        help="Path of the directory to save merged output (default: ./merger.txt)",
+    )
+
+    parser.add_argument(
+        "-e",
+        "--exporter",
+        type=str,
+        choices=get_exporter_strategy_names(),
+        default=TreeWithPlainTextExporter.NAME,
+        help=f"Output exporter strategy (default: {TreeWithPlainTextExporter.NAME})",
     )
 
     module_group = parser.add_mutually_exclusive_group()
@@ -158,11 +168,20 @@ def main():
 
     ignore_patterns = list(set(ignore_patterns))
 
-    args.output_path.parent.mkdir(parents=True, exist_ok=True)
-
     tree = FileTree.from_path(args.input_dir, ignore_patterns)
-    write_tree(tree, args.output_path)
-    logger.info(f"Saved to {args.output_path}")
+    exporter = get_exporter_strategy(args.exporter.upper())
+
+    logger.info(f"Using {exporter.NAME} exporter.")
+
+    output_filename = f"merger.{exporter.FILE_EXTENSION.removeprefix('.').lower()}"
+    output_path = Path(args.output_path) / output_filename
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    Path(output_path).write_bytes(
+        exporter.export(tree)
+    )
+
+    logger.info(f"Saved to '{output_path.as_posix()}'.")
 
 
 if __name__ == "__main__":
