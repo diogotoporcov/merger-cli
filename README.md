@@ -92,10 +92,10 @@ pip install .
 
 ## Usage
 
-### Basic merge (default exporter)
+### Basic merge
 
 ```bash
-merger ./src
+merger .
 ```
 
 This writes a file named `merger.txt` in the current directory.
@@ -117,19 +117,19 @@ This writes `./out/merger.txt` (or `./out/merger.json`, depending on the exporte
 Use `-e` or `--exporter` to select the output format:
 
 ```bash
-merger ./src . --exporter JSON
+merger ./src --exporter JSON
 ```
 
 ```bash
-merger ./src . --exporter DIRECTORY_TREE
+merger ./src --exporter DIRECTORY_TREE
 ```
 
 ```bash
-merger ./src . --exporter PLAIN_TEXT
+merger ./src --exporter PLAIN_TEXT
 ```
 
 ```bash
-merger ./src . --exporter TREE_PLAIN_TEXT
+merger ./src --exporter TREE_PLAIN_TEXT
 ```
 
 ---
@@ -137,7 +137,7 @@ merger ./src . --exporter TREE_PLAIN_TEXT
 ### Custom ignore patterns
 
 ```bash
-merger ./project ./out --ignore "*.log" "__pycache__" "*.tmp"
+merger ./project --ignore "*.log" "__pycache__" "*.tmp"
 ```
 
 ---
@@ -145,7 +145,7 @@ merger ./project ./out --ignore "*.log" "__pycache__" "*.tmp"
 ### Custom ignore file
 
 ```bash
-merger . ./out --merger-ignore "C:\Users\USER\Desktop\merger.ignore"
+merger . --merger-ignore "C:\Users\USER\Desktop\ignore.txt"
 ```
 
 ---
@@ -153,7 +153,7 @@ merger . ./out --merger-ignore "C:\Users\USER\Desktop\merger.ignore"
 ### Verbose output
 
 ```bash
-merger ./src ./out --log-level DEBUG
+merger ./src --log-level DEBUG
 ```
 
 ---
