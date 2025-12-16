@@ -27,10 +27,9 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
 ## Core Features
 
 * **Recursive merge** of all readable files under a root directory.
-* **Custom glob-like ignore patterns** for filtering (supports `*`, `**`, anchoring, and file/dir qualifiers).
+* **Custom glob-like ignore patterns** for filtering.
 * **Automatic file encoding detection**.
-* **Modular parser system** for custom formats.
-* **CLI support** for installation, removal, and listing of custom parsers.
+* **Modular parser system** for custom formats with easy CLI managemennt.
 * **Multiple export formats**.
 
 ---
