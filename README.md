@@ -4,7 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/merger-cli.svg?color=orange)](https://pypi.org/project/merger-cli/)
 
-Merger is a **command-line utility** for developers that **scans a directory**, **filters files** using customizable ignore patterns, and **merges all readable content** into a **single output file**. It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** for formats, such as `.pdf`.
+Merger is a **command-line utility** for developers that **scans a directory**, **filters files** using customizable ignore patterns, and **merges all readable content** into a **single output file**, suitable both for **human reading** and for **use by AI models**.
+It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** for formats, such as `.pdf`.
 
 ---
 
@@ -26,7 +27,7 @@ Merger is a **command-line utility** for developers that **scans a directory**, 
 
 * **Recursive merge** of all readable files under a root directory.
 * **Glob-based ignore patterns** using `.gitignore`-style syntax.
-* **Automatic binary validation and parsing**.
+* **Automatic file encoding detection**.
 * **Modular parser system** for custom formats.
 * **CLI support** for installation, removal, and listing of custom parsers.
 * **Multiple export formats**.
