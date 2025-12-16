@@ -5,7 +5,7 @@ from ..tree import FileTree
 
 class TreeExporter(ABC):
     """
-    Strategy interface for exporting a FileTree to text.
+    Strategy interface for exporting a FileTree to a custom format.
     """
 
     NAME: str
@@ -18,6 +18,6 @@ class TreeExporter(ABC):
     @abstractmethod
     def export(cls, tree: FileTree) -> bytes:
         """
-        Export the given FileTree into a string representation.
+        Export the given FileTree into a custom representation.
         """
         pass
