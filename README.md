@@ -217,31 +217,31 @@ Supported segments:
 
 ### Examples
 
-Ignore any `.log` file or directory:
+Ignore all files or directorys that contains `.log` prefix:
 * `*.log`
 
-Ignore any `dist` directory:
+Ignore all `dist` directories:
 * `dist/`
 
-Ignore only files named `config.json` at the scan root:
+Ignore a file named `config.json` at the scan root:
 * `/config.json:`
 
-Ignore any `.py` file directly under any `src` directory (but not deeper):
-* `src/*.py`
+Ignore all `.py` file directly under any `src` directory (but not deeper):
+* `src/*.py:`
 
-Ignore any file that contains `cache` and is only one level deep inside any directory named `src`:
+Ignore all file or directories that contains `cache` and is only one level deep inside any directory named `src`:
 * `src/*/*cache*`
 
-Ignore any `__pycache__` directory inside the `src` directory at root:
+Ignore all `__pycache__` directories inside the `src` directory at the scan root:
 * `./src/**/__pycache__/`
 
-Ignore any file `data:`:
+Ignore all files `data:`:
 * `data::`
 
-Ignore any directory `data:`:
+Ignore all directories `data:`:
 * `data:/`
 
-Ignore any file or directory `data:`:
+Ignore all files or directories `data:`:
 * `data:!`
 
 ---
