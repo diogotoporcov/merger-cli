@@ -16,17 +16,18 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
 3. [Installation with PyPI](#installation-with-pypi)
 4. [Build and Install Locally](#build-and-install-locally)
 5. [Usage](#usage)
-6. [Output Formats](#output-formats)
-7. [Custom Parsers](#custom-parsers)
-8. [CLI Options](#cli-options)
-9. [License](#license)
+6. [Ignore Pattern Syntax](#ignore-pattern-syntax)
+7. [Output Formats](#output-formats)
+8. [Custom Parsers](#custom-parsers)
+9. [CLI Options](#cli-options)
+10. [License](#license)
 
 ---
 
 ## Core Features
 
 * **Recursive merge** of all readable files under a root directory.
-* **Glob-based ignore patterns** using `.gitignore`-style syntax.
+* **Custom glob-like ignore patterns** for filtering (supports `*`, `**`, anchoring, and file/dir qualifiers).
 * **Automatic file encoding detection**.
 * **Modular parser system** for custom formats.
 * **CLI support** for installation, removal, and listing of custom parsers.
@@ -137,13 +138,17 @@ merger ./src --exporter TREE_PLAIN_TEXT
 
 ### Custom ignore patterns
 
+Provide one or more ignore patterns with `--ignore` (see [Ignore Pattern Syntax](#ignore-pattern-syntax)):
+
 ```bash
-merger ./project --ignore "*.log" "__pycache__" "*.tmp"
+merger ./project --ignore "*.log" "__pycache__/**" "*.tmp"
 ```
 
 ---
 
 ### Custom ignore file
+
+Provide a file containing ignore patterns (one per line) with `--merger-ignore` (see [Ignore Pattern Syntax](#ignore-pattern-syntax)):
 
 ```bash
 merger . --merger-ignore "C:\Users\USER\Desktop\ignore.txt"
@@ -159,9 +164,91 @@ merger ./src --log-level DEBUG
 
 ---
 
+## Ignore Pattern Syntax
+
+Ignore patterns are evaluated **relative to the input directory** (the directory you ask `merger` to scan). If a path is not located under that root, it will not match.
+
+### Segment matching
+
+The pattern is split into segments and matched against the scanned path’s relative segments.
+
+Supported segments:
+
+* Literal segments (e.g. `src`, `tests`, `README.md`)
+* `*` matches **exactly one** path segment
+* `**` matches **zero or more** path segments
+* Embedded `*` inside a segment matches `prefix*suffix` (e.g. `foo*.py`, `*cache*`)
+
+### Anchoring
+
+* Leading `/` anchors the pattern to the scan root
+  * Example: `/src/*.py` matches `src/main.py` but not `project/src/main.py`
+  
+
+* Leading `./` anchors the pattern to the start of the relative path (equivalent anchoring behavior)
+  * Example: `./src/*.py` matches `src/main.py` but not `project/src/main.py`
+  
+
+* Without anchoring, the pattern may match starting at **any segment boundary** within the relative path
+  * Example: `src/*.py` matches both `src/main.py` and `project/src/main.py`
+
+### Type qualifiers
+
+* Trailing `/` requires the matched path to be a **directory**
+  * Example: `build/` matches the `build` directory entry
+
+
+* Trailing `:` requires the matched path to be a **file**
+  * Example: `README.md:` matches the `README.md` file
+
+
+* Trailing `!`:
+  * This is a special escape suffix that disables type qualification and preserves
+    any trailing `/` or `:` as literal characters in the final path segment
+
+    * Examples:
+      * `data:!` matches any file or directory literally named `data:`
+      * `data::` matches any file literally named `data:`
+      * `data:/` matches any directory literally named `data:`
+      * `data!!` matches any file or directory literally named `data!`
+      * `data!/` matches any directory literally named `data!`
+      * `data!:` matches any file literally named `data!`
+
+
+### Examples
+
+Ignore any `.log` file or directory:
+* `*.log`
+
+Ignore any `dist` directory:
+* `dist/`
+
+Ignore only files named `config.json` at the scan root:
+* `/config.json:`
+
+Ignore any `.py` file directly under any `src` directory (but not deeper):
+* `src/*.py`
+
+Ignore any file that contains `cache` and is only one level deep inside any directory named `src`:
+* `src/*/*cache*`
+
+Ignore any `__pycache__` directory inside the `src` directory at root:
+* `./src/**/__pycache__/`
+
+Ignore any file `data:`:
+* `data::`
+
+Ignore any directory `data:`:
+* `data:/`
+
+Ignore any file or directory `data:`:
+* `data:!`
+
+---
+
 ## Output Formats
 
-Merger writes **one output file** to the output directory, named `merger.<ext>` based on the selected exporter.
+Merger writes **one output file** to the output directory, named `merger.<extension>` based on the selected exporter.
 
 | Exporter Name     | File Extension | Description                                                                            |
 |-------------------|----------------|----------------------------------------------------------------------------------------|
@@ -314,8 +401,8 @@ This implementation is available at [`examples/custom_parsers/pdf_parser.py`](ex
 | `-i, --install-module`   | Install a custom parser module.                                                             |
 | `-u, --uninstall-module` | Uninstall a parser module by ID (`*` removes all).                                          |
 | `-l, --list-modules`     | List installed parser modules.                                                              |
-| `--ignore`               | Glob-style ignore patterns.                                                                 |
-| `--merger-ignore`        | File containing glob-style patterns to ignore (default: `./merger.ignore`).                 |
+| `--ignore`               | One or more ignore patterns (see [Ignore Pattern Syntax](#ignore-pattern-syntax)).          |
+| `--merger-ignore`        | File containing ignore patterns (default: `./merger.ignore`).                               |
 | `--version`              | Show installed version.                                                                     |
 | `--log-level`            | Set logging verbosity.                                                                      |
 
