@@ -9,10 +9,10 @@ from .tree_with_plain_text_exporter import TreeWithPlainTextExporter
 
 _EXPORTERS: Dict[str, Type[TreeExporter]] = {
     TreeWithPlainTextExporter.NAME.upper(): TreeWithPlainTextExporter,
-    PlainTextExporter.NAME.upper(): PlainTextExporter,
-    JsonTreeExporter.NAME.upper(): JsonTreeExporter,
     DirectoryTreeExporter.NAME.upper(): DirectoryTreeExporter,
-    JsonExporter.NAME.upper(): JsonExporter
+    PlainTextExporter.NAME.upper(): PlainTextExporter,
+    JsonExporter.NAME.upper(): JsonExporter,
+    JsonTreeExporter.NAME.upper(): JsonTreeExporter,
 }
 
 
