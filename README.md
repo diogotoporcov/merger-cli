@@ -403,6 +403,7 @@ This implementation is available at [`examples/custom_parsers/pdf_parser.py`](ex
 | `-l, --list-modules`     | List installed parser modules.                                                              |
 | `--ignore`               | One or more ignore patterns (see [Ignore Pattern Syntax](#ignore-pattern-syntax)).          |
 | `--merger-ignore`        | File containing ignore patterns (default: `./merger.ignore`).                               |
+| `-c, --create-ignore`    | Create a `merger.ignore` file using a built-in template (e.g., `DEFAULT`, `PYTHON`).        |
 | `--version`              | Show installed version.                                                                     |
 | `--log-level`            | Set logging verbosity.                                                                      |
 
