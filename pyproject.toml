@@ -1,6 +1,6 @@
 [project]
 name = "merger-cli"
-version = "2.2.1"
+version = "2.3.0"
 description = "Merger is a tool that scans a directory, filters files using customizable patterns, and merges readable content into a single output file."
 keywords = ["merger", "file system", "concatenation", "automation", "development"]
 authors = [
@@ -24,6 +24,9 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/diogotoporcov/merger-cli"
 Documentation = "https://github.com/diogotoporcov/merger-cli"
+
+[tool.setuptools.package-data]
+merger = ["resources/ignore_files/*.ignore"]
 
 [build-system]
 requires = ["setuptools>=80.9.0", "wheel"]

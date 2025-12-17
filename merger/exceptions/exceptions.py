@@ -21,3 +21,6 @@ class ModuleAlreadyInstalled(Exception):
 
         super().__init__(f"Module at '{path}' is already installed")
 
+
+class UnknownIgnoreTemplate(ValueError):
+    pass
