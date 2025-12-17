@@ -249,12 +249,13 @@ Ignore all files or directories `data:`:
 
 Merger writes **one output file** to the output directory, named `merger.<extension>` based on the selected exporter.
 
-| Exporter Name     | File Extension | Description                                                                            |
-|-------------------|----------------|----------------------------------------------------------------------------------------|
-| `PLAIN_TEXT`      | `.txt`         | Plain-text merged file contents with `<<FILE_START>>` / `<<FILE_END>>` file delimiter. |
-| `DIRECTORY_TREE`  | `.txt`         | Directory tree only.                                                                   |
-| `TREE_PLAIN_TEXT` | `.txt`         | Directory tree + plain-text merged file contents (**default**).                        |
-| `JSON`            | `.json`        | Structured JSON representing the directory tree and file contents.                     |
+| Exporter Name     | File Extension | Description                                                                                    |
+|-------------------|----------------|------------------------------------------------------------------------------------------------|
+| `TREE_PLAIN_TEXT` | `.txt`         | Directory tree + plain-text merged file contents (**default**).                                |
+| `PLAIN_TEXT`      | `.txt`         | Plain-text merged file contents with `<<FILE_START>>` / `<<FILE_END>>` file delimiter.         |
+| `TREE`            | `.txt`         | Directory tree only.                                                                           |
+| `JSON`            | `.json`        | JSON mapping file paths to parsed file contents (`path: content`).                             |
+| `JSON_TREE`       | `.json`        | Structured JSON representing the directory tree and file contents with hierarchy and metadata. |
 
 ---
 
