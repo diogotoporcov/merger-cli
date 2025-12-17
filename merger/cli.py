@@ -2,8 +2,9 @@ import argparse
 import logging
 from pathlib import Path
 
+from .exceptions.exceptions import UnknownIgnoreTemplate
 from .file_tree.exporters.tree_with_plain_text_exporter import TreeWithPlainTextExporter
-from .utils.default_ignore_files import read_default_ignore
+from .utils.default_ignore_files import read_ignore_template, list_ignore_templates
 from .file_tree.exporters.strategy import get_exporter_strategy, get_exporter_strategy_names
 from .file_tree.tree import FileTree
 from .logging.logger import setup_logger, logger
@@ -103,8 +104,10 @@ def main():
     parser.add_argument(
         "-c",
         "--create-ignore",
-        action="store_true",
-        help="Create a merger.ignore file with default ignore patterns",
+        choices=list_ignore_templates(),
+        type=str,
+        help="Create a merger.ignore file using a built-in template "
+             "(e.g. default, python, node, java)",
     )
 
     args = parser.parse_args()
@@ -112,15 +115,21 @@ def main():
 
     # Create default merger.ignore file
     if args.create_ignore:
-        filepath = Path("merger.ignore")
+        target = Path("merger.ignore")
 
-        if filepath.exists():
+        if target.exists():
             parser.error("'merger.ignore' already exists.")
 
-        content = read_default_ignore()
+        try:
+            body = read_ignore_template(args.create_ignore)
 
-        filepath.write_text(content, encoding="utf-8")
-        logger.info("Created 'merger.ignore'.")
+        except UnknownIgnoreTemplate as e:
+            parser.error(str(e))
+
+        target.write_text(body, encoding="utf-8")
+        logger.info(
+            f"Created 'merger.ignore' using '{args.create_ignore}' template."
+        )
         return
 
     # Install module
