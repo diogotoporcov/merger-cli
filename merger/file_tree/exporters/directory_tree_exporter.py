@@ -5,7 +5,7 @@ from ..entry import DirectoryEntry, FileTreeEntry
 
 
 class DirectoryTreeExporter(TreeExporter):
-    NAME = "DIRECTORY_TREE"
+    NAME = "TREE"
     FILE_EXTENSION = ".txt"
 
     @classmethod
