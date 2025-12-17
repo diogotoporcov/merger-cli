@@ -2,7 +2,8 @@ import argparse
 import logging
 from pathlib import Path
 
-from merger.file_tree.exporters.tree_with_plain_text_exporter import TreeWithPlainTextExporter
+from .file_tree.exporters.tree_with_plain_text_exporter import TreeWithPlainTextExporter
+from .utils.default_ignore_files import read_default_ignore
 from .file_tree.exporters.strategy import get_exporter_strategy, get_exporter_strategy_names
 from .file_tree.tree import FileTree
 from .logging.logger import setup_logger, logger
@@ -99,8 +100,28 @@ def main():
         help="File containing glob-style patterns to ignore (default: ./merger.ignore)",
     )
 
+    parser.add_argument(
+        "-c",
+        "--create-ignore",
+        action="store_true",
+        help="Create a merger.ignore file with default ignore patterns",
+    )
+
     args = parser.parse_args()
     setup_logger(level=getattr(logging, args.log_level.upper()))
+
+    # Create default merger.ignore file
+    if args.create_ignore:
+        filepath = Path("merger.ignore")
+
+        if filepath.exists():
+            parser.error("'merger.ignore' already exists.")
+
+        content = read_default_ignore()
+
+        filepath.write_text(content, encoding="utf-8")
+        logger.info("Created 'merger.ignore'.")
+        return
 
     # Install module
     if args.install_module:

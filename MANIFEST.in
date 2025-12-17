@@ -3,3 +3,4 @@ include README.md
 include pyproject.toml
 
 recursive-include merger *.py
+recursive-include merger/resources/ignore_files *.ignore
