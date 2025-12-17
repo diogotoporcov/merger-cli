@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Union, Optional, Any, Set, Type
+from typing import Union, Optional, Set, Type
 
 import fitz
 
