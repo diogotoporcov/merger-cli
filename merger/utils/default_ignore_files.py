@@ -8,7 +8,7 @@ def list_ignore_templates() -> List[str]:
     base = resources.files("merger.resources.ignore_files")
 
     return sorted(
-        p.name.removesuffix(".ignore")
+        p.name.removesuffix(".ignore").upper()
         for p in base.iterdir()
         if p.is_file() and p.name.endswith(".ignore")
     )
