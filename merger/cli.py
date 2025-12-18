@@ -104,11 +104,15 @@ def main():
     parser.add_argument(
         "-c",
         "--create-ignore",
-        default="DEFAULT",
+        nargs="?",
+        const="DEFAULT",
+        default=None,
         choices=list_ignore_templates(),
-        type=str,
-        help="Create a merger.ignore file using a built-in template "
-             "(e.g. default, python, node, java)",
+        metavar="TEMPLATE",
+        help=(
+            "Create a merger.ignore file using a built-in template. "
+            "If provided without a value, uses DEFAULT."
+        ),
     )
 
     args = parser.parse_args()
