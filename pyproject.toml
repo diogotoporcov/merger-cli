@@ -1,6 +1,6 @@
 [project]
 name = "merger-cli"
-version = "2.4.2"
+version = "2.4.3"
 description = "Merger is a tool that scans a directory, filters files using customizable patterns, and merges readable content into a single output file."
 keywords = ["merger", "file system", "concatenation", "automation", "development"]
 authors = [
