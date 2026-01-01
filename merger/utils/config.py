@@ -37,5 +37,6 @@ def get_or_create_config() -> Dict[str, Dict[str, Any]]:
     if config_path.exists() and config_path.is_file():
         return load_json(config_path)
 
+    config_path.parent.mkdir(parents=True, exist_ok=True)
     write_json(config_path, {})
     return {}
