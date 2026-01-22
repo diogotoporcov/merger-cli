@@ -1,3 +1,7 @@
+merger.txt
+merger.json
+merger.ignore
+
 node_modules/
 bower_components/
 .pnpm-store/

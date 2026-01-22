@@ -1,3 +1,7 @@
+merger.txt
+merger.json
+merger.ignore
+
 __pycache__/
 *.py[cod]
 *.pyo
