@@ -96,12 +96,12 @@ def test_cli_merge_missing_ignore(tmp_path, monkeypatch, capsys):
         assert e.value.code == 2
     
     captured = capsys.readouterr()
-    assert f"Ignore file 'merger.ignore' is required" in captured.err
-    assert "You can create one using 'merger -c [TEMPLATE]'" in captured.err
-    assert "Available templates: CPP, CSHARP, DEFAULT, GO, JAVA, JAVASCRIPT, KOTLIN, PHP, PYTHON, RUST, TYPESCRIPT" in captured.err
+    err = " ".join(captured.err.split())
+    assert f"Ignore file 'merger.ignore' is required" in err
+    assert "You can create one using 'merger -c [TEMPLATE]'" in err
+    assert "Available templates: CPP, CSHARP, DEFAULT, GO, JAVA, JAVASCRIPT, KOTLIN, PHP, PYTHON, RUST, TYPESCRIPT" in err
 
     # Check order
-    err = captured.err
     instruction_idx = err.find("You can create one using 'merger -c [TEMPLATE]'")
     templates_idx = err.find("Available templates:")
     assert instruction_idx < templates_idx
