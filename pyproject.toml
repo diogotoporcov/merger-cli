@@ -1,17 +1,19 @@
 [project]
 name = "merger-cli"
-version = "2.4.5"
+version = "3.0.0"
 description = "Merger is a tool that scans a directory, filters files using customizable patterns, and merges readable content into a single output file."
 keywords = ["merger", "file system", "concatenation", "automation", "development"]
 authors = [
     { name = "Diogo Toporcov", email = "diogotoporcov@gmail.com" }
 ]
-license = "MIT"
+license = {file = "LICENSE"}
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "chardet>=5.2.0",
-    "filetype>=1.2.0"
+    "filetype>=1.2.0",
+    "pydantic>=2.0.0",
+    "rich>=13.0.0"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -20,16 +22,29 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0"
+]
+
 
 [project.urls]
 Homepage = "https://github.com/diogotoporcov/merger-cli"
 Documentation = "https://github.com/diogotoporcov/merger-cli"
 
+[tool.setuptools.package-dir]
+"" = "src"
+
 [tool.setuptools.package-data]
 merger = ["resources/ignore_files/*.ignore"]
 
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
 [build-system]
-requires = ["setuptools>=80.9.0", "wheel"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]

@@ -2,8 +2,7 @@ import logging
 from pathlib import Path
 from typing import Union, Optional, Set, Type
 
-import fitz
-
+import pymupdf
 from merger.parsing.parser import Parser
 
 
@@ -31,7 +30,7 @@ class PdfParser(Parser):
             bool: True if the file is a readable PDF, False otherwise.
         """
         try:
-            with fitz.open(file_path) as doc:
+            with pymupdf.open(file_path) as doc:
                 _ = doc[0]
             return True
 
@@ -52,13 +51,13 @@ class PdfParser(Parser):
         Args:
             file_bytes: Binary contents of the file being parsed.
             file_path: Path of the file being parsed.
-            logger: ptional logger instance for logging.
+            logger: optional logger instance for logging.
 
         Returns:
 
         """
         texts = []
-        with fitz.open(stream=file_bytes) as doc:
+        with pymupdf.open(stream=file_bytes) as doc:
             for page in doc:
                 text = page.get_text()
                 if text:
