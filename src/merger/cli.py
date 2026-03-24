@@ -4,6 +4,7 @@ from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
+from rich.prompt import Confirm
 
 from .exceptions import UnknownIgnoreTemplate
 from .exporters.factory import get_exporter_strategy, get_exporter_strategy_names
@@ -112,7 +113,7 @@ def main():
     module_group.add_argument(
         "-u", "--uninstall",
         metavar="MODULE_ID",
-        help="Uninstall a module by ID (use '*' to remove all)",
+        help="Uninstall a module by ID (use '*' to remove all modules including parsers and exporters)",
     )
 
     module_group.add_argument(
@@ -190,6 +191,17 @@ def main():
     if args.uninstall:
         try:
             if args.uninstall == "*":
+                parsers_count = len(list_parsers())
+                exporters_count = len(list_exporters())
+                
+                if parsers_count == 0 and exporters_count == 0:
+                    logger.info("No custom modules found to uninstall.")
+                    return
+                
+                if not Confirm.ask(f"Are you sure you want to uninstall {parsers_count} parser(s) and {exporters_count} exporter(s)?"):
+                    logger.info("Uninstallation cancelled.")
+                    return
+                
                 uninstall_parser("*")
                 uninstall_exporter("*")
                 logger.info("All modules uninstalled.")
