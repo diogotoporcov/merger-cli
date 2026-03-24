@@ -1,0 +1,27 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version on PyPI
+        run: |
+          PACKAGE_NAME=$(grep -E '^name\s*=' pyproject.toml | head -n 1 | sed -E 's/.*=\s*"(.*)"/\1/')
+          VERSION=$(grep -E '^version\s*=' pyproject.toml | head -n 1 | sed -E 's/.*=\s*"(.*)"/\1/')
+          echo "Checking if $PACKAGE_NAME version $VERSION is already on PyPI..."
+          
+          RESPONSE=$(curl -s "https://pypi.org/pypi/$PACKAGE_NAME/json")
+          
+          if echo "$RESPONSE" | jq -e ".releases[\"$VERSION\"]" > /dev/null; then
+            echo "Error: Version $VERSION of $PACKAGE_NAME already exists on PyPI!"
+            exit 1
+          else
+            echo "Version $VERSION is new on PyPI."
+          fi

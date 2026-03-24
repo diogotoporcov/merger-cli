@@ -1,11 +1,22 @@
 # Merger CLI
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/merger-cli.svg?color=orange)](https://pypi.org/project/merger-cli/)
 
 Merger is a **command-line utility** for developers that **scans a directory**, **filters files** using customizable ignore patterns, and **merges all readable content** into a **single output file**, suitable both for **human reading** and for **use by AI models**.
-It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** for formats, such as `.pdf`.
+It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** (e.g., `.pdf`) and **custom exporters** (e.g., `.xml`, `.md`).
+
+---
+
+## TLDR
+
+1.  **Install the package**: `pip install merger-cli`
+2.  **Navigate to your project folder**: `cd path/to/your/project`
+3.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (Where the template is optional)
+4.  **Execute merger-cli**: `merger .` (to create a single combined file called `merger.txt`)
+
+For more options, refer to the [Usage](#usage) section below.
 
 ---
 
@@ -13,12 +24,12 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
 
 1. [Core Features](#core-features)
 2. [Dependencies](#dependencies)
-3. [Installation with PyPI](#installation-with-pypi)
-4. [Build and Install Locally](#build-and-install-locally)
-5. [Usage](#usage)
-6. [Ignore Pattern Syntax](#ignore-pattern-syntax)
-7. [Output Formats](#output-formats)
-8. [Custom Parsers](#custom-parsers)
+3. [Installation](#installation)
+4. [Usage](#usage)
+5. [Ignore Pattern Syntax](#ignore-pattern-syntax)
+6. [Output Formats](#output-formats)
+7. [Custom Parsers](#custom-parsers)
+8. [Custom Exporters](#custom-exporters)
 9. [CLI Options](#cli-options)
 10. [License](#license)
 
@@ -29,64 +40,28 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
 * **Recursive merge** of all readable files under a root directory.
 * **Custom glob-like ignore patterns** for filtering.
 * **Automatic file encoding detection**.
-* **Modular parser system** for custom formats with easy CLI managemennt.
-* **Multiple export formats**.
+* **Modular parser & exporter system** for custom formats and outputs with easy CLI management.
+* **Multiple export formats** (built-in and custom).
+* **Modern CLI interface**.
 
 ---
 
 ## Dependencies
 
-| Component  | Version | Notes    |
-|------------|---------|----------|
-| **Python** | ≥ 3.8   | Required |
+| Component    | Version | Notes    |
+|--------------|---------|----------|
+| **Python**   | ≥ 3.8   | Required |
+| **Pydantic** | ≥ 2.0   | Required |
+| **Rich**     | ≥ 13.0  | Required |
 
 All dependencies are listed in [`requirements.txt`](requirements.txt).
 
 ---
 
-## Installation with PyPI
+## Installation
 
 ```bash
 pip install merger-cli
-```
-
----
-
-## Build and Install Locally
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/diogotoporcov/merger-cli.git
-cd merger-cli
-```
-
-### 2. Create and activate a virtual environment
-
-**Linux / macOS**
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-**Windows (PowerShell)**
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Install as CLI tool
-
-```bash
-pip install .
 ```
 
 ---
@@ -155,6 +130,28 @@ merger . --merger-ignore "C:\Users\USER\Desktop\ignore.txt"
 
 ---
 
+### Custom ignore templates
+
+Quickly create a `merger.ignore` file using built-in templates:
+
+```bash
+merger -c PYTHON
+```
+
+Supported templates: `DEFAULT`, `PYTHON`, `JAVASCRIPT`, `TYPESCRIPT`, `JAVA`, `GO`, `RUST`, `CPP`, `CSHARP`, `RUBY`, `PHP`, `KOTLIN`.
+
+---
+
+### Custom modules (Parsers & Exporters)
+
+List all installed custom modules (parsers and exporters):
+
+```bash
+merger --list
+```
+
+---
+
 ### Verbose output
 
 ```bash
@@ -216,7 +213,7 @@ Supported segments:
 
 ### Examples
 
-Ignore all files or directorys that contains `.log` prefix:
+Ignore all files or directories that end with `.log`:
 * `*.log`
 
 Ignore all `dist` directories:
@@ -225,10 +222,10 @@ Ignore all `dist` directories:
 Ignore a file named `config.json` at the scan root:
 * `/config.json:`
 
-Ignore all `.py` file directly under any `src` directory (but not deeper):
+Ignore all `.py` files directly under any `src` directory (but not deeper):
 * `src/*.py:`
 
-Ignore all file or directories that contains `cache` and is only one level deep inside any directory named `src`:
+Ignore all files or directories that contain `cache` and are only one level deep inside any directory named `src`:
 * `src/*/*cache*`
 
 Ignore all `__pycache__` directories inside the `src` directory at the scan root:
@@ -261,7 +258,7 @@ Merger writes **one output file** to the output directory, named `merger.<extens
 
 ## Custom Parsers
 
-Merger uses **parser strategies** to support parsing of non-text file formats.
+Merger uses **parser strategies** to support parsing of non-text file formats (e.g., PDF, images with OCR, etc.).
 
 ---
 
@@ -275,48 +272,43 @@ from merger.parsing.parser import Parser
 
 Required structure:
 
-* `EXTENSIONS: Set[str]`
-* `MAX_BYTES_FOR_VALIDATION: Optional[int]`
-* `validate(cls, file_chunk_bytes, *, file_path=None, logger=None) -> bool`
-* `parse(cls, file_bytes, *, file_path=None, logger=None) -> str`
+*   `EXTENSIONS: Set[str]` (e.g., `{".pdf"}`)
+*   `MAX_BYTES_FOR_VALIDATION: Optional[int]`
+*   `validate(cls, file_chunk_bytes, *, file_path=None, logger=None) -> bool`
+*   `parse(cls, file_bytes, *, file_path=None, logger=None) -> str`
 
 ---
 
-### Installing a Custom Parser
+### Managing Custom Parsers
+
+To install a module:
 
 ```bash
-merger --install-module path/to/parser.py
+merger --install path/to/parser.py
 ```
 
-To uninstall a module:
+To uninstall a module (`*` removes all modules including parsers and exporters):
 
 ```bash
-merger --uninstall-module <module_id>
-```
-
-To remove all modules:
-
-```bash
-merger --uninstall-module *
+merger --uninstall <module_id>
 ```
 
 To list installed modules:
 
 ```bash
-merger --list-modules
+merger --list
 ```
 
 ---
 
-### Custom Parser Implementation Example (PDF)
+### Custom Parser Example (PDF)
 
 ```python
 import logging
 from pathlib import Path
-from typing import Union, Optional, Any, Set, Type
+from typing import Union, Optional, Set, Type
 
-import fitz
-
+import pymupdf
 from merger.parsing.parser import Parser
 
 
@@ -326,11 +318,11 @@ class PdfParser(Parser):
 
     @classmethod
     def validate(
-            cls,
-            file_chunk_bytes: Union[bytes, bytearray],
-            *,
-            file_path: Optional[Path] = None,
-            logger: Optional[logging.Logger] = None
+        cls,
+        file_chunk_bytes: Union[bytes, bytearray],
+        *,
+        file_path: Optional[Path] = None,
+        logger: Optional[logging.Logger] = None
     ) -> bool:
         """
         Validate that the given file represents a readable PDF document.
@@ -344,7 +336,7 @@ class PdfParser(Parser):
             bool: True if the file is a readable PDF, False otherwise.
         """
         try:
-            with fitz.open(file_path) as doc:
+            with pymupdf.open(file_path) as doc:
                 _ = doc[0]
             return True
 
@@ -353,11 +345,11 @@ class PdfParser(Parser):
 
     @classmethod
     def parse(
-            cls,
-            file_bytes: Union[bytes, bytearray],
-            *,
-            file_path: Optional[Path] = None,
-            logger: Optional[logging.Logger] = None,
+        cls,
+        file_bytes: Union[bytes, bytearray],
+        *,
+        file_path: Optional[Path] = None,
+        logger: Optional[logging.Logger] = None,
     ) -> str:
         """
         Extracts and concatenates text from all pages of a PDF file.
@@ -365,13 +357,13 @@ class PdfParser(Parser):
         Args:
             file_bytes: Binary contents of the file being parsed.
             file_path: Path of the file being parsed.
-            logger: ptional logger instance for logging.
+            logger: optional logger instance for logging.
 
         Returns:
 
         """
         texts = []
-        with fitz.open(stream=file_bytes) as doc:
+        with pymupdf.open(stream=file_bytes) as doc:
             for page in doc:
                 text = page.get_text()
                 if text:
@@ -385,30 +377,153 @@ class PdfParser(Parser):
 parser_cls: Type[Parser] = PdfParser
 ```
 
+Available at [`examples/custom_parsers/pdf_parser.py`](examples/custom_parsers/pdf_parser.py).
+
 > The module **must expose a `parser_cls` object** referencing the parser class.
 
-This implementation is available at [`examples/custom_parsers/pdf_parser.py`](examples/custom_parsers/pdf_parser.py).
+---
+
+## Custom Exporters
+
+You can also extend Merger with **custom export strategies** to output data in any format (e.g., XML, Markdown, CSV).
+
+---
+
+### Exporter Abstract Class
+
+All exporters must inherit from `TreeExporter`:
+
+```python
+from merger.exporters.tree_exporter import TreeExporter
+```
+
+Required structure:
+
+*   `NAME: str` (The name used in `--exporter`)
+*   `FILE_EXTENSION: str` (The output file extension)
+*   `export(cls, tree: FileTree) -> bytes`
+
+---
+
+### Managing Custom Exporters
+
+To install an exporter:
+
+```bash
+merger --install path/to/exporter.py
+```
+
+To uninstall an exporter (`*` removes all modules including parsers and exporters):
+
+```bash
+merger --uninstall <exporter_id>
+```
+
+To list installed exporters:
+
+```bash
+merger --list
+```
+
+---
+
+### Custom Exporter Example (XML)
+
+```python
+import xml.etree.ElementTree as ET
+
+from merger.file_tree.entries import FileEntry, DirectoryEntry, FileTreeEntry
+from merger.exporters.tree_exporter import TreeExporter
+from merger.file_tree.tree import FileTree
+
+
+class XmlExporter(TreeExporter):
+    """
+    A custom exporter that generates an XML representation of the file tree.
+    """
+    NAME = "XML"
+    FILE_EXTENSION = ".xml"
+
+    @classmethod
+    def export(cls, tree: FileTree) -> bytes:
+        root = ET.Element("filetree")
+        cls._to_xml(tree.root, root)
+
+        cls._indent(root)
+
+        return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+
+    @classmethod
+    def _to_xml(cls, entry: FileTreeEntry, parent: ET.Element):
+        if isinstance(entry, FileEntry):
+            file_el = ET.SubElement(parent, "file", {
+                "name": entry.name,
+                "path": entry.path.as_posix()
+            })
+            content_el = ET.SubElement(file_el, "content")
+            content_el.text = entry.content
+
+        elif isinstance(entry, DirectoryEntry):
+            dir_el = ET.SubElement(parent, "directory", {
+                "name": entry.name,
+                "path": entry.path.as_posix()
+            })
+            for child in sorted(entry.children.values(), key=lambda e: e.name.lower()):
+                cls._to_xml(child, dir_el)
+
+    @classmethod
+    def _indent(cls, elem: ET.Element, level: int = 0):
+        """
+        Recursive function to indent XML elements while preserving text content.
+        """
+        i = "\n" + level * "  "
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + "  "
+
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+
+            for child in elem:
+                cls._indent(child, level + 1)
+
+            if len(elem) > 0:
+                last_child = elem[-1]
+                if not last_child.tail or not last_child.tail.strip():
+                    last_child.tail = i
+
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+
+exporter_cls = XmlExporter
+
+```
+
+Available at [`examples/custom_exporters/xml_exporter.py`](examples/custom_exporters/xml_exporter.py).
+
+> The module **must expose an `exporter_cls` object** referencing the exporter class.
 
 ---
 
 ## CLI Options
 
-| Option                   | Description                                                                                 |
-|--------------------------|---------------------------------------------------------------------------------------------|
-| `input_dir`              | Root directory to scan for files.                                                           |
-| `output_path`            | Output directory where the tool writes `merger.<ext>` (default: current directory).         |
-| `-e, --exporter`         | Output exporter strategy (e.g., `TREE_PLAIN_TEXT`, `PLAIN_TEXT`, `DIRECTORY_TREE`, `JSON`). |
-| `-i, --install-module`   | Install a custom parser module.                                                             |
-| `-u, --uninstall-module` | Uninstall a parser module by ID (`*` removes all).                                          |
-| `-l, --list-modules`     | List installed parser modules.                                                              |
-| `--ignore`               | One or more ignore patterns (see [Ignore Pattern Syntax](#ignore-pattern-syntax)).          |
-| `--merger-ignore`        | File containing ignore patterns (default: `./merger.ignore`).                               |
-| `-c, --create-ignore`    | Create a `merger.ignore` file using a built-in template (e.g., `DEFAULT`, `PYTHON`).        |
-| `--version`              | Show installed version.                                                                     |
-| `--log-level`            | Set logging verbosity.                                                                      |
+| Option                     | Description                                                                                 |
+|----------------------------|---------------------------------------------------------------------------------------------|
+| `input_dir`                | Root directory to scan for files.                                                           |
+| `output_path`              | Output directory where the tool writes `merger.<ext>` (default: current directory).         |
+| `-e, --exporter`           | Output exporter strategy (e.g., `TREE_PLAIN_TEXT`, `PLAIN_TEXT`, `JSON`, `XML`).            |
+| `-i, --install`            | Install a custom module (parser or exporter).                                               |
+| `-u, --uninstall`          | Uninstall a module by ID (`*` removes all modules including parsers and exporters).         |
+| `-l, --list`               | List all installed custom modules.                                                          |
+| `--ignore`                 | One or more ignore patterns (see [Ignore Pattern Syntax](#ignore-pattern-syntax)).          |
+| `--merger-ignore`          | File containing ignore patterns (default: `./merger.ignore`).                               |
+| `-c, --create-ignore`      | Create a `merger.ignore` file using a built-in template (e.g., `DEFAULT`, `PYTHON`).        |
+| `--version`                | Show installed version.                                                                     |
+| `--log-level`              | Set logging verbosity.                                                                      |
 
 ---
 
 ## License
 
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+This project is licensed under the GPLv3 License — see [LICENSE](LICENSE) for details.
