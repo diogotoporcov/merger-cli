@@ -1,18 +1,27 @@
 name: Publish to PyPI
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
-  release:
-    types: [published]
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  test:
+    uses: ./.github/workflows/tests.yml
+
+  version-check:
+    uses: ./.github/workflows/version-check.yml
+
   build-and-publish:
+    needs: [test, version-check]
     runs-on: ubuntu-latest
     environment: pypi
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
 
     steps:
       - uses: actions/checkout@v4
