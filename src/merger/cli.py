@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from pathlib import Path
 
 from rich.console import Console
@@ -70,8 +71,18 @@ def handle_module_list() -> None:
         console.print(table)
 
 
+class RichArgumentParser(argparse.ArgumentParser):
+    """
+    A custom argument parser that uses the logger for reporting errors.
+    """
+    def error(self, message: str) -> None:
+        self.print_usage(sys.stderr)
+        logger.error(message)
+        sys.exit(2)
+
+
 def main():
-    parser = argparse.ArgumentParser(
+    parser = RichArgumentParser(
         description="Merge files from a directory into a structured output."
     )
 

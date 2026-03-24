@@ -1,6 +1,7 @@
 import logging
 
 from rich.logging import RichHandler
+from rich.console import Console
 
 
 class RichColorFormatter(logging.Formatter):
@@ -34,6 +35,7 @@ def setup_logger(name: str = "merger", level: int = logging.INFO) -> logging.Log
         logger.removeHandler(handler)
 
     handler = RichHandler(
+        console=Console(stderr=True),
         rich_tracebacks=True, 
         show_path=False, 
         show_time=False, 
