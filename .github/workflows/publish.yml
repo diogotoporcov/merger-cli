@@ -19,16 +19,16 @@ jobs:
 
   build-and-publish:
     needs: [test, version-check]
+    if: ${{ needs.version-check.outputs.should_publish == 'true' }}
     runs-on: ubuntu-latest
     environment: pypi
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install build tools
         run: |
@@ -40,3 +40,13 @@ jobs:
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-skipped:
+    needs: [test, version-check]
+    if: ${{ needs.test.result == 'success' && needs.version-check.outputs.should_publish != 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Explain why publish was skipped
+        run: |
+          echo "Skipping PyPI publish because version ${{ needs.version-check.outputs.version }} of ${{ needs.version-check.outputs.package_name }} already exists on PyPI."
