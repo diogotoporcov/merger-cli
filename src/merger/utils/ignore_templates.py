@@ -9,7 +9,7 @@ def list_ignore_templates() -> List[str]:
     try:
         # For Python 3.9+
         base = resources.files("merger.resources.ignore_files")
-        return sorted(
+        templates = sorted(
             p.name[:-7].upper()
             for p in base.iterdir()
             if p.is_file() and p.name.endswith(".ignore")
@@ -18,11 +18,16 @@ def list_ignore_templates() -> List[str]:
     except AttributeError:
         # Fallback for Python 3.8
         files = resources.contents("merger.resources.ignore_files")
-        return sorted(
+        templates = sorted(
             name[:-7].upper()
             for name in files
             if name.endswith(".ignore")
         )
+
+    if "DEFAULT" in templates:
+        templates.remove("DEFAULT")
+        return ["DEFAULT"] + templates
+    return templates
 
 
 def read_ignore_template(template: str) -> str:

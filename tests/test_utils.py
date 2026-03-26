@@ -8,6 +8,9 @@ def test_list_ignore_templates():
     assert isinstance(templates, list)
     assert "DEFAULT" in templates
     assert "PYTHON" in templates
+    # Test that DEFAULT is first, then the rest is sorted
+    assert templates[0] == "DEFAULT"
+    assert templates[1:] == sorted(templates[1:])
 
 def test_read_ignore_template():
     content = read_ignore_template("PYTHON")
