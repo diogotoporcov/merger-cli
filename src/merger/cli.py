@@ -6,6 +6,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 from rich.prompt import Confirm
+from rich_argparse import RichHelpFormatter
 
 from .exceptions import UnknownIgnoreTemplate
 from .exporters.factory import get_exporter_strategy, get_exporter_strategy_names
@@ -71,17 +72,25 @@ def handle_module_list() -> None:
         console.print(table)
 
 
+
+
 class RichArgumentParser(argparse.ArgumentParser):
     """
-    A custom argument parser that uses the logger for reporting errors.
+    A custom argument parser that uses rich for help formatting 
+    and the logger for reporting errors.
     """
+    def __init__(self, *args, **kwargs):
+        if "formatter_class" not in kwargs:
+            kwargs["formatter_class"] = RichHelpFormatter
+        super().__init__(*args, **kwargs)
+
     def error(self, message: str) -> None:
         self.print_usage(sys.stderr)
         logger.error(message)
         sys.exit(2)
 
 
-def main():
+def main() -> None:
     parser = RichArgumentParser(
         description="Merge files from a directory into a structured output."
     )
@@ -251,17 +260,18 @@ def main():
     if not args.input_dir:
         parser.error("input_dir is required for merging.")
 
-    if not args.merger_ignore.exists():
+    ignore_patterns = args.ignore.copy()
+
+    if args.merger_ignore.exists():
+        logger.info(f"Using ignore file: {args.merger_ignore}")
+        ignore_patterns.extend(read_merger_ignore_file(args.merger_ignore))
+    else:
         templates = ", ".join(list_ignore_templates())
         parser.error(
             f"Ignore file '{args.merger_ignore}' is required.\n"
             f"You can create one using 'merger -c [TEMPLATE]'.\n"
             f"Available templates: {templates}"
         )
-
-    ignore_patterns = args.ignore.copy()
-    logger.info(f"Using ignore file: {args.merger_ignore}")
-    ignore_patterns.extend(read_merger_ignore_file(args.merger_ignore))
 
     # Normalize and deduplicate ignore patterns to use consistent forward slashes.
     ignore_patterns = list(set(pattern.replace("\\", "/") for pattern in ignore_patterns))

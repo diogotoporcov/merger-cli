@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from .enums import FileTreeEntryType
 
@@ -16,7 +16,7 @@ class FileTreeEntry(ABC):
 class FileEntry(FileTreeEntry):
     name: str
     path: Path
-    content: str
+    content: Optional[str] = None
     type: FileTreeEntryType = FileTreeEntryType.FILE
 
 

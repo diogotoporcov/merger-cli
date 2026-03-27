@@ -1,9 +1,10 @@
 import logging
+import mimetypes
 from pathlib import Path
 from typing import Union, Tuple, Optional
 
-import chardet
-import filetype
+import charset_normalizer
+import magic
 
 from ..parser import Parser
 
@@ -17,28 +18,77 @@ class DefaultParser(Parser):
     MAX_BINARY_RATIO = 0.30
 
     TEXTUAL_APPLICATION_MIMES = {
+        # JSON (files)
         "application/json",
+        "application/ld+json",
+        "application/vnd.api+json",
+
+        # XML-based files (configs, documents, feeds)
         "application/xml",
-        "application/javascript",
+        "application/xhtml+xml",
+        "application/atom+xml",
+        "application/rss+xml",
+        "application/soap+xml",
+        "application/xml-dtd",
+
+        # YAML (config files)
+        "application/yaml",
         "application/x-yaml",
+
+        # TOML (config files)
+        "application/toml",
+        "application/x-toml",
+
+        # Forms / encoded text files
+        "application/x-www-form-urlencoded",
+
+        # JavaScript files (yes, real files)
+        "application/javascript",
+
+        # Script / source files
+        "application/x-sh",
+        "application/x-bash",
+        "application/x-csh",
+        "application/x-python",
+
+        # Text-based document format
+        "application/rtf",
+
+        # Patch / diff files (VERY common in repos)
+        "application/vnd.github.v3.diff",
+        "application/vnd.github.v3.patch",
+
+        # Edge but legit text configs
+        "application/graphql",
+
+        # Empty files
+        "application/x-empty",
+        "inode/x-empty",
     }
 
     @staticmethod
     def guess_encoding(file_chunk: Union[bytes, bytearray]) -> Tuple[str, float]:
-        result = chardet.detect(file_chunk)
-        return (
-            result.get("encoding") or "utf-8",
-            result.get("confidence", 0.0)
-        )
+        result = charset_normalizer.from_bytes(file_chunk).best()
+        if result:
+            return result.encoding, result.coherence
+        return "utf-8", 0.0
 
     @staticmethod
-    def guess_mime_type(file_chunk: Union[bytes, bytearray]) -> Optional[str]:
+    def guess_mime_type(
+        file_chunk: Union[bytes, bytearray],
+        file_path: Optional[Path] = None
+    ) -> Optional[str]:
+        mime = None
         try:
-            kind = filetype.guess(file_chunk)
-            return kind.mime if kind else None
-
+            mime = magic.from_buffer(file_chunk, mime=True)
         except Exception:
-            return None
+            # libmagic might be missing or other error
+            pass
+
+        if not mime and file_path:
+            mime, _ = mimetypes.guess_type(file_path)
+
+        return mime
 
     @staticmethod
     def looks_binary(file_chunk: Union[bytes, bytearray]) -> bool:
@@ -61,7 +111,7 @@ class DefaultParser(Parser):
         file_path: Optional[Path] = None,
         logger: Optional[logging.Logger] = None
     ) -> bool:
-        mime_type = cls.guess_mime_type(file_chunk_bytes)
+        mime_type = cls.guess_mime_type(file_chunk_bytes, file_path=file_path)
 
         if mime_type:
             is_text_mime = (
@@ -71,12 +121,12 @@ class DefaultParser(Parser):
 
             if not is_text_mime:
                 if logger:
-                    logger.debug(f"Rejected by MIME type: {mime_type}")
+                    logger.debug(f"Rejected by MIME type: {mime_type} for {file_path}")
                 return False
 
         if cls.looks_binary(file_chunk_bytes):
             if logger:
-                logger.debug("Binary signature detected")
+                logger.debug(f"Binary signature detected for {file_path}")
             return False
 
         encoding, confidence = cls.guess_encoding(file_chunk_bytes)
@@ -90,7 +140,7 @@ class DefaultParser(Parser):
             file_chunk_bytes.decode(encoding)
             return True
             
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, LookupError):
             return False
 
     @classmethod
@@ -106,7 +156,7 @@ class DefaultParser(Parser):
         try:
             return file_bytes.decode(encoding)
 
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, LookupError):
             if logger:
                 logger.debug(
                     f"Decoding failed for {file_path}, falling back to utf-8"

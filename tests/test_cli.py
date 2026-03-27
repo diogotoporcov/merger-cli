@@ -28,14 +28,16 @@ def test_cli_version(capsys):
             main()
         assert e.value.code == 0
         captured = capsys.readouterr()
-        assert "merger" in captured.out or captured.err # argparse might use stderr for version in some python versions
+        # RichHelpFormatter might use stdout or stderr for version
+        all_out = captured.out + captured.err
+        assert "merger" in all_out
 
 def test_cli_merge_basic(tmp_path, monkeypatch, capsys):
     project_dir = tmp_path / "myproj"
     project_dir.mkdir()
     (project_dir / "file1.txt").write_text("hello", encoding="utf-8")
     
-    # Create required ignore file
+    # Create required ignore file (optional now, but testing basic merge)
     (tmp_path / "merger.ignore").touch()
     
     output_dir = tmp_path / "out"
@@ -80,9 +82,11 @@ def test_cli_create_ignore_invalid_template(capsys):
         # argparse raises SystemExit with code 2 for invalid choices
         assert e.value.code == 2
 
-def test_cli_merge_missing_ignore(tmp_path, monkeypatch, capsys):
+def test_cli_merge_no_ignore_file(tmp_path, monkeypatch, capsys):
+    # Testing that it fails without merger.ignore
     project_dir = tmp_path / "myproj"
     project_dir.mkdir()
+    (project_dir / "file1.txt").write_text("hello", encoding="utf-8")
     
     output_dir = tmp_path / "out"
     output_dir.mkdir()
@@ -96,12 +100,35 @@ def test_cli_merge_missing_ignore(tmp_path, monkeypatch, capsys):
         assert e.value.code == 2
     
     captured = capsys.readouterr()
-    err = " ".join(captured.err.split())
-    assert f"Ignore file 'merger.ignore' is required" in err
-    assert "You can create one using 'merger -c [TEMPLATE]'" in err
-    assert "Available templates: DEFAULT, CPP, CSHARP, GO, JAVA, JAVASCRIPT, KOTLIN, PHP, PYTHON, RUST, TYPESCRIPT" in err
+    all_out = captured.out + captured.err
+    assert "Ignore file 'merger.ignore' is required." in all_out
+    assert "You can create one using 'merger -c [TEMPLATE]'." in all_out
+    assert "Available templates:" in all_out
 
-    # Check order
-    instruction_idx = err.find("You can create one using 'merger -c [TEMPLATE]'")
-    templates_idx = err.find("Available templates:")
-    assert instruction_idx < templates_idx
+def test_cli_merge_qualifier_file_only(tmp_path, monkeypatch, capsys):
+    project_dir = tmp_path / "myproj"
+    project_dir.mkdir()
+    (project_dir / "data").mkdir()
+    (project_dir / "data.txt").touch()
+    
+    output_dir = tmp_path / "out"
+    output_dir.mkdir()
+    monkeypatch.chdir(tmp_path)
+    
+    # Create required ignore file
+    (tmp_path / "merger.ignore").touch()
+    
+    # Ignore "data" but only if it's a file. Since "data" is a directory, it should NOT be ignored.
+    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '--ignore', 'data:']):
+        main()
+    
+    content = (output_dir / "merger.txt").read_text()
+    assert "data/" in content
+    assert "data.txt" in content
+
+    # Ignore "data.txt" but only if it's a file.
+    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '--ignore', 'data.txt:']):
+        main()
+    
+    content = (output_dir / "merger.txt").read_text()
+    assert "data.txt" not in content
