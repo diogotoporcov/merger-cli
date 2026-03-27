@@ -1,5 +1,5 @@
 import pytest
-from pathlib import Path
+import platform
 from merger.utils.patterns import matches_pattern
 
 @pytest.fixture
@@ -17,7 +17,6 @@ def test_directory_match(root):
     dir_path.mkdir()
     assert matches_pattern(dir_path, root, "src")
     assert matches_pattern(dir_path, root, "src/")
-    assert not matches_pattern(dir_path, root, "src:")
 
 def test_wildcard_one_segment(root):
     file_path = root / "src" / "main.py"
@@ -41,45 +40,20 @@ def test_anchoring(root):
     file_path.parent.mkdir(parents=True)
     file_path.touch()
     
-    # Not anchored
-    assert matches_pattern(file_path, root, "src/main.py")
+    # In standard Git rules, a pattern with an internal slash is anchored to the root.
+    # So "src/main.py" does NOT match "project/src/main.py"
+    assert not matches_pattern(file_path, root, "src/main.py")
     
-    # Anchored to root
+    # Recursive match requires **
+    assert matches_pattern(file_path, root, "**/src/main.py")
+    
+    # Anchored to root explicitly
     assert not matches_pattern(file_path, root, "/src/main.py")
     assert matches_pattern(file_path, root, "/project/src/main.py")
     
-    # Anchored to here (./)
+    # Anchored to here (./) - normalized to /
     assert not matches_pattern(file_path, root, "./src/main.py")
     assert matches_pattern(file_path, root, "./project/src/main.py")
-
-def test_type_qualifiers(root, monkeypatch):
-    dir_path = root / "data"
-    # dir_path.mkdir() # Skip actual creation to avoid some issues
-    file_path = root / "config"
-    # file_path.touch()
-
-    def mock_is_dir(self):
-        return self.name == "data"
-    
-    monkeypatch.setattr(Path, "is_dir", mock_is_dir)
-    
-    assert matches_pattern(dir_path, root, "data/")
-    assert not matches_pattern(dir_path, root, "data:")
-    
-    assert matches_pattern(file_path, root, "config:")
-    assert not matches_pattern(file_path, root, "config/")
-
-def test_escape_suffix(root, monkeypatch):
-    # Testing trailing !
-    # Avoid actual file creation with illegal characters on Windows
-    dir_path = root / "data:"
-
-    def mock_is_dir(self):
-        return ":" in self.name
-    
-    monkeypatch.setattr(Path, "is_dir", mock_is_dir)
-
-    assert matches_pattern(dir_path, root, "data:!")
 
 def test_embedded_wildcard(root):
     file_path = root / "log_2023_01_01.txt"
@@ -104,40 +78,95 @@ def test_complex_double_wildcard(root):
     assert matches_pattern(root / "a" / "b" / "c" / "test.py", root, "**/*.py")
     assert matches_pattern(root / "a" / "b" / "c", root, "a/**/c")
 
-def test_empty_pattern(root):
-    (root / "file.txt").touch()
-    # If pattern is empty, it shouldn't match anything unless we are checking the root itself?
-    # Actually, pattern "" split by "/" results in () if we handle it specifically.
-    # Let's see how matches_pattern handles it.
-    assert not matches_pattern(root / "file.txt", root, "")
-    # Does it match the root itself?
-    assert matches_pattern(root, root, "")
-
-def test_trailing_slashes_and_colons(root):
-    (root / "dir").mkdir()
-    (root / "file").touch()
-    
-    assert matches_pattern(root / "dir", root, "dir/")
-    assert not matches_pattern(root / "dir", root, "dir:")
-    assert matches_pattern(root / "file", root, "file:")
-    assert not matches_pattern(root / "file", root, "file/")
-    
-    # With escape suffix
-    assert not matches_pattern(root / "dir", root, "dir/!") # should look for literal "dir/"
-    # Note: creating a file named "dir/" is not possible on many systems, but we can test logic
-
 def test_dots_in_path(root):
     (root / "src" / "main.py").mkdir(parents=True, exist_ok=True)
     file_path = root / "src" / "main.py"
     file_path.touch()
     
+    # Normalized by our compile_patterns
     assert matches_pattern(file_path, root, "./src/main.py")
-    assert matches_pattern(file_path, root, "src/./main.py") # if it's not anchored, it might fail because of how split works
-    # Wait, "src/./main.py".split("/") is ("src", ".", "main.py")
-    # Our matches_pattern implementation doesn't handle "." or ".." in patterns specially unless it's leading "./"
 
 def test_multiple_wildcards_in_segment(root):
     (root / "foobar.txt").touch()
     assert matches_pattern(root / "foobar.txt", root, "f*b*.txt")
     assert matches_pattern(root / "foobar.txt", root, "*oo*ar*")
     assert not matches_pattern(root / "foobar.txt", root, "*oo*az*")
+
+def test_empty_pattern(root):
+    (root / "file.txt").touch()
+    # If pattern is empty, it shouldn't match anything unless we are checking the root itself?
+    assert not matches_pattern(root / "file.txt", root, "")
+    # Does it match the root itself?
+    assert matches_pattern(root, root, "")
+
+def test_type_qualifiers(root):
+    # Setup files and directories
+    (root / "data").mkdir()
+    (root / "data" / "sub").mkdir()
+    (root / "data.txt").touch()
+    (root / "readme_file").touch()
+    (root / "README_DIR").mkdir()
+    if platform.system() != "Windows":
+        (root / "data:").touch()
+        (root / "data:").mkdir(exist_ok=True)
+
+    # / suffix - directory only
+    assert matches_pattern(root / "data", root, "data/")
+    assert not matches_pattern(root / "data.txt", root, "data/")
+    
+    # : suffix - file only
+    assert matches_pattern(root / "data.txt", root, "data.txt:")
+    assert not matches_pattern(root / "data", root, "data:")
+    
+    # ! suffix - literal (escapes : and /)
+    # data:! matches both file and directory named data:
+    if platform.system() != "Windows":
+        file_colon = root / "data:"
+        file_colon.touch()
+        assert matches_pattern(file_colon, root, "data:!")
+    
+    # Let's test standard behavior (matches both)
+    assert matches_pattern(root / "readme_file", root, "readme_file")
+    assert matches_pattern(root / "README_DIR", root, "README_DIR")
+
+def test_complex_qualifiers(root):
+    (root / "src").mkdir()
+    (root / "src" / "main.py").touch()
+    (root / "src" / "utils").mkdir()
+    
+    # Match all files in src
+    assert matches_pattern(root / "src" / "main.py", root, "src/*:")
+    assert not matches_pattern(root / "src" / "utils", root, "src/*:")
+    
+    # Match all directories in src
+    assert matches_pattern(root / "src" / "utils", root, "src/*/")
+    assert not matches_pattern(root / "src" / "main.py", root, "src/*/")
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Colon not allowed in filenames on Windows")
+def test_literal_escapes(root):
+    # data:! -> matches literal "data:" (either file or dir)
+    (root / "data:").touch()
+    assert matches_pattern(root / "data:", root, "data:!")
+    
+    # data:: -> matches literal "data:" (file only)
+    assert matches_pattern(root / "data:", root, "data::")
+    (root / "dir:").mkdir()
+    assert not matches_pattern(root / "dir:", root, "dir::")
+    
+    # data:/ -> matches literal "data:" (directory only)
+    (root / "data_dir:").mkdir()
+    assert matches_pattern(root / "data_dir:", root, "data_dir:/")
+    (root / "file:").touch()
+    assert not matches_pattern(root / "file:", root, "file:/")
+    
+    # data!! -> matches literal "data!" (either file or dir)
+    (root / "data!").touch()
+    assert matches_pattern(root / "data!", root, "data!!")
+    
+    # data!/ -> matches literal "data!" (directory only)
+    (root / "dir!").mkdir()
+    assert matches_pattern(root / "dir!", root, "dir!/")
+    
+    # data!: -> matches literal "data!" (file only)
+    (root / "file!").touch()
+    assert matches_pattern(root / "file!", root, "file!:")

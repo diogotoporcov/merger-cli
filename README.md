@@ -74,6 +74,8 @@ pip install merger-cli
 merger .
 ```
 
+> **Note:** A `merger.ignore` file is **required** in the current directory for the tool to run. You can create one quickly using `merger --create-ignore`.
+
 This writes a file named `merger.txt` in the current directory.
 
 ---
@@ -162,31 +164,24 @@ merger ./src --log-level DEBUG
 
 ## Ignore Pattern Syntax
 
-Ignore patterns are evaluated **relative to the input directory** (the directory you ask `merger` to scan). If a path is not located under that root, it will not match.
+Ignore patterns are evaluated **relative to the input directory** (the scan root). `merger-cli` uses standard **Git-style matching** (via `pathspec`), with some additional custom qualifiers.
 
-### Segment matching
+### Recursive vs. Anchored
 
-The pattern is split into segments and matched against the scanned path’s relative segments.
+*   **Recursive**: Patterns with **no slashes** (or starting with `**/`) match anywhere in the directory tree.
+    *   Example: `*.log` matches `root/app.log` and `root/logs/app.log`.
+*   **Anchored**: Patterns with **at least one internal slash** or a **leading slash** are anchored to the scan root.
+    *   Example: `src/*.py` matches `root/src/main.py` but **not** `root/project/src/main.py`.
+    *   Example: `/config.json` matches `root/config.json` but **not** `root/subdir/config.json`.
+*   **Leading `./`**: Normalized to `/` and treated as an anchored pattern.
 
-Supported segments:
+### Pattern Components
 
-* Literal segments (e.g. `src`, `tests`, `README.md`)
-* `*` matches **exactly one** path segment
-* `**` matches **zero or more** path segments
-* Embedded `*` inside a segment matches `prefix*suffix` (e.g. `foo*.py`, `*cache*`)
-
-### Anchoring
-
-* Leading `/` anchors the pattern to the scan root
-  * Example: `/src/*.py` matches `src/main.py` but not `project/src/main.py`
-  
-
-* Leading `./` anchors the pattern to the start of the relative path (equivalent anchoring behavior)
-  * Example: `./src/*.py` matches `src/main.py` but not `project/src/main.py`
-  
-
-* Without anchoring, the pattern may match starting at **any segment boundary** within the relative path
-  * Example: `src/*.py` matches both `src/main.py` and `project/src/main.py`
+*   `*` matches any number of characters within a single path segment.
+*   `**` matches zero or more directories.
+    *   Example: `**/node_modules/` matches `node_modules` at any depth.
+*   `?` matches exactly one character.
+*   `[seq]` matches any character in *seq*.
 
 ### Type qualifiers
 
@@ -214,22 +209,22 @@ Supported segments:
 ### Examples
 
 Ignore all files or directories that end with `.log`:
-* `*.log`
+* `*.log` (Recursive)
 
-Ignore all `dist` directories:
-* `dist/`
+Ignore the `dist` directory at the scan root:
+* `dist/` (Anchored because it has a slash)
+
+Ignore all `node_modules` directories anywhere:
+* `**/node_modules/` (Recursive)
 
 Ignore a file named `config.json` at the scan root:
 * `/config.json:`
 
-Ignore all `.py` files directly under any `src` directory (but not deeper):
+Ignore all `.py` files directly under the **root** `src` directory:
 * `src/*.py:`
 
-Ignore all files or directories that contain `cache` and are only one level deep inside any directory named `src`:
-* `src/*/*cache*`
-
-Ignore all `__pycache__` directories inside the `src` directory at the scan root:
-* `./src/**/__pycache__/`
+Ignore all `__pycache__` directories inside the **root** `src` directory:
+* `src/**/__pycache__/`
 
 Ignore all files `data:`:
 * `data::`
@@ -497,7 +492,6 @@ class XmlExporter(TreeExporter):
                 elem.tail = i
 
 exporter_cls = XmlExporter
-
 ```
 
 Available at [`examples/custom_exporters/xml_exporter.py`](examples/custom_exporters/xml_exporter.py).

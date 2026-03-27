@@ -1,12 +1,12 @@
 import json
 import pytest
-from pathlib import Path
-from merger.file_tree.tree import FileTree
-from merger.exporters.impl.plain_text_exporter import PlainTextExporter
 from merger.exporters.impl.directory_tree_exporter import DirectoryTreeExporter
 from merger.exporters.impl.json_exporter import JsonExporter
 from merger.exporters.impl.json_tree_exporter import JsonTreeExporter
+from merger.exporters.impl.plain_text_exporter import PlainTextExporter
 from merger.exporters.impl.tree_with_plain_text_exporter import TreeWithPlainTextExporter
+from merger.file_tree.tree import FileTree
+
 
 @pytest.fixture
 def complex_tree(tmp_path):

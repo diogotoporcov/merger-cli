@@ -1,15 +1,11 @@
-import pytest
-import shutil
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-from merger.utils.module_manager import ModuleManager
+from unittest.mock import MagicMock
+
+import pytest
 from merger.exceptions import InvalidModule, ModuleAlreadyInstalled
-
 from merger.parsing.parser import Parser as Base
+from merger.utils.module_manager import ModuleManager
 
-# Dummy base class for testing
-# class Base:
-#    pass
 
 def test_module_manager_load_invalid_path():
     mm = ModuleManager("test", Base, "modules", lambda: Path("."), "cls", lambda c: [])
