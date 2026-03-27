@@ -336,7 +336,7 @@ class PdfParser(Parser):
             bool: True if the file is a readable PDF, False otherwise.
         """
         try:
-            with pymupdf.open(file_path) as doc:
+            with pymupdf.open(stream=file_chunk_bytes) as doc:
                 _ = doc[0]
             return True
 
