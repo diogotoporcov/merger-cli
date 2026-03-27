@@ -13,9 +13,9 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
 
 1.  **Install Python 3.8 or newer**
 2.  **Install libmagic** if not installed:
-    *   **Windows**: Not necessary (automatically downloaded)
-    *   **Linux**: `apt install libmagic1`  
-    * **macOS**: `brew install libmagic`
+    *   **Windows**: Automatically downloaded
+    *   **Linux**: `sudo apt-get update && sudo apt-get install libmagic1`  
+    *   **macOS**: `brew install libmagic`
 3.  **Install the package**: `pip install merger-cli`
 4.  **Navigate to your project folder**: `cd path/to/your/project`
 5.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (Where the template is optional)
@@ -53,11 +53,11 @@ For more options, refer to the [Usage](#usage) section below.
 
 ## Dependencies
 
-* **Python** (≥ 3.8)
-* **libmagic** (Required on Linux and macOS)
-  * **macOS (Homebrew):** `brew install libmagic`
-  * **Linux (Ubuntu/Debian):** `sudo apt-get update && sudo apt-get install libmagic1`
-  * **Windows:** Not necessary (automatically handled via `python-magic-bin`)
+* **Python** (3.8+)
+* **libmagic**
+    *   **Windows**: Automatically downloaded
+    *   **Linux**: `sudo apt-get update && sudo apt-get install libmagic1`  
+    *   **macOS**: `brew install libmagic`
 
 All Python package requirements are listed in [`requirements.txt`](requirements.txt).
 
