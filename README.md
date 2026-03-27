@@ -11,10 +11,15 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
 
 ## TLDR
 
-1.  **Install the package**: `pip install merger-cli`
-2.  **Navigate to your project folder**: `cd path/to/your/project`
-3.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (Where the template is optional)
-4.  **Execute merger-cli**: `merger .` (to create a single combined file called `merger.txt`)
+1.  **Install Python 3.8 or newer**
+2.  **Install libmagic** if not installed:
+    *   **Windows**: Not necessary (automatically downloaded)
+    *   **Linux**: `apt install libmagic1`  
+    * **macOS**: `brew install libmagic`
+3.  **Install the package**: `pip install merger-cli`
+4.  **Navigate to your project folder**: `cd path/to/your/project`
+5.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (Where the template is optional)
+6.  **Execute merger-cli**: `merger .` to create a single combined file called `merger.txt`
 
 For more options, refer to the [Usage](#usage) section below.
 
@@ -22,7 +27,7 @@ For more options, refer to the [Usage](#usage) section below.
 
 ## Summary
 
-1. [Core Features](#core-features)
+1. [Features](#features)
 2. [Dependencies](#dependencies)
 3. [Installation](#installation)
 4. [Usage](#usage)
@@ -35,7 +40,7 @@ For more options, refer to the [Usage](#usage) section below.
 
 ---
 
-## Core Features
+## Features
 
 * **Recursive merge** of all readable files under a root directory.
 * **Custom glob-like ignore patterns** for filtering.
@@ -52,6 +57,7 @@ For more options, refer to the [Usage](#usage) section below.
 * **libmagic** (Required on Linux and macOS)
   * **macOS (Homebrew):** `brew install libmagic`
   * **Linux (Ubuntu/Debian):** `sudo apt-get update && sudo apt-get install libmagic1`
+  * **Windows:** Not necessary (automatically handled via `python-magic-bin`)
 
 All Python package requirements are listed in [`requirements.txt`](requirements.txt).
 
