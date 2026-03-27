@@ -48,13 +48,12 @@ For more options, refer to the [Usage](#usage) section below.
 
 ## Dependencies
 
-| Component    | Version | Notes    |
-|--------------|---------|----------|
-| **Python**   | ≥ 3.8   | Required |
-| **Pydantic** | ≥ 2.0   | Required |
-| **Rich**     | ≥ 13.0  | Required |
+* **Python** (≥ 3.8)
+* **libmagic** (Required on Linux and macOS)
+  * **macOS (Homebrew):** `brew install libmagic`
+  * **Linux (Ubuntu/Debian):** `sudo apt-get update && sudo apt-get install libmagic1`
 
-All dependencies are listed in [`requirements.txt`](requirements.txt).
+All Python package requirements are listed in [`requirements.txt`](requirements.txt).
 
 ---
 

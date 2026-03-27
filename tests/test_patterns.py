@@ -107,8 +107,8 @@ def test_type_qualifiers(root):
     (root / "readme_file").touch()
     (root / "README_DIR").mkdir()
     if platform.system() != "Windows":
-        (root / "data:").touch()
-        (root / "data:").mkdir(exist_ok=True)
+        (root / "data_file_colon").touch()
+        (root / "data_dir_colon").mkdir(exist_ok=True)
 
     # / suffix - directory only
     assert matches_pattern(root / "data", root, "data/")
@@ -119,11 +119,10 @@ def test_type_qualifiers(root):
     assert not matches_pattern(root / "data", root, "data:")
     
     # ! suffix - literal (escapes : and /)
-    # data:! matches both file and directory named data:
+    # data_file_colon! matches both file and directory named data_file_colon
     if platform.system() != "Windows":
-        file_colon = root / "data:"
-        file_colon.touch()
-        assert matches_pattern(file_colon, root, "data:!")
+        file_colon = root / "data_file_colon"
+        assert matches_pattern(file_colon, root, "data_file_colon!")
     
     # Let's test standard behavior (matches both)
     assert matches_pattern(root / "readme_file", root, "readme_file")
@@ -144,16 +143,16 @@ def test_complex_qualifiers(root):
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Colon not allowed in filenames on Windows")
 def test_literal_escapes(root):
-    # data:! -> matches literal "data:" (either file or dir)
-    (root / "data:").touch()
-    assert matches_pattern(root / "data:", root, "data:!")
+    # data_file:! -> matches literal "data_file:" (either file or dir)
+    (root / "data_file:").touch()
+    assert matches_pattern(root / "data_file:", root, "data_file:!")
     
-    # data:: -> matches literal "data:" (file only)
-    assert matches_pattern(root / "data:", root, "data::")
+    # data_file:: -> matches literal "data_file:" (file only)
+    assert matches_pattern(root / "data_file:", root, "data_file::")
     (root / "dir:").mkdir()
     assert not matches_pattern(root / "dir:", root, "dir::")
     
-    # data:/ -> matches literal "data:" (directory only)
+    # data_dir:/ -> matches literal "data_dir:" (directory only)
     (root / "data_dir:").mkdir()
     assert matches_pattern(root / "data_dir:", root, "data_dir:/")
     (root / "file:").touch()
