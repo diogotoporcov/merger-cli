@@ -1,185 +1,117 @@
-from functools import lru_cache
+import pathspec
 from pathlib import Path
 from typing import Iterable
 
 
-def matches_pattern(path: Path, root: Path, pattern: str) -> bool:
+class PatternSpec:
     """
-    Determine whether a filesystem path matches a single custom glob-like pattern,
-    evaluated relative to a given root directory.
-
-    The pattern syntax supports:
-    - Literal path segments (e.g. "src", "README.md")
-    - "*" to match exactly one path segment
-    - "**" to match zero or more path segments
-    - Embedded "*" within a segment for prefix/suffix matching (e.g. "foo*.py")
-    - Leading "/" to anchor the match at the root
-    - Leading "./" to anchor the match at the relative path start
-    - Trailing "/" to require the matched path to be a directory
-    - Trailing ":" to require the matched path to be a file
-    - Trailing "!" to disable type qualification and treat any trailing "/"
-      or ":" as literal characters in the final path segment
-
-    Matching is performed against the path relative to `root`. If `path` is not
-    located under `root`, the function returns False.
-
-    Parameters:
-        path: The filesystem path to test.
-        root: The root directory used to compute the relative path.
-        pattern: The glob-like pattern to match against.
-
-    Returns:
-        bool: True if the path matches the pattern; False otherwise.
+    A container for compiled path patterns with support for type-based filtering.
     """
+    def __init__(self, spec_either: pathspec.PathSpec, spec_file_only: pathspec.PathSpec, has_empty_pattern: bool = False):
+        self.spec_either = spec_either
+        self.spec_file_only = spec_file_only
+        self.has_empty_pattern = has_empty_pattern
 
-    try:
-        relative_path = path.relative_to(root)
 
-    except ValueError:
-        return False
+def compile_patterns(patterns: Iterable[str]) -> PatternSpec:
+    """
+    Compile an iterable of glob-like patterns into a PatternSpec object.
+    Normalized to handle common non-standard prefixes like './' and 
+    type qualifiers like ':' for files and '!' for literal escaping.
+    """
+    either_patterns = []
+    file_only_patterns = []
+    has_empty_pattern = False
 
-    path_segments = relative_path.parts
-    path_len = len(path_segments)
-    is_path_dir = path.is_dir()
+    for p in patterns:
+        if not p:
+            has_empty_pattern = True
+            continue
 
-    has_ignore_type_suffix = pattern.endswith("!")
-    if has_ignore_type_suffix:
-        pattern = pattern[:-1]
+        # Normalize ./ to / for anchoring
+        if p.startswith("./"):
+            p = "/" + p[2:]
 
-    is_anchored_root = pattern.startswith("/")
-    is_anchored_here = pattern.startswith("./")
+        # Suffix handling
+        is_literal = False
+        is_file_only = False
+        if p.endswith('!'):
+            is_literal = True
+            p = p[:-1]
 
-    is_dir_only = False
-    is_file_only = False
+        elif p.endswith(':'):
+            is_file_only = True
+            p = p[:-1]
 
-    if not has_ignore_type_suffix:
-        is_dir_only = pattern.endswith("/")
-        is_file_only = pattern.endswith(":")
+        if not is_literal:
+            is_anchored = p.startswith("/")
+            is_dir_only = p.endswith("/")
+            segments = [s for s in p.split('/') if s and s != '.']
+            p = "/".join(segments)
+            if is_anchored:
+                p = "/" + p
 
-    if is_anchored_root:
-        pattern = pattern[1:]
+            if is_dir_only and not p.endswith("/"):
+                p = p + "/"
 
-    if is_anchored_here:
-        pattern = pattern[2:]
+        if p == "/" or not p:
+            has_empty_pattern = True
+            continue
 
-    if is_dir_only or is_file_only:
-        pattern = pattern[:-1]
+        if is_file_only:
+            file_only_patterns.append(p)
 
-    pattern_segments = tuple(p for p in pattern.split("/") if p != ".")
-    if not has_ignore_type_suffix:
-        pattern_segments = tuple(p for p in pattern_segments if p)
+        else:
+            either_patterns.append(p)
 
-    if is_anchored_root or is_anchored_here:
-        start_positions = (0,)
-
-    elif not pattern_segments:
-        # For non-anchored empty pattern, we should only match the root.
-        # However, it should probably only happen if path == root.
-        # But relative_path is Path("."). If it's root, path_len is 0.
-        # Let's see. If path_len is 0, start_positions is (0,)
-        # match_at(0, 0) returns 0 == 0 -> True.
-        # If path_len > 0, we don't want it to match if pattern is empty.
-        start_positions = () if path_len > 0 else (0,)
-
-    else:
-        start_positions = range(path_len + 1)
-
-    @lru_cache(maxsize=None)
-    def match_at(pattern_idx: int, segment_idx: int) -> bool:
-        while True:
-            if pattern_idx == len(pattern_segments):
-                if is_dir_only:
-                    return segment_idx <= path_len and is_path_dir
-
-                if is_file_only:
-                    return segment_idx == path_len and not is_path_dir
-
-                return segment_idx == path_len
-
-            if segment_idx > path_len:
-                return False
-
-            pattern_segment = pattern_segments[pattern_idx]
-
-            if pattern_segment == "**":
-                if pattern_idx + 1 == len(pattern_segments):
-                    return True
-
-                for k in range(segment_idx, path_len + 1):
-                    if match_at(pattern_idx + 1, k):
-                        return True
-
-                return False
-
-            if segment_idx == path_len:
-                return False
-
-            path_segment = path_segments[segment_idx]
-
-            if pattern_segment == "*":
-                pattern_idx += 1
-                segment_idx += 1
-                continue
-
-            if "*" in pattern_segment:
-                import fnmatch
-                if not fnmatch.fnmatchcase(path_segment, pattern_segment):
-                    return False
-
-                pattern_idx += 1
-                segment_idx += 1
-                continue
-
-            if pattern_segment != path_segment:
-                return False
-
-            pattern_idx += 1
-            segment_idx += 1
-
-        return False
-
-    for start in start_positions:
-        if match_at(0, start):
-            return True
-
-    return False
+    return PatternSpec(
+        spec_either=pathspec.PathSpec.from_lines('gitwildmatch', either_patterns),
+        spec_file_only=pathspec.PathSpec.from_lines('gitwildmatch', file_only_patterns),
+        has_empty_pattern=has_empty_pattern
+    )
 
 
 def matches_any_pattern(
     path: Path,
     root: Path,
-    patterns: Iterable[str],
+    spec: PatternSpec,
 ) -> bool:
     """
-    Determine whether a filesystem path matches at least one custom glob-like
-    pattern from a collection of patterns, evaluated relative to a given root
-    directory.
-
-    Each pattern is interpreted using the same matching rules as `matches_pattern`,
-    including support for:
-    - Literal path segments
-    - "*" to match exactly one path segment
-    - "**" to match zero or more path segments
-    - Embedded "*" within a segment for prefix/suffix matching
-    - Leading "/" or "./" for anchoring
-    - Trailing "/" to require directories
-    - Trailing ":" to require files
-    - Trailing "!" to disable type qualification and treat any trailing "/"
-      or ":" as literal characters in the final path segment
-
-    Matching is performed against the path relative to `root`. If `path` is not
-    located under `root`, the function returns False.
-
-    Parameters:
-        path: The filesystem path to test.
-        root: The root directory used to compute the relative path.
-        patterns: An iterable of glob-like patterns to match against.
-
-    Returns:
-        bool: True if the path matches at least one pattern; False otherwise.
+    Determine whether a filesystem path matches at least one pattern from
+    the given PatternSpec, evaluated relative to a given root directory.
     """
+    try:
+        relative_path = path.relative_to(root)
+    except ValueError:
+        return False
 
-    return any(
-        matches_pattern(path, root, pattern)
-        for pattern in patterns
-    )
+    path_str = relative_path.as_posix()
+    is_dir = path.is_dir()
+
+    # Empty pattern matches only the root
+    if spec.has_empty_pattern and path_str == ".":
+        return True
+
+    # pathspec matches against strings. 
+    # For directories, pathspec expects a trailing slash to match directory-only patterns.
+    if is_dir and not path_str.endswith('/'):
+        path_str += '/'
+
+    # Check for patterns that match either file or directory (including standard patterns and / suffixes)
+    if spec.spec_either.match_file(path_str):
+        return True
+
+    # Check for file-only patterns (:)
+    if not is_dir and spec.spec_file_only.match_file(path_str):
+        return True
+
+    return False
+
+
+def matches_pattern(path: Path, root: Path, pattern: str) -> bool:
+    """
+    Determine whether a filesystem path matches a single pattern,
+    evaluated relative to a given root directory.
+    """
+    spec = compile_patterns([pattern])
+    return matches_any_pattern(path, root, spec)
