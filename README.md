@@ -92,28 +92,29 @@ All Python package requirements are listed in [`requirements.txt`](requirements.
 
 ### Global Installation
 
-If you want the CLI to be available globally, follow these steps:
+If you want the CLI to be available globally, it is recommended to use **pipx**:
 
-1. **Install the package globally**:
+1. **Install pipx** (if you don't have it):
+   * **Windows**: `python -m pip install --user pipx`
+   * **Linux**: `sudo apt update && sudo apt install pipx`
+   * **macOS**: `brew install pipx`
+
+2. **Install merger-cli**:
    ```bash
-   pip install merger-cli
+   pipx install merger-cli
    ```
 
-2. **Verify the installation**:
+3. **Ensure path**:
+   ```bash
+   pipx ensurepath
+   ```
+
+4. **Restart your terminal**.
+
+5. **Verify the installation**:
    ```bash
    merger --version
    ```
-
-3. **If the `merger` command is not recognized**, run the following to add the Python scripts directory to your system's `PATH`:
-
-* **Windows (PowerShell)**:
-  ```powershell
-  $path = python -c "import os, sys; print(os.path.join(sys.prefix, 'Scripts'))"; if ($path -and (Test-Path $path)) { [System.Environment]::SetEnvironmentVariable("Path", [System.Environment]::GetEnvironmentVariable("Path", "User") + ";$path", "User"); echo "Added $path to User PATH. Restart your terminal." } else { echo "Could not find Python Scripts directory." }
-  ```
-* **Linux/macOS (Bash/Zsh)**:
-  ```bash
-  echo "export PATH=\"\$PATH:\$(python3 -c 'import os, sys; print(os.path.join(sys.prefix, \"bin\"))')\"" >> ~/.bashrc  # or ~/.zshrc, then restart terminal
-  ```
 
 ---
 
