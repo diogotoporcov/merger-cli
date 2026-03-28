@@ -18,7 +18,7 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
     *   **macOS**: `brew install libmagic`
 3.  **Install the package**: `pip install merger-cli`
 4.  **Navigate to your project folder**: `cd path/to/your/project`
-5.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (Where the template is optional)
+5.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (See [Custom Ignore Templates](#custom-ignore-templates))
 6.  **Execute merger-cli**: `merger .` to create a single combined file called `merger.txt`
 
 For more options, refer to the [Usage](#usage) section below.
