@@ -116,6 +116,11 @@ If you want the CLI to be available globally, it is recommended to use **pipx**:
    merger --version
    ```
 
+> **Note:** If you want to use custom modules that require external libraries (e.g., `pymupdf`), you need to inject them into the `merger-cli` environment:
+> ```bash
+> pipx inject merger-cli pymupdf
+> ```
+
 ---
 
 ## Usage
