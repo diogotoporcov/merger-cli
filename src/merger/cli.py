@@ -92,6 +92,7 @@ class RichArgumentParser(argparse.ArgumentParser):
 
 def main() -> None:
     parser = RichArgumentParser(
+        prog="merger",
         description="Merge files from a directory into a structured output."
     )
 
