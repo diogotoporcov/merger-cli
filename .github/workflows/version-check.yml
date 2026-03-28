@@ -16,6 +16,9 @@ on:
         value: ${{ jobs.check-version.outputs.version }}
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   check-version:
     runs-on: ubuntu-latest
