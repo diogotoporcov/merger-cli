@@ -12,14 +12,18 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
 ## TLDR
 
 1.  **Install Python 3.8 or newer**
-2.  **Install libmagic** if not installed:
+2.  **Create and activate a virtual environment**: (If you want the CLI to be available globally, see [Global Installation](#global-installation))
+    *   **Windows**: `python -m venv .venv && .venv\Scripts\activate`
+    *   **Linux/macOS**: `python3 -m venv .venv && source .venv/bin/activate`
+3.  **Install libmagic** if not installed:
     *   **Windows**: Automatically downloaded
     *   **Linux**: `sudo apt-get update && sudo apt-get install libmagic1`  
     *   **macOS**: `brew install libmagic`
-3.  **Install the package**: `pip install merger-cli`
-4.  **Navigate to your project folder**: `cd path/to/your/project`
-5.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (See [Custom Ignore Templates](#custom-ignore-templates))
-6.  **Execute merger-cli**: `merger .` to create a single combined file called `merger.txt`
+4.  **Install the package**: `pip install merger-cli`
+5.  **Verify the installation**: `merger --version`
+6.  **Navigate to your project folder**: `cd path/to/your/project`
+7.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (See [Custom Ignore Templates](#custom-ignore-templates))
+8.  **Execute merger-cli**: `merger .` to create a single combined file called `merger.txt`
 
 For more options, refer to the [Usage](#usage) section below.
 
@@ -65,9 +69,51 @@ All Python package requirements are listed in [`requirements.txt`](requirements.
 
 ## Installation
 
-```bash
-pip install merger-cli
-```
+### Virtual Environment (Recommended)
+
+1. Create a virtual environment:
+    ```bash
+    python3 -m venv .venv
+    ```
+
+2. Activate the virtual environment:
+   * **Windows**: `.venv\Scripts\activate`
+   * **Linux/macOS**: `source .venv/bin/activate`
+
+3. Install the package:
+    ```bash
+    pip install merger-cli
+    ```
+
+4. Verify the installation:
+    ```bash
+    merger --version
+    ```
+
+### Global Installation
+
+If you want the CLI to be available globally, follow these steps:
+
+1. **Install the package globally**:
+   ```bash
+   pip install merger-cli
+   ```
+
+2. **Verify the installation**:
+   ```bash
+   merger --version
+   ```
+
+3. **If the `merger` command is not recognized**, run the following to add the Python scripts directory to your system's `PATH`:
+
+* **Windows (PowerShell)**:
+  ```powershell
+  $path = python -c "import os, sys; print(os.path.join(sys.prefix, 'Scripts'))"; if ($path -and (Test-Path $path)) { [System.Environment]::SetEnvironmentVariable("Path", [System.Environment]::GetEnvironmentVariable("Path", "User") + ";$path", "User"); echo "Added $path to User PATH. Restart your terminal." } else { echo "Could not find Python Scripts directory." }
+  ```
+* **Linux/macOS (Bash/Zsh)**:
+  ```bash
+  echo "export PATH=\"\$PATH:\$(python3 -c 'import os, sys; print(os.path.join(sys.prefix, \"bin\"))')\"" >> ~/.bashrc  # or ~/.zshrc, then restart terminal
+  ```
 
 ---
 
