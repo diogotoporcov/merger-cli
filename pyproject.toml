@@ -52,3 +52,4 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 merger = "merger.cli:main"
+merger-cli = "merger.cli:main"
