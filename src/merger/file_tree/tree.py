@@ -25,92 +25,64 @@ class FileTree:
         root_path = path.resolve()
         spec = compile_patterns(ignore_patterns or [])
 
-        root_entry = cls._scan_disk(root_path, root_path, spec)
-        parsed_root = cls._parse_tree(root_entry, root_path)
+        root_entry = cls._scan_and_parse(root_path, root_path, spec)
 
-        if not isinstance(parsed_root, DirectoryEntry):
+        if not isinstance(root_entry, DirectoryEntry):
             raise RuntimeError(f"Failed to parse the root directory: {root_path}")
 
-        return cls(parsed_root)
+        return cls(root_entry)
 
     @classmethod
-    def _scan_disk(
+    def _scan_and_parse(
             cls,
             path: Path,
             root: Path,
             spec: PatternSpec
-    ) -> DirectoryEntry:
-        rel_path = path.relative_to(root) if path != root else Path(".")
-        children: Dict[Path, FileTreeEntry] = {}
-
-        try:
-            entries = sorted(path.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
-
-        except PermissionError:
-            logger.warning(f"Permission denied: {path}")
-            entries = []
-
-        for entry_path in entries:
-            path_relative = entry_path.relative_to(root)
-
-            if matches_any_pattern(entry_path, root, spec):
-                continue
-
-            if entry_path.is_dir():
-                children[path_relative] = cls._scan_disk(entry_path, root, spec)
-                continue
-
-            children[path_relative] = FileEntry(
-                name=entry_path.name,
-                path=path_relative,
-                content=None
-            )
-
-        return DirectoryEntry(
-            name=path.name,
-            path=rel_path,
-            children=children
-        )
-
-    @classmethod
-    def _parse_tree(
-            cls,
-            entry: FileTreeEntry,
-            root_path: Path
     ) -> Optional[FileTreeEntry]:
         from ..utils.files import read_file_bytes
 
-        if isinstance(entry, DirectoryEntry):
-            new_children: Dict[Path, FileTreeEntry] = {}
-            for path, child in entry.children.items():
-                parsed_child = cls._parse_tree(child, root_path)
-                if parsed_child is not None:
-                    new_children[path] = parsed_child
+        if path != root and matches_any_pattern(path, root, spec):
+            return None
+
+        rel_path = path.relative_to(root) if path != root else Path(".")
+
+        if path.is_dir():
+            children: Dict[Path, FileTreeEntry] = {}
+            try:
+                # Sort entries: directories first, then files
+                entries = sorted(path.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+            except PermissionError:
+                logger.warning(f"Permission denied: {path}")
+                entries = []
+
+            for entry_path in entries:
+                child_entry = cls._scan_and_parse(entry_path, root, spec)
+                if child_entry is not None:
+                    children[child_entry.path] = child_entry
 
             return DirectoryEntry(
-                name=entry.name,
-                path=entry.path,
-                children=new_children
+                name=path.name,
+                path=rel_path,
+                children=children
             )
 
-        if isinstance(entry, FileEntry):
-            full_path = root_path / entry.path
-            parser = get_parser(entry.name)
-
-            validation_bytes = read_file_bytes(full_path, parser.MAX_BYTES_FOR_VALIDATION)
-            if not parser.validate(validation_bytes, file_path=full_path, logger=logger):
+        parser = get_parser(path.name)
+        try:
+            validation_bytes = read_file_bytes(path, parser.MAX_BYTES_FOR_VALIDATION)
+            if not parser.validate(validation_bytes, file_path=path, logger=logger):
                 return None
 
             if parser.MAX_BYTES_FOR_VALIDATION is not None:
-                file_bytes = read_file_bytes(full_path)
+                file_bytes = read_file_bytes(path)
             else:
                 file_bytes = validation_bytes
 
-            content = parser.parse(file_bytes, file_path=full_path, logger=logger)
+            content = parser.parse(file_bytes, file_path=path, logger=logger)
             return FileEntry(
-                name=entry.name,
-                path=entry.path,
+                name=path.name,
+                path=rel_path,
                 content=content
             )
-
-        return entry
+        except (PermissionError, OSError) as e:
+            logger.warning(f"Could not process file {path}: {e}")
+            return None
