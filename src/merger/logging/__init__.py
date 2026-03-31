@@ -4,21 +4,17 @@ from rich.logging import RichHandler
 from rich.console import Console
 
 
+from .constants import LOG_COLORS
+
+
 class RichColorFormatter(logging.Formatter):
     """
     Custom formatter that adds rich colors to the log level and follows 
     the format: [<TYPE>] <Message>.
     """
-    COLORS = {
-        "INFO": "bold cyan",
-        "ERROR": "bold red",
-        "WARNING": "bold yellow",
-        "DEBUG": "bold green",
-        "CRITICAL": "bold red reverse"
-    }
 
     def format(self, record: logging.LogRecord) -> str:
-        color = self.COLORS.get(record.levelname, "white")
+        color = LOG_COLORS.get(record.levelname, "white")
         orig_levelname = record.levelname
         record.levelname = f"[{color}][{orig_levelname}][/{color}]"
         res = super().format(record)
