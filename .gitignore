@@ -3,3 +3,7 @@
 .pypirc
 build/
 *.egg-info/
+
+merger.ignore
+merger.txt
+merger.json
