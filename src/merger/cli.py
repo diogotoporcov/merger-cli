@@ -116,7 +116,7 @@ def main() -> None:
     parser.add_argument(
         "-e",
         "--exporter",
-        type=str,
+        type=lambda s: str(s).upper(),
         choices=get_exporter_strategy_names(),
         default=TreeWithPlainTextExporter.NAME,
         help=f"Output exporter strategy (default: {TreeWithPlainTextExporter.NAME})",
@@ -152,7 +152,7 @@ def main() -> None:
 
     parser.add_argument(
         "--log-level",
-        type=str,
+        type=lambda s: str(s).upper(),
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
         help="Set the logging level (default: INFO)",
@@ -180,6 +180,7 @@ def main() -> None:
         nargs="?",
         const="DEFAULT",
         default=None,
+        type=lambda s: str(s).upper(),
         choices=list_ignore_templates(),
         help="Create a merger.ignore file using a built-in template.",
     )
