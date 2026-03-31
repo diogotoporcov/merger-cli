@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from typing import Union, Optional, Set, Type
 
@@ -14,9 +13,7 @@ class PdfParser(Parser):
     def validate(
         cls,
         file_chunk_bytes: Union[bytes, bytearray],
-        *,
-        file_path: Optional[Path] = None,
-        logger: Optional[logging.Logger] = None
+        file_path: Path
     ) -> bool:
         """
         Validate that the given file represents a readable PDF document.
@@ -24,7 +21,6 @@ class PdfParser(Parser):
         Args:
             file_chunk_bytes: Binary contents of the file being validated, sufficient to perform validation.
             file_path: Path of the file being validated.
-            logger: Optional logger instance for logging.
 
         Returns:
             bool: True if the file is a readable PDF, False otherwise.
@@ -41,9 +37,7 @@ class PdfParser(Parser):
     def parse(
         cls,
         file_bytes: Union[bytes, bytearray],
-        *,
-        file_path: Optional[Path] = None,
-        logger: Optional[logging.Logger] = None,
+        file_path: Path,
     ) -> str:
         """
         Extracts and concatenates text from all pages of a PDF file.
@@ -51,10 +45,9 @@ class PdfParser(Parser):
         Args:
             file_bytes: Binary contents of the file being parsed.
             file_path: Path of the file being parsed.
-            logger: optional logger instance for logging.
 
         Returns:
-
+            str: Full text content of the PDF.
         """
         texts = []
         with pymupdf.open(stream=file_bytes) as doc:

@@ -6,9 +6,9 @@ from merger.utils.module_manager import ModuleManager
 class MockParser(Parser):
     EXTENSIONS = [".mock"]
     @classmethod
-    def validate(cls, file_bytes, **kwargs): return True
+    def validate(cls, file_bytes, file_path): return True
     @classmethod
-    def parse(cls, file_bytes, **kwargs): return "mock content"
+    def parse(cls, file_bytes, file_path): return "mock content"
 
 @pytest.fixture
 def module_dir(tmp_path):
@@ -36,9 +36,9 @@ from merger.parsing.parser import Parser
 class MockParser(Parser):
     EXTENSIONS = [".mock"]
     @classmethod
-    def validate(cls, file_bytes, **kwargs): return True
+    def validate(cls, file_bytes, file_path): return True
     @classmethod
-    def parse(cls, file_bytes, **kwargs): return "mocked"
+    def parse(cls, file_bytes, file_path): return "mocked"
 parser_cls = MockParser
 """
     module_source = tmp_path / "my_module.py"
@@ -52,7 +52,7 @@ parser_cls = MockParser
     
     loaded = manager.load_all()
     assert ".mock" in loaded
-    assert loaded[".mock"].parse(b"") == "mocked"
+    assert loaded[".mock"].parse(b"", tmp_path) == "mocked"
 
 def test_module_manager_uninstall(module_dir, mock_config_dir, tmp_path):
     manager = ModuleManager(

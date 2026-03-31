@@ -17,9 +17,9 @@ from merger.parsing.parser import Parser
 class MockParser(Parser):
     EXTENSIONS = [".mock"]
     @classmethod
-    def validate(cls, file_bytes, **kwargs): return True
+    def validate(cls, file_bytes, file_path): return True
     @classmethod
-    def parse(cls, file_bytes, **kwargs): return "mocked"
+    def parse(cls, file_bytes, file_path): return "mocked"
 parser_cls = MockParser
 """
     parser_path = tmp_path / "mock_parser.py"

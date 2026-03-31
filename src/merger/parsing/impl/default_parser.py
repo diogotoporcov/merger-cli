@@ -1,4 +1,3 @@
-import logging
 import mimetypes
 from pathlib import Path
 from typing import Union, Tuple, Optional
@@ -76,16 +75,17 @@ class DefaultParser(Parser):
     @staticmethod
     def guess_mime_type(
         file_chunk: Union[bytes, bytearray],
-        file_path: Optional[Path] = None
+        file_path: Path
     ) -> Optional[str]:
         mime = None
         try:
             mime = magic.from_buffer(file_chunk, mime=True)
+
         except Exception:
             # libmagic might be missing or other error
             pass
 
-        if not mime and file_path:
+        if not mime:
             mime, _ = mimetypes.guess_type(file_path)
 
         return mime
@@ -107,9 +107,7 @@ class DefaultParser(Parser):
     def validate(
         cls,
         file_chunk_bytes: Union[bytes, bytearray],
-        *,
-        file_path: Optional[Path] = None,
-        logger: Optional[logging.Logger] = None
+        file_path: Path
     ) -> bool:
         mime_type = cls.guess_mime_type(file_chunk_bytes, file_path=file_path)
 
@@ -120,26 +118,17 @@ class DefaultParser(Parser):
             )
 
             if not is_text_mime:
-                if logger:
-                    logger.debug(f"Rejected by MIME type: {mime_type} for {file_path}")
                 return False
 
         if cls.looks_binary(file_chunk_bytes):
-            if logger:
-                logger.debug(f"Binary signature detected for {file_path}")
             return False
 
-        encoding, confidence = cls.guess_encoding(file_chunk_bytes)
-
-        if confidence < cls.TEXT_CONFIDENCE_THRESHOLD and logger:
-            logger.debug(
-                f"Low encoding confidence ({confidence}) for {file_path}"
-            )
+        encoding, _ = cls.guess_encoding(file_chunk_bytes)
 
         try:
             file_chunk_bytes.decode(encoding)
             return True
-            
+
         except (UnicodeDecodeError, LookupError):
             return False
 
@@ -147,9 +136,7 @@ class DefaultParser(Parser):
     def parse(
         cls,
         file_bytes: Union[bytes, bytearray],
-        *,
-        file_path: Optional[Path] = None,
-        logger: Optional[logging.Logger] = None
+        file_path: Path
     ) -> str:
         encoding, _ = cls.guess_encoding(file_bytes[:2048])
 
@@ -157,9 +144,4 @@ class DefaultParser(Parser):
             return file_bytes.decode(encoding)
 
         except (UnicodeDecodeError, LookupError):
-            if logger:
-                logger.debug(
-                    f"Decoding failed for {file_path}, falling back to utf-8"
-                )
-
             return file_bytes.decode("utf-8", errors="backslashreplace")

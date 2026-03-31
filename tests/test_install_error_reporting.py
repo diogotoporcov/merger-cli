@@ -18,9 +18,9 @@ from merger.parsing.parser import Parser
 class BrokenParser(Parser):
     EXTENSIONS = [".broken"]
     @classmethod
-    def validate(cls, file_bytes, **kwargs): return True
+    def validate(cls, file_bytes, file_path): return True
     @classmethod
-    def parse(cls, file_bytes, **kwargs): return "broken"
+    def parse(cls, file_bytes, file_path): return "broken"
 parser_cls = BrokenParser
 """
     broken_path = tmp_path / "broken_parser.py"
