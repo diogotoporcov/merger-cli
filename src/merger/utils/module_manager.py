@@ -99,11 +99,7 @@ class ModuleManager(Generic[T]):
         module_path = target_dir / filename
         shutil.copy(path, module_path)
 
-        extensions = []
-        if hasattr(cls, "EXTENSIONS"):
-            extensions = list(getattr(cls, "EXTENSIONS"))
-        elif hasattr(cls, "FILE_EXTENSION"):
-            extensions = [getattr(cls, "FILE_EXTENSION")]
+        extensions = self.key_getter(cls)
 
         modules_dict[file_hash] = ModuleEntry(
             extensions=extensions,
@@ -157,6 +153,21 @@ class ModuleManager(Generic[T]):
             
         return "unknown"
 
+    def load_module(self, module_id: str) -> Type[T]:
+        config = get_or_create_config()
+        modules_dict = self._get_config_dict(config)
+
+        if module_id not in modules_dict:
+            raise KeyError(f"{self.module_type_name.capitalize()} module not installed: {module_id}")
+
+        entry = modules_dict[module_id]
+        path = Path(entry.path)
+        if not path.exists() or not path.is_file():
+            raise FileNotFoundError(f"Module file not found: {path}")
+
+        module = self.load_module_from_path(path, module_id)
+        return self.get_class_from_module(module)
+
     def load_all(self) -> Dict[str, Type[T]]:
         config = get_or_create_config()
         modules_dict = self._get_config_dict(config)
@@ -183,3 +194,22 @@ class ModuleManager(Generic[T]):
                 continue
 
         return loaded
+
+    def validate_all(self) -> None:
+        config = get_or_create_config()
+        modules_dict = self._get_config_dict(config)
+
+        for module_id, entry in modules_dict.items():
+            path = Path(entry.path)
+            if not path.exists() or not path.is_file():
+                raise FileNotFoundError(f"{self.module_type_name.capitalize()} module file not found: {path}")
+
+            try:
+                module = self.load_module_from_path(path, module_id)
+                self.get_class_from_module(module)
+
+            except (ImportError, InvalidModule) as e:
+                raise InvalidModule(path.as_posix(), str(e)) from e
+
+            except Exception as e:
+                raise RuntimeError(f"Unexpected error validating {self.module_type_name} module '{module_id}': {e}") from e

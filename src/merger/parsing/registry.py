@@ -44,17 +44,32 @@ install_parser = _manager.install
 uninstall_parser = _manager.uninstall
 list_parsers = _manager.list
 load_parsers = _manager.load_all
+validate_parsers = _manager.validate_all
 get_parser_module_type = _manager.get_module_type
 
-_PARSERS: Dict[str, Type[Parser]] = load_parsers()
+_PARSER_CACHE: Dict[str, Type[Parser]] = {}
 
 
 def get_parser(filename: str) -> Type[Parser]:
     filename_lower = filename.lower()
+    parsers_meta = list_parsers()
+
+    # Map extension to module_id
+    ext_to_id: Dict[str, str] = {}
+    for module_id, meta in parsers_meta.items():
+        for ext in meta.extensions:
+            ext_to_id[ext.lower()] = module_id
+
     # Try longest extensions first (e.g., .tar.gz before .gz)
-    sorted_extensions = sorted(_PARSERS.keys(), key=len, reverse=True)
+    sorted_extensions = sorted(ext_to_id.keys(), key=len, reverse=True)
     for extension in sorted_extensions:
-        if filename_lower.endswith(extension.lower()):
-            return _PARSERS[extension]
+        if filename_lower.endswith(extension):
+            module_id = ext_to_id[extension]
+            if module_id in _PARSER_CACHE:
+                return _PARSER_CACHE[module_id]
+
+            cls = _manager.load_module(module_id)
+            _PARSER_CACHE[module_id] = cls
+            return cls
 
     return DefaultParser

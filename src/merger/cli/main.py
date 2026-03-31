@@ -2,6 +2,8 @@ import logging
 from pathlib import Path
 
 from ..exporters.factory import get_exporter_strategy
+from ..exporters.registry import validate_exporters
+from ..parsing.registry import validate_parsers
 from ..file_tree.tree import FileTree
 from ..logging import setup_logger, logger
 from ..utils.files import read_merger_ignore_file
@@ -42,6 +44,16 @@ def main() -> None:
 
         if not args.input_dir:
             parser.error("input_dir is required for merging.")
+
+        # Validate all custom modules before execution
+        try:
+            validate_parsers()
+            validate_exporters()
+
+        except Exception as e:
+            logger.error(f"Module validation failed: {e}")
+            logger.error("Please fix or uninstall the invalid module(s) before proceeding.")
+            return
 
         ignore_patterns = args.ignore.copy()
 

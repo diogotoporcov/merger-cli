@@ -29,4 +29,6 @@ install_exporter = _manager.install
 uninstall_exporter = _manager.uninstall
 list_exporters = _manager.list
 load_exporters = _manager.load_all
+load_exporter = _manager.load_module
+validate_exporters = _manager.validate_all
 get_exporter_module_type = _manager.get_module_type
