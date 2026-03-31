@@ -6,10 +6,11 @@ from ...file_tree.entries import DirectoryEntry, FileEntry, FileTreeEntry
 from ...file_tree.tree import FileTree
 
 
-class JsonExporter(TreeExporter):
-    NAME = "JSON"
-    FILE_EXTENSION = ".json"
+NAME = "JSON"
+FILE_EXTENSION = ".json"
 
+
+class JsonExporter(TreeExporter):
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
         data: Dict[str, str] = {}

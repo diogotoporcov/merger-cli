@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from typing import Type, Dict
 
+from types import ModuleType
 from .impl.default_parser import DefaultParser
 from .parser import Parser
 from ..exceptions import InvalidModule
@@ -12,10 +13,10 @@ _EXTENSION_REGEX_STR = r"\.[a-z0-9.]+$"
 _EXTENSION_REGEX = re.compile(_EXTENSION_REGEX_STR, re.IGNORECASE)
 
 
-def _validate_parser_cls(parser_cls: Type[Parser], path: Path) -> None:
-    extensions = getattr(parser_cls, "EXTENSIONS", None)
+def _validate_parser_module(path: Path, module: ModuleType) -> None:
+    extensions = getattr(module, "EXTENSIONS", None)
     if extensions is None:
-        raise InvalidModule(path.as_posix(), "parser does not contain EXTENSIONS attribute")
+        raise InvalidModule(path.as_posix(), "parser module does not contain EXTENSIONS attribute")
 
     if not isinstance(extensions, (set, list, tuple)):
         raise InvalidModule(path.as_posix(), "parser EXTENSIONS attribute is not a collection")
@@ -36,25 +37,40 @@ _manager = ModuleManager[Parser](
     config_key="modules",
     get_target_dir=get_or_create_parsers_dir,
     class_attr="parser_cls",
-    key_getter=lambda cls: [ext.lower() for ext in getattr(cls, "EXTENSIONS")],
-    validate_func=_validate_parser_cls,
+    key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")],
+    validate_func=_validate_parser_module,
 )
 
 install_parser = _manager.install
 uninstall_parser = _manager.uninstall
 list_parsers = _manager.list
 load_parsers = _manager.load_all
+validate_parsers = _manager.validate_all
 get_parser_module_type = _manager.get_module_type
 
-_PARSERS: Dict[str, Type[Parser]] = load_parsers()
+_PARSER_CACHE: Dict[str, Type[Parser]] = {}
 
 
 def get_parser(filename: str) -> Type[Parser]:
     filename_lower = filename.lower()
+    parsers_meta = list_parsers()
+
+    # Map extension to module_id
+    ext_to_id: Dict[str, str] = {}
+    for module_id, meta in parsers_meta.items():
+        for ext in meta.extensions:
+            ext_to_id[ext.lower()] = module_id
+
     # Try longest extensions first (e.g., .tar.gz before .gz)
-    sorted_extensions = sorted(_PARSERS.keys(), key=len, reverse=True)
+    sorted_extensions = sorted(ext_to_id.keys(), key=len, reverse=True)
     for extension in sorted_extensions:
-        if filename_lower.endswith(extension.lower()):
-            return _PARSERS[extension]
+        if filename_lower.endswith(extension):
+            module_id = ext_to_id[extension]
+            if module_id in _PARSER_CACHE:
+                return _PARSER_CACHE[module_id]
+
+            cls = _manager.load_module(module_id)
+            _PARSER_CACHE[module_id] = cls
+            return cls
 
     return DefaultParser

@@ -2,6 +2,8 @@ import logging
 from pathlib import Path
 
 from ..exporters.factory import get_exporter_strategy
+from ..exporters.registry import validate_exporters
+from ..parsing.registry import validate_parsers
 from ..file_tree.tree import FileTree
 from ..logging import setup_logger, logger
 from ..utils.files import read_merger_ignore_file
@@ -43,6 +45,16 @@ def main() -> None:
         if not args.input_dir:
             parser.error("input_dir is required for merging.")
 
+        # Validate all custom modules before execution
+        try:
+            validate_parsers()
+            validate_exporters()
+
+        except Exception as e:
+            logger.error(f"Module validation failed: {e}")
+            logger.error("Please fix or uninstall the invalid module(s) before proceeding.")
+            return
+
         ignore_patterns = args.ignore.copy()
 
         if args.merger_ignore.exists():
@@ -63,10 +75,10 @@ def main() -> None:
         check_libmagic_availability()
 
         tree = FileTree.from_path(args.input_dir, ignore_patterns)
-        exporter_cls = get_exporter_strategy(args.exporter)
-        logger.info(f"Using {exporter_cls.NAME} exporter.")
+        exporter_info = get_exporter_strategy(args.exporter)
+        logger.info(f"Using {exporter_info.name} exporter.")
 
-        output_ext = exporter_cls.FILE_EXTENSION
+        output_ext = exporter_info.file_extension
         if output_ext.startswith("."):
             output_ext = output_ext[1:]
         output_ext = output_ext.lower()
@@ -75,7 +87,7 @@ def main() -> None:
             output_path = output_path / f"merger.{output_ext}"
         
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_bytes(exporter_cls.export(tree))
+        output_path.write_bytes(exporter_info.cls.export(tree))
         logger.info(f"Saved to '{output_path.as_posix()}'.")
         
     except Exception as e:

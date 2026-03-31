@@ -13,7 +13,7 @@ from ..exporters.factory import get_exporter_strategy_names
 from ..exporters.registry import (
     install_exporter, uninstall_exporter, list_exporters, get_exporter_module_type
 )
-from ..exporters.impl.tree_with_plain_text_exporter import TreeWithPlainTextExporter
+from ..exporters.impl.tree_with_plain_text_exporter import TreeWithPlainTextExporter, NAME as TREE_PLAIN_TEXT_NAME
 from ..logging import logger
 from ..parsing.registry import (
     install_parser, uninstall_parser, list_parsers, get_parser_module_type
@@ -179,8 +179,8 @@ def setup_argparse() -> RichArgumentParser:
         "--exporter",
         type=lambda s: str(s).upper(),
         choices=get_exporter_strategy_names(),
-        default=TreeWithPlainTextExporter.NAME,
-        help=f"Output exporter strategy (default: {TreeWithPlainTextExporter.NAME})",
+        default=TREE_PLAIN_TEXT_NAME,
+        help=f"Output exporter strategy (default: {TREE_PLAIN_TEXT_NAME})",
     )
 
     module_group = parser.add_mutually_exclusive_group()

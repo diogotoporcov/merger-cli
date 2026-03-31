@@ -5,12 +5,14 @@ from merger.exporters.tree_exporter import TreeExporter
 from merger.file_tree.tree import FileTree
 
 
+NAME = "MARKDOWN"
+FILE_EXTENSION = ".md"
+
+
 class MarkdownExporter(TreeExporter):
     """
     A custom exporter that generates a Markdown representation of the file tree.
     """
-    NAME = "MARKDOWN"
-    FILE_EXTENSION = ".md"
 
     @classmethod
     def export(cls, tree: FileTree) -> bytes:

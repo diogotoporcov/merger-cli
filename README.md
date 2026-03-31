@@ -324,10 +324,11 @@ from merger.parsing.parser import Parser
 
 Required structure:
 
-*   `EXTENSIONS: Set[str]` (e.g., `{".pdf"}`)
-*   `MAX_BYTES_FOR_VALIDATION: Optional[int]`
-*   `validate(cls, file_chunk_bytes, *, file_path=None, logger=None) -> bool`
-*   `parse(cls, file_bytes, *, file_path=None, logger=None) -> str`
+*   `EXTENSIONS: Set[str]` (e.g., `{".pdf"}`) - **Module-level variable**
+*   `parser_cls: Type[Parser]` - **Module-level variable** referencing the parser class
+*   `MAX_BYTES_FOR_VALIDATION: Optional[int]` - Class attribute
+*   `validate(cls, file_chunk_bytes, file_path) -> bool` - Class method
+*   `parse(cls, file_bytes, file_path) -> str` - Class method
 
 ---
 
@@ -363,8 +364,10 @@ import pymupdf
 from merger.parsing.parser import Parser
 
 
+EXTENSIONS: Set[str] = {".pdf"}
+
+
 class PdfParser(Parser):
-    EXTENSIONS: Set[str] = {".pdf"}
     MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
     @classmethod
@@ -444,9 +447,10 @@ from merger.exporters.tree_exporter import TreeExporter
 
 Required structure:
 
-*   `NAME: str` (The name used in `--exporter`)
-*   `FILE_EXTENSION: str` (The output file extension)
-*   `export(cls, tree: FileTree) -> bytes`
+*   `NAME: str` (The name used in `--exporter`) - **Module-level variable**
+*   `FILE_EXTENSION: str` (The output file extension) - **Module-level variable**
+*   `exporter_cls: Type[TreeExporter]` - **Module-level variable** referencing the exporter class
+*   `export(cls, tree: FileTree) -> bytes` - Class method
 
 ---
 
@@ -482,12 +486,14 @@ from merger.exporters.tree_exporter import TreeExporter
 from merger.file_tree.tree import FileTree
 
 
+NAME = "XML"
+FILE_EXTENSION = ".xml"
+
+
 class XmlExporter(TreeExporter):
     """
     A custom exporter that generates an XML representation of the file tree.
     """
-    NAME = "XML"
-    FILE_EXTENSION = ".xml"
 
     @classmethod
     def export(cls, tree: FileTree) -> bytes:

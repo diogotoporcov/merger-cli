@@ -5,12 +5,14 @@ from merger.exporters.tree_exporter import TreeExporter
 from merger.file_tree.tree import FileTree
 
 
+NAME = "XML"
+FILE_EXTENSION = ".xml"
+
+
 class XmlExporter(TreeExporter):
     """
     A custom exporter that generates an XML representation of the file tree.
     """
-    NAME = "XML"
-    FILE_EXTENSION = ".xml"
 
     @classmethod
     def export(cls, tree: FileTree) -> bytes:

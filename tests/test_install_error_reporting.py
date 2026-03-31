@@ -15,8 +15,8 @@ def test_install_failure_with_details(tmp_path, mock_config_dir, capsys):
     broken_content = """
 import non_existent_module_foo_bar
 from merger.parsing.parser import Parser
+EXTENSIONS = [".broken"]
 class BrokenParser(Parser):
-    EXTENSIONS = [".broken"]
     @classmethod
     def validate(cls, file_bytes, file_path): return True
     @classmethod

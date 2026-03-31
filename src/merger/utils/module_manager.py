@@ -3,7 +3,7 @@ import shutil
 from inspect import isclass
 from pathlib import Path
 from types import ModuleType
-from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic
+from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic, Tuple
 
 from .config import get_or_create_config, save_config, ModuleEntry
 from .hash import hash_from_file
@@ -21,8 +21,8 @@ class ModuleManager(Generic[T]):
         config_key: str,
         get_target_dir: Callable[[], Path],
         class_attr: str,
-        key_getter: Callable[[Type[T]], List[str]],
-        validate_func: Optional[Callable[[Type[T], Path], None]] = None,
+        key_getter: Callable[[ModuleType], List[str]],
+        validate_func: Optional[Callable[[Path, ModuleType], None]] = None,
     ):
         self.module_type_name = module_type_name
         self.base_class = base_class
@@ -73,7 +73,7 @@ class ModuleManager(Generic[T]):
             )
 
         if self.validate_func:
-            self.validate_func(cls, Path(getattr(module, "__file__", "")))
+            self.validate_func(Path(getattr(module, "__file__", "")), module)
 
         return cls
 
@@ -99,11 +99,7 @@ class ModuleManager(Generic[T]):
         module_path = target_dir / filename
         shutil.copy(path, module_path)
 
-        extensions = []
-        if hasattr(cls, "EXTENSIONS"):
-            extensions = list(getattr(cls, "EXTENSIONS"))
-        elif hasattr(cls, "FILE_EXTENSION"):
-            extensions = [getattr(cls, "FILE_EXTENSION")]
+        extensions = self.key_getter(module)
 
         modules_dict[file_hash] = ModuleEntry(
             extensions=extensions,
@@ -157,6 +153,26 @@ class ModuleManager(Generic[T]):
             
         return "unknown"
 
+    def load_module(self, module_id: str) -> Type[T]:
+        _, cls = self.load_module_and_class(module_id)
+        return cls
+
+    def load_module_and_class(self, module_id: str) -> Tuple[ModuleType, Type[T]]:
+        config = get_or_create_config()
+        modules_dict = self._get_config_dict(config)
+
+        if module_id not in modules_dict:
+            raise KeyError(f"{self.module_type_name.capitalize()} module not installed: {module_id}")
+
+        entry = modules_dict[module_id]
+        path = Path(entry.path)
+        if not path.exists() or not path.is_file():
+            raise FileNotFoundError(f"Module file not found: {path}")
+
+        module = self.load_module_from_path(path, module_id)
+        cls = self.get_class_from_module(module)
+        return module, cls
+
     def load_all(self) -> Dict[str, Type[T]]:
         config = get_or_create_config()
         modules_dict = self._get_config_dict(config)
@@ -171,7 +187,7 @@ class ModuleManager(Generic[T]):
                 module = self.load_module_from_path(path, module_id)
                 cls = self.get_class_from_module(module)
 
-                for key in self.key_getter(cls):
+                for key in self.key_getter(module):
                     loaded[key] = cls
                     
             except (ImportError, InvalidModule) as e:
@@ -183,3 +199,22 @@ class ModuleManager(Generic[T]):
                 continue
 
         return loaded
+
+    def validate_all(self) -> None:
+        config = get_or_create_config()
+        modules_dict = self._get_config_dict(config)
+
+        for module_id, entry in modules_dict.items():
+            path = Path(entry.path)
+            if not path.exists() or not path.is_file():
+                raise FileNotFoundError(f"{self.module_type_name.capitalize()} module file not found: {path}")
+
+            try:
+                module = self.load_module_from_path(path, module_id)
+                self.get_class_from_module(module)
+
+            except (ImportError, InvalidModule) as e:
+                raise InvalidModule(path.as_posix(), str(e)) from e
+
+            except Exception as e:
+                raise RuntimeError(f"Unexpected error validating {self.module_type_name} module '{module_id}': {e}") from e

@@ -28,13 +28,13 @@ def test_module_manager_install(module_dir, mock_config_dir, tmp_path):
         config_key="modules",
         get_target_dir=lambda: module_dir,
         class_attr="parser_cls",
-        key_getter=lambda cls: [ext.lower() for ext in getattr(cls, "EXTENSIONS")]
+        key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")]
     )
     
     module_content = """
 from merger.parsing.parser import Parser
+EXTENSIONS = [".mock"]
 class MockParser(Parser):
-    EXTENSIONS = [".mock"]
     @classmethod
     def validate(cls, file_bytes, file_path): return True
     @classmethod
@@ -61,7 +61,7 @@ def test_module_manager_uninstall(module_dir, mock_config_dir, tmp_path):
         config_key="modules",
         get_target_dir=lambda: module_dir,
         class_attr="parser_cls",
-        key_getter=lambda cls: [ext.lower() for ext in getattr(cls, "EXTENSIONS")]
+        key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")]
     )
     
     module_source = tmp_path / "my_module.py"
@@ -86,7 +86,7 @@ def test_module_manager_load_all_with_broken_module(module_dir, mock_config_dir,
         config_key="modules",
         get_target_dir=lambda: module_dir,
         class_attr="parser_cls",
-        key_getter=lambda cls: [ext.lower() for ext in getattr(cls, "EXTENSIONS")]
+        key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")]
     )
     
     from merger.utils.config import get_or_create_config, save_config, ModuleEntry
