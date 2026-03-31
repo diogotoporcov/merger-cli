@@ -3,6 +3,8 @@
 .pypirc
 build/
 *.egg-info/
+__pycache__/
+.pytest_cache/
 
 merger.ignore
 merger.txt

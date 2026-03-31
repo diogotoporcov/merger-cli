@@ -59,6 +59,9 @@ def main() -> None:
         # Normalize and deduplicate ignore patterns to use consistent forward slashes.
         ignore_patterns = list(set(pattern.replace("\\", "/") for pattern in ignore_patterns))
 
+        from ..utils.magic import check_libmagic_availability
+        check_libmagic_availability()
+
         tree = FileTree.from_path(args.input_dir, ignore_patterns)
         exporter_cls = get_exporter_strategy(args.exporter)
         logger.info(f"Using {exporter_cls.NAME} exporter.")

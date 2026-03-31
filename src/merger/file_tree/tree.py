@@ -69,7 +69,7 @@ class FileTree:
         parser = get_parser(path.name)
         try:
             validation_bytes = read_file_bytes(path, parser.MAX_BYTES_FOR_VALIDATION)
-            if not parser.validate(validation_bytes, file_path=path, logger=logger):
+            if not parser.validate(validation_bytes, path):
                 return None
 
             if parser.MAX_BYTES_FOR_VALIDATION is not None:
@@ -77,7 +77,7 @@ class FileTree:
             else:
                 file_bytes = validation_bytes
 
-            content = parser.parse(file_bytes, file_path=path, logger=logger)
+            content = parser.parse(file_bytes, path)
             return FileEntry(
                 name=path.name,
                 path=rel_path,
