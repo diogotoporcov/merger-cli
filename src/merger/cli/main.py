@@ -5,7 +5,7 @@ from ..exporters.factory import get_exporter_strategy
 from ..file_tree.tree import FileTree
 from ..logging import setup_logger, logger
 from ..utils.files import read_merger_ignore_file
-from ..utils.update import check_for_updates
+from ..utils.update import check_for_updates, finalize_update_check
 from .utils import (
     handle_ignore_creation,
     handle_module_list,
@@ -21,46 +21,44 @@ def main() -> None:
     args = parser.parse_args()
     setup_logger(level=getattr(logging, args.log_level.upper()))
 
-    if args.create_ignore:
-        handle_ignore_creation(args.create_ignore)
-        check_for_updates()
-        return
-
-    if args.install:
-        handle_install(args.install)
-        check_for_updates()
-        return
-
-    if args.uninstall:
-        handle_uninstall(args.uninstall)
-        check_for_updates()
-        return
-
-    if args.list:
-        handle_module_list()
-        check_for_updates()
-        return
-
-    if not args.input_dir:
-        parser.error("input_dir is required for merging.")
-
-    ignore_patterns = args.ignore.copy()
-
-    if args.merger_ignore.exists():
-        logger.info(f"Using ignore file: {args.merger_ignore}")
-        ignore_patterns.extend(read_merger_ignore_file(args.merger_ignore))
-    else:
-        templates = ", ".join(list_ignore_templates())
-        parser.error(
-            f"Ignore file '{args.merger_ignore}' is required.\n"
-            f"You can create one using 'merger -c [TEMPLATE]'.\n"
-            f"Available templates: {templates}"
-        )
-
-    # Normalize and deduplicate ignore patterns to use consistent forward slashes.
-    ignore_patterns = list(set(pattern.replace("\\", "/") for pattern in ignore_patterns))
+    check_for_updates()
 
     try:
+        if args.create_ignore:
+            handle_ignore_creation(args.create_ignore)
+            return
+
+        if args.install:
+            handle_install(args.install)
+            return
+
+        if args.uninstall:
+            handle_uninstall(args.uninstall)
+            return
+
+        if args.list:
+            handle_module_list()
+            return
+
+        if not args.input_dir:
+            parser.error("input_dir is required for merging.")
+
+        ignore_patterns = args.ignore.copy()
+
+        if args.merger_ignore.exists():
+            logger.info(f"Using ignore file: {args.merger_ignore}")
+            ignore_patterns.extend(read_merger_ignore_file(args.merger_ignore))
+        else:
+            templates = ", ".join(list_ignore_templates())
+            parser.error(
+                f"Ignore file '{args.merger_ignore}' is required.\n"
+                f"You can create one using 'merger -c [TEMPLATE]'.\n"
+                f"Available templates: {templates}"
+            )
+
+        # Normalize and deduplicate ignore patterns to use consistent forward slashes.
+        ignore_patterns = list(set(pattern.replace("\\", "/") for pattern in ignore_patterns))
+
         tree = FileTree.from_path(args.input_dir, ignore_patterns)
         exporter_cls = get_exporter_strategy(args.exporter)
         logger.info(f"Using {exporter_cls.NAME} exporter.")
@@ -79,8 +77,8 @@ def main() -> None:
         
     except Exception as e:
         logger.error(f"An error occurred: {e}", exc_info=args.log_level == "DEBUG")
-
-    check_for_updates()
+    finally:
+        finalize_update_check()
 
 
 if __name__ == "__main__":
