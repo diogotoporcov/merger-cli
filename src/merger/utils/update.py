@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import sys
 import time
 import urllib.request
 import urllib.error
@@ -11,6 +12,7 @@ from typing import Optional, Tuple
 from .version import get_version
 from ..logging.constants import LOG_COLORS
 from rich.console import Console
+from rich.panel import Panel
 
 # Use a separate console to ensure update messages are always displayed 
 # even if logging is disabled or set to a higher level.
@@ -23,10 +25,6 @@ MIN_CHECK_INTERVAL = 3600
 _pending_message: Optional[str] = None
 _update_thread: Optional[threading.Thread] = None
 
-def log_update(message: str):
-    """Print the update message to stderr using rich formatting."""
-    color = LOG_COLORS.get("UPDATE", "bold yellow")
-    _update_console.print(f"[{color}][UPDATE][/{color}] {message}", markup=True)
 
 def get_latest_version(package_name: str = "merger-cli", etag: Optional[str] = None) -> Tuple[Optional[str], Optional[str], bool]:
     """
@@ -103,12 +101,26 @@ def is_newer_version(latest: str, current: str) -> bool:
             
         return False
 
+def is_ci_environment() -> bool:
+    """
+    Detect if the code is running in a CI/automated environment.
+    Most major CLIs skip update checks in CI to avoid noise and network usage.
+    """
+    ci_vars = [
+        "CI", "CONTINUOUS_INTEGRATION", "GITHUB_ACTIONS", "TRAVIS", 
+        "CIRCLECI", "GITLAB_CI", "JENKINS_URL", "BUILD_NUMBER",
+        "RUN_ID"
+    ]
+    return any(os.environ.get(var) for var in ci_vars)
+
 def check_for_updates():
     """
     Start the update check process. 
     It will check cache first, and if needed, start a background thread for network check.
     """
-    if os.environ.get("MERGER_SKIP_UPDATE_CHECK"):
+    if (os.environ.get("MERGER_SKIP_UPDATE_CHECK") or 
+        os.environ.get("NO_UPDATE_CHECK") or 
+        is_ci_environment()):
         return
 
     current_version = get_version()
@@ -187,7 +199,16 @@ def finalize_update_check():
     """Display the update message if one is pending. Call this at the end of the program."""
     global _pending_message
     if _pending_message:
-        for line in _pending_message.split("\n"):
-            log_update(line)
+        # Only show update notifications in interactive terminals
+        if _update_console.is_terminal:
+            color = LOG_COLORS.get("UPDATE", "yellow")
+            _update_console.print()  # Add a newline for better spacing
+            _update_console.print(Panel(
+                _pending_message,
+                title=f"[bold {color}]Update Available[/bold {color}]",
+                border_style=color,
+                expand=False,
+                padding=(0, 2)
+            ))
             
         _pending_message = None
