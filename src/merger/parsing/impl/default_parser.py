@@ -77,16 +77,18 @@ class DefaultParser(Parser):
         file_chunk: Union[bytes, bytearray],
         file_path: Path
     ) -> Optional[str]:
-        mime = None
         try:
             mime = magic.from_buffer(file_chunk, mime=True)
 
         except Exception:
-            # libmagic might be missing or other error
-            pass
+            from ...utils.magic import check_libmagic_availability
+            check_libmagic_availability()
+            raise
 
-        if not mime:
-            mime, _ = mimetypes.guess_type(file_path)
+        if not mime or mime == "application/octet-stream":
+            guess, _ = mimetypes.guess_type(file_path)
+            if guess:
+                mime = guess
 
         return mime
 
