@@ -9,8 +9,6 @@ from ..parser import Parser
 
 
 class DefaultParser(Parser):
-    EXTENSIONS = None
-
     MAX_BYTES_FOR_VALIDATION: Optional[int] = 1024
 
     TEXT_CONFIDENCE_THRESHOLD = 0.8

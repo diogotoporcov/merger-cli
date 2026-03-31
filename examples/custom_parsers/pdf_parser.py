@@ -5,8 +5,10 @@ import pymupdf
 from merger.parsing.parser import Parser
 
 
+EXTENSIONS: Set[str] = {".pdf"}
+
+
 class PdfParser(Parser):
-    EXTENSIONS: Set[str] = {".pdf"}
     MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
     @classmethod

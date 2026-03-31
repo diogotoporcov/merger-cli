@@ -3,7 +3,7 @@ import shutil
 from inspect import isclass
 from pathlib import Path
 from types import ModuleType
-from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic
+from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic, Tuple
 
 from .config import get_or_create_config, save_config, ModuleEntry
 from .hash import hash_from_file
@@ -21,8 +21,8 @@ class ModuleManager(Generic[T]):
         config_key: str,
         get_target_dir: Callable[[], Path],
         class_attr: str,
-        key_getter: Callable[[Type[T]], List[str]],
-        validate_func: Optional[Callable[[Type[T], Path], None]] = None,
+        key_getter: Callable[[ModuleType], List[str]],
+        validate_func: Optional[Callable[[Path, ModuleType], None]] = None,
     ):
         self.module_type_name = module_type_name
         self.base_class = base_class
@@ -73,7 +73,7 @@ class ModuleManager(Generic[T]):
             )
 
         if self.validate_func:
-            self.validate_func(cls, Path(getattr(module, "__file__", "")))
+            self.validate_func(Path(getattr(module, "__file__", "")), module)
 
         return cls
 
@@ -99,7 +99,7 @@ class ModuleManager(Generic[T]):
         module_path = target_dir / filename
         shutil.copy(path, module_path)
 
-        extensions = self.key_getter(cls)
+        extensions = self.key_getter(module)
 
         modules_dict[file_hash] = ModuleEntry(
             extensions=extensions,
@@ -154,6 +154,10 @@ class ModuleManager(Generic[T]):
         return "unknown"
 
     def load_module(self, module_id: str) -> Type[T]:
+        _, cls = self.load_module_and_class(module_id)
+        return cls
+
+    def load_module_and_class(self, module_id: str) -> Tuple[ModuleType, Type[T]]:
         config = get_or_create_config()
         modules_dict = self._get_config_dict(config)
 
@@ -166,7 +170,8 @@ class ModuleManager(Generic[T]):
             raise FileNotFoundError(f"Module file not found: {path}")
 
         module = self.load_module_from_path(path, module_id)
-        return self.get_class_from_module(module)
+        cls = self.get_class_from_module(module)
+        return module, cls
 
     def load_all(self) -> Dict[str, Type[T]]:
         config = get_or_create_config()
@@ -182,7 +187,7 @@ class ModuleManager(Generic[T]):
                 module = self.load_module_from_path(path, module_id)
                 cls = self.get_class_from_module(module)
 
-                for key in self.key_getter(cls):
+                for key in self.key_getter(module):
                     loaded[key] = cls
                     
             except (ImportError, InvalidModule) as e:

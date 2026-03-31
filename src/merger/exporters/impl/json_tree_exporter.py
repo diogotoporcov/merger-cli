@@ -5,10 +5,11 @@ from ...file_tree.entries import DirectoryEntry, FileEntry, FileTreeEntry
 from ...file_tree.tree import FileTree
 
 
-class JsonTreeExporter(TreeExporter):
-    NAME = "JSON_TREE"
-    FILE_EXTENSION = ".json"
+NAME = "JSON_TREE"
+FILE_EXTENSION = ".json"
 
+
+class JsonTreeExporter(TreeExporter):
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
         return json.dumps(

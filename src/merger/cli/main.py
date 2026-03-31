@@ -75,10 +75,10 @@ def main() -> None:
         check_libmagic_availability()
 
         tree = FileTree.from_path(args.input_dir, ignore_patterns)
-        exporter_cls = get_exporter_strategy(args.exporter)
-        logger.info(f"Using {exporter_cls.NAME} exporter.")
+        exporter_info = get_exporter_strategy(args.exporter)
+        logger.info(f"Using {exporter_info.name} exporter.")
 
-        output_ext = exporter_cls.FILE_EXTENSION
+        output_ext = exporter_info.file_extension
         if output_ext.startswith("."):
             output_ext = output_ext[1:]
         output_ext = output_ext.lower()
@@ -87,7 +87,7 @@ def main() -> None:
             output_path = output_path / f"merger.{output_ext}"
         
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_bytes(exporter_cls.export(tree))
+        output_path.write_bytes(exporter_info.cls.export(tree))
         logger.info(f"Saved to '{output_path.as_posix()}'.")
         
     except Exception as e:

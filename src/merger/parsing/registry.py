@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from typing import Type, Dict
 
+from types import ModuleType
 from .impl.default_parser import DefaultParser
 from .parser import Parser
 from ..exceptions import InvalidModule
@@ -12,10 +13,10 @@ _EXTENSION_REGEX_STR = r"\.[a-z0-9.]+$"
 _EXTENSION_REGEX = re.compile(_EXTENSION_REGEX_STR, re.IGNORECASE)
 
 
-def _validate_parser_cls(parser_cls: Type[Parser], path: Path) -> None:
-    extensions = getattr(parser_cls, "EXTENSIONS", None)
+def _validate_parser_module(path: Path, module: ModuleType) -> None:
+    extensions = getattr(module, "EXTENSIONS", None)
     if extensions is None:
-        raise InvalidModule(path.as_posix(), "parser does not contain EXTENSIONS attribute")
+        raise InvalidModule(path.as_posix(), "parser module does not contain EXTENSIONS attribute")
 
     if not isinstance(extensions, (set, list, tuple)):
         raise InvalidModule(path.as_posix(), "parser EXTENSIONS attribute is not a collection")
@@ -36,8 +37,8 @@ _manager = ModuleManager[Parser](
     config_key="modules",
     get_target_dir=get_or_create_parsers_dir,
     class_attr="parser_cls",
-    key_getter=lambda cls: [ext.lower() for ext in getattr(cls, "EXTENSIONS")],
-    validate_func=_validate_parser_cls,
+    key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")],
+    validate_func=_validate_parser_module,
 )
 
 install_parser = _manager.install

@@ -3,10 +3,11 @@ from ...file_tree.entries import DirectoryEntry, FileTreeEntry
 from ...file_tree.tree import FileTree
 
 
-class DirectoryTreeExporter(TreeExporter):
-    NAME = "TREE"
-    FILE_EXTENSION = ".txt"
+NAME = "TREE"
+FILE_EXTENSION = ".txt"
 
+
+class DirectoryTreeExporter(TreeExporter):
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
         def format_name(entry: FileTreeEntry) -> str:

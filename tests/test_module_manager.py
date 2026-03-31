@@ -8,19 +8,19 @@ from merger.utils.module_manager import ModuleManager
 
 
 def test_module_manager_load_invalid_path():
-    mm = ModuleManager("test", Base, "modules", lambda: Path("."), "cls", lambda c: [])
+    mm = ModuleManager("test", Base, "modules", lambda: Path("."), "cls", lambda _m: [])
     with pytest.raises(FileNotFoundError):
         mm.load_module_from_path(Path("non_existent.py"), "test")
 
 def test_module_manager_load_directory(tmp_path):
-    mm = ModuleManager("test", Base, "modules", lambda: Path("."), "cls", lambda c: [])
+    mm = ModuleManager("test", Base, "modules", lambda: Path("."), "cls", lambda _m: [])
     dir_path = tmp_path / "somedir"
     dir_path.mkdir()
     with pytest.raises(IsADirectoryError):
         mm.load_module_from_path(dir_path, "test")
 
 def test_module_manager_get_class_from_module():
-    mm = ModuleManager("test", Base, "modules", lambda: Path("."), "test_cls", lambda c: [])
+    mm = ModuleManager("test", Base, "modules", lambda: Path("."), "test_cls", lambda _m: [])
     
     # Valid module
     class ValidSub(Base): pass
@@ -57,7 +57,7 @@ def test_module_manager_install_uninstall(tmp_path, mock_config_dir):
         "modules", 
         lambda: target_dir, 
         "test_cls", 
-        lambda c: ["key"]
+        lambda _m: ["key"]
     )
     
     module_content = """
@@ -97,7 +97,7 @@ test_cls = MyModule
 
 def test_module_manager_uninstall_all(tmp_path, mock_config_dir):
     target_dir = mock_config_dir / "test_modules"
-    mm = ModuleManager("test", Base, "modules", lambda: target_dir, "test_cls", lambda c: [])
+    mm = ModuleManager("test", Base, "modules", lambda: target_dir, "test_cls", lambda _m: [])
     
     # Create two dummy modules in target_dir and register them in config
     target_dir.mkdir()
@@ -118,7 +118,7 @@ def test_module_manager_uninstall_all(tmp_path, mock_config_dir):
     assert not (target_dir / "m2.py").exists()
 
 def test_module_manager_get_module_type(tmp_path):
-    mm = ModuleManager("test_type", Base, "modules", lambda: Path("."), "test_cls", lambda c: [])
+    mm = ModuleManager("test_type", Base, "modules", lambda: Path("."), "test_cls", lambda _m: [])
     
     module_content = """
 from merger.parsing.parser import Parser

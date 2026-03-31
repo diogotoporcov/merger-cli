@@ -3,10 +3,11 @@ from .plain_text_exporter import PlainTextExporter
 from ..tree_exporter import TreeExporter
 
 
-class TreeWithPlainTextExporter(TreeExporter):
-    NAME = "TREE_PLAIN_TEXT"
-    FILE_EXTENSION = ".txt"
+NAME = "TREE_PLAIN_TEXT"
+FILE_EXTENSION = ".txt"
 
+
+class TreeWithPlainTextExporter(TreeExporter):
     @classmethod
     def export(cls, tree) -> bytes:
         separator = b"\n\n"

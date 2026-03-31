@@ -7,13 +7,15 @@ from easyocr import Reader
 from merger.parsing.parser import Parser
 
 
+EXTENSIONS: Set[str] = {
+    ".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp", ".gif"
+}
+
+
 class ImageParser(Parser):
     """
     Parser for image files that extracts text using OCR (Optical Character Recognition).
     """
-    EXTENSIONS: Set[str] = {
-        ".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp", ".gif"
-    }
     MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
     _reader: Optional[Reader] = None

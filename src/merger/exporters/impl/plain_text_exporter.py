@@ -3,10 +3,11 @@ from ...file_tree.entries import FileTreeEntry, FileEntry, DirectoryEntry
 from ...file_tree.tree import FileTree
 
 
-class PlainTextExporter(TreeExporter):
-    NAME = "PLAIN_TEXT"
-    FILE_EXTENSION = ".txt"
+NAME = "PLAIN_TEXT"
+FILE_EXTENSION = ".txt"
 
+
+class PlainTextExporter(TreeExporter):
     PREFIX: str = "<<FILE_START: %s>>\n"
     SUFFIX: str = "\n<<FILE_END: %s>>"
 

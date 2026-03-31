@@ -8,12 +8,10 @@ class Parser(ABC):
     Strategy interface for file parsing.
 
     Attributes:
-        EXTENSIONS: Must contain at least one value.
         MAX_BYTES_FOR_VALIDATION: Max number of bytes required to validate a file.
             If None, all bytes will be used for validation.
     """
 
-    EXTENSIONS: Set[str]
     MAX_BYTES_FOR_VALIDATION: Optional[int] = 1024
 
     def __new__(cls, *args, **kwargs):
