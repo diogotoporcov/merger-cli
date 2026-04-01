@@ -24,7 +24,7 @@ class ImageParser(Parser):
     def _get_reader(cls) -> Reader:
         """
         Lazily initialize the EasyOCR reader.
-        Note: On first call, this will download necessary models (~100MB+).
+        Note: On the first call, this will download the necessary models (~100MB+).
         """
         if cls._reader is None:
             cls._reader = Reader(['en', 'es', 'fr', 'de', 'pt', 'it', 'zh_sim', 'ja', 'ko', 'ru'])
