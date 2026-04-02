@@ -15,7 +15,7 @@ from rich.console import Console
 def mock_get_version():
     return "1.0.0"
 
-merger.utils.update.get_version = mock_get_version
+merger_cli.utils.update.get_version = mock_get_version
 
 # Force cache to say there is a newer version
 cache_dir = Path.home() / ".merger"
@@ -36,26 +36,26 @@ try:
             "etag": "some-etag"
         }, f)
 
-    merger.utils.update.check_for_updates()
-    merger.utils.update.finalize_update_check()
+    merger_cli.utils.update.check_for_updates()
+    merger_cli.utils.update.finalize_update_check()
 
     print("\n--- Test 2: CI Environment (Should skip) ---")
     os.environ["CI"] = "true"
     # We need to reset pending message if it was set
-    merger.utils.update._pending_message = None 
+    merger_cli.utils.update._pending_message = None 
     
-    merger.utils.update.check_for_updates()
-    merger.utils.update.finalize_update_check()
+    merger_cli.utils.update.check_for_updates()
+    merger_cli.utils.update.finalize_update_check()
     del os.environ["CI"]
 
     print("\n--- Test 3: Non-TTY (Should skip display) ---")
     # Mock is_terminal
-    original_is_terminal = merger.utils.update._update_console.is_terminal
-    merger.utils.update._update_console = Console(force_terminal=False)
+    original_is_terminal = merger_cli.utils.update._update_console.is_terminal
+    merger_cli.utils.update._update_console = Console(force_terminal=False)
     
     # Reload pending message from cache
-    merger.utils.update.check_for_updates()
-    merger.utils.update.finalize_update_check()
+    merger_cli.utils.update.check_for_updates()
+    merger_cli.utils.update.finalize_update_check()
     
 finally:
     # Restore old cache

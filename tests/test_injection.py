@@ -40,7 +40,7 @@ def test_handle_inject_requirements(mock_check_call, mock_merger_dir, tmp_path):
     req_file = tmp_path / "requirements.txt"
     req_file.write_text("pymupdf\npydantic")
     
-    handle_inject(requirements_file=req_file)
+    handle_inject(package_file=req_file)
     
     mock_check_call.assert_called_once()
     args = mock_check_call.call_args[0][0]
@@ -50,10 +50,10 @@ def test_handle_inject_requirements(mock_check_call, mock_merger_dir, tmp_path):
 @patch("subprocess.check_call")
 def test_handle_inject_requirements_not_found(mock_check_call, mock_merger_dir, caplog):
     req_file = Path("non_existent_req.txt")
-    handle_inject(requirements_file=req_file)
+    handle_inject(package_file=req_file)
     
     mock_check_call.assert_not_called()
-    assert "Requirements file not found" in caplog.text
+    assert "Package file not found" in caplog.text
 
 @patch("merger_cli.cli.utils.Confirm.ask")
 def test_handle_purge_packages(mock_confirm, mock_merger_dir):
@@ -77,6 +77,31 @@ def test_handle_purge_packages_no_confirm(mock_confirm, mock_merger_dir):
     handle_purge_packages()
     
     assert any(site_packages.iterdir())
+
+def test_cli_inject_package_file(mock_merger_dir, tmp_path):
+    import merger_cli.cli.main
+    cli_main_module = sys.modules['merger_cli.cli.main']
+    req_file = tmp_path / "requirements.txt"
+    req_file.touch()
+    
+    with patch.object(cli_main_module, 'handle_inject') as mock_handle_inject:
+        with patch.object(sys, 'argv', ['merger', '--inject-package', '--install-package-file', str(req_file)]):
+            cli_main_module.main()
+        
+        mock_handle_inject.assert_called_once_with(package_file=Path(req_file))
+
+def test_cli_inject_package_file_missing_arg(mock_merger_dir, capsys):
+    import merger_cli.cli.main
+    cli_main_module = sys.modules['merger_cli.cli.main']
+    
+    with patch.object(cli_main_module, 'handle_inject') as mock_handle_inject:
+        with patch.object(sys, 'argv', ['merger', '--inject-package']):
+            with pytest.raises(SystemExit) as e:
+                cli_main_module.main()
+            assert e.value.code == 2
+        
+    captured = capsys.readouterr()
+    assert "--inject-package requires a package file via --install-package-file" in captured.err
 
 def test_handle_purge_packages_empty(mock_merger_dir, caplog):
     site_packages = get_or_create_site_packages_dir()

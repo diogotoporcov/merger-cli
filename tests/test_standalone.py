@@ -1,7 +1,8 @@
 import subprocess
-import pytest
 from pathlib import Path
-import shutil
+
+import pytest
+
 
 @pytest.fixture
 def test_project(tmp_path):

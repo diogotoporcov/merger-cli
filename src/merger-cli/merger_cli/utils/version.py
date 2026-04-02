@@ -17,8 +17,8 @@ def get_version() -> str:
 
     try:
         # Traverse the directory hierarchy to resolve the project's root from the current module.
-        # This module is located at 'src/merger_cli/utils/version.py';
-        path = Path(__file__).resolve().parents[3] / "pyproject.toml"
+        # This module is located at 'src/merger-cli/merger_cli/utils/version.py';
+        path = Path(__file__).resolve().parents[4] / "pyproject.toml"
         if path.is_file():
             content = path.read_text(encoding="utf-8")
             match = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"', content)

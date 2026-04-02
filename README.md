@@ -129,7 +129,7 @@ Since standalone bundles are isolated, you can't use your system's `pip` to add 
 merger --inject pymupdf "pydantic>=2.0"
 
 # Inject from a requirements file
-merger --inject-package -r requirements.txt
+merger --inject-package --install-package-file requirements.txt
 
 # Purge all injected packages
 merger --purge-packages

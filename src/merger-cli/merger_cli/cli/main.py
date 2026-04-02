@@ -55,9 +55,9 @@ def main() -> None:
             return
 
         if args.inject_package:
-            if not args.requirements:
-                parser.error("--inject-package requires a requirements file via -r")
-            handle_inject(requirements_file=args.requirements)
+            if not args.install_package_file:
+                parser.error("--inject-package requires a package file via --install-package-file")
+            handle_inject(package_file=args.install_package_file)
             return
 
         if args.purge_packages:

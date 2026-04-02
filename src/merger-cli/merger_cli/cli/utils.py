@@ -155,7 +155,7 @@ def handle_uninstall(module_id: str, force: bool = False) -> None:
         logger.error(f"Could not uninstall module: {e}")
 
 
-def handle_inject(packages: list = None, requirements_file: Path = None) -> None:
+def handle_inject(packages: list = None, package_file: Path = None) -> None:
     """Installs external packages into the merger-cli site-packages directory."""
     site_packages = get_or_create_site_packages_dir()
 
@@ -174,11 +174,11 @@ def handle_inject(packages: list = None, requirements_file: Path = None) -> None
                 return
 
             cmd_args = ["install", "--target", str(site_packages), "--upgrade", "--no-input"]
-            if requirements_file:
-                if not requirements_file.exists():
-                    logger.error(f"Requirements file not found: {requirements_file}")
+            if package_file:
+                if not package_file.exists():
+                    logger.error(f"Package file not found: {package_file}")
                     return
-                cmd_args.extend(["-r", str(requirements_file)])
+                cmd_args.extend(["-r", str(package_file)])
             if packages:
                 cmd_args.extend(packages)
 
@@ -201,11 +201,11 @@ def handle_inject(packages: list = None, requirements_file: Path = None) -> None
     # We use sys.executable to ensure we use the same Python interpreter as the caller
     cmd = [sys.executable, "-m", "pip", "install", "--target", str(site_packages), "--upgrade"]
 
-    if requirements_file:
-        if not requirements_file.exists():
-            logger.error(f"Requirements file not found: {requirements_file}")
+    if package_file:
+        if not package_file.exists():
+            logger.error(f"Package file not found: {package_file}")
             return
-        cmd.extend(["-r", str(requirements_file)])
+        cmd.extend(["-r", str(package_file)])
 
     if packages:
         cmd.extend(packages)
@@ -357,7 +357,7 @@ def setup_argparse() -> RichArgumentParser:
     module_group.add_argument(
         "--inject-package",
         action="store_true",
-        help="Inject packages from a requirements file (requires -r)",
+        help="Inject packages from a requirements file (requires --install-package-file)",
     )
 
     module_group.add_argument(
@@ -379,11 +379,10 @@ def setup_argparse() -> RichArgumentParser:
     )
 
     parser.add_argument(
-        "-r",
-        "--requirements",
+        "--install-package-file",
         type=Path,
         metavar="FILE",
-        help="Path to requirements.txt for --inject-package",
+        help="Path to requirements.txt (or similar) for --inject-package",
     )
 
     parser.add_argument(
