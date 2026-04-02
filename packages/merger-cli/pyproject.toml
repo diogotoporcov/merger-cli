@@ -8,7 +8,7 @@ authors = [
 ]
 license = {file = "LICENSE"}
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 dependencies = [
     "merger-plugin-api>=1.0.0",
     "charset-normalizer>=3.0.0",
@@ -17,6 +17,7 @@ dependencies = [
     "pathspec>=0.11.0",
     "rich-argparse>=1.1.0",
     "packaging>=23.0",
+    "uv>=0.1.0",
     "python-magic-bin>=0.4.14; platform_system == 'Windows'",
     "python-magic>=0.4.15; platform_system != 'Windows'"
 ]

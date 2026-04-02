@@ -16,10 +16,7 @@ from .utils import (
     handle_plugin_list,
     handle_install,
     handle_uninstall,
-    handle_inject,
-    handle_purge_packages,
     handle_update,
-    handle_update_injected,
     setup_argparse
 )
 from ..utils.ignore_templates import list_ignore_templates
@@ -50,26 +47,8 @@ def main() -> None:
             handle_uninstall(args.uninstall, force=args.yes)
             return
 
-        if args.inject:
-            handle_inject(packages=args.inject)
-            return
-
-        if args.inject_package:
-            if not args.install_package_file:
-                parser.error("--inject-package requires a package file via --install-package-file")
-            handle_inject(package_file=args.install_package_file)
-            return
-
-        if args.purge_packages:
-            handle_purge_packages(force=args.yes)
-            return
-
         if args.update:
             handle_update()
-            return
-
-        if args.update_injected:
-            handle_update_injected()
             return
 
         if args.list:

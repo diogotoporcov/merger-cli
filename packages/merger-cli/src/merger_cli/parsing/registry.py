@@ -34,7 +34,6 @@ def _validate_parser_plugin(path: Path, module: ModuleType) -> None:
 _manager = PluginManager[Parser](
     plugin_type_name="parser",
     base_class=Parser,
-    config_key="parsers",
     get_target_dir=get_or_create_parsers_dir,
     class_attr="parser_cls",
     key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")],
@@ -57,9 +56,9 @@ def get_parser(filename: str) -> Type[Parser]:
 
     # Map extension to plugin_id
     ext_to_id: Dict[str, str] = {}
-    for plugin_id, meta in parsers_meta.items():
+    for meta in parsers_meta:
         for ext in meta.extensions:
-            ext_to_id[ext.lower()] = plugin_id
+            ext_to_id[ext.lower()] = meta.id
 
     # Try longest extensions first (e.g., .tar.gz before .gz)
     sorted_extensions = sorted(ext_to_id.keys(), key=len, reverse=True)

@@ -19,7 +19,6 @@ def _validate_exporter_plugin(path: Path, module: ModuleType) -> None:
 _manager = PluginManager[TreeExporter](
     plugin_type_name="exporter",
     base_class=TreeExporter,
-    config_key="exporters",
     get_target_dir=get_or_create_exporters_dir,
     class_attr="exporter_cls",
     key_getter=lambda module: [getattr(module, "NAME").upper()],

@@ -4,6 +4,7 @@ from typing import Union, Optional, Set, Type
 import pymupdf
 from merger_plugin_api import Parser
 
+REQUIREMENTS = ["pymupdf"]
 
 EXTENSIONS: Set[str] = {".pdf"}
 

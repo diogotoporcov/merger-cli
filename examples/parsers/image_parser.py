@@ -6,6 +6,7 @@ from PIL import Image
 from easyocr import Reader
 from merger_plugin_api import Parser
 
+REQUIREMENTS = ["Pillow", "easyocr"]
 
 EXTENSIONS: Set[str] = {
     ".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp", ".gif"

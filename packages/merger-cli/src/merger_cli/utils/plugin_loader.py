@@ -1,11 +1,13 @@
 import importlib.util
 import shutil
+import ast
 from inspect import isclass
 from pathlib import Path
 from types import ModuleType
 from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic, Tuple
 
-from .config import get_or_create_config, save_config, PluginEntry
+from .db import DatabaseManager, PluginRecord
+from .uv import uv_install, uv_purge, get_or_create_site_packages_dir
 from .hash import hash_from_file
 from ..exceptions import InvalidPlugin, PluginAlreadyInstalled
 from ..logging import logger
@@ -18,7 +20,6 @@ class PluginManager(Generic[T]):
         self,
         plugin_type_name: str,
         base_class: Type[T],
-        config_key: str,
         get_target_dir: Callable[[], Path],
         class_attr: str,
         key_getter: Callable[[ModuleType], List[str]],
@@ -26,14 +27,45 @@ class PluginManager(Generic[T]):
     ):
         self.plugin_type_name = plugin_type_name
         self.base_class = base_class
-        self.config_key = config_key
         self.get_target_dir = get_target_dir
         self.class_attr = class_attr
         self.key_getter = key_getter
         self.validate_func = validate_func
+        self._db: Optional[DatabaseManager] = None
 
-    def _get_config_dict(self, config) -> Dict[str, PluginEntry]:
-        return getattr(config, self.config_key)
+    @property
+    def db(self) -> DatabaseManager:
+        if self._db is None:
+            self._db = DatabaseManager()
+        return self._db
+
+    @staticmethod
+    def extract_requirements(path: Path) -> List[str]:
+        """Extracts the REQUIREMENTS list from a Python file using AST without executing it."""
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in tree.body:
+                # Handle simple assignment: REQUIREMENTS = [...]
+                if (isinstance(node, ast.Assign) and 
+                    len(node.targets) == 1 and 
+                    isinstance(node.targets[0], ast.Name) and 
+                    node.targets[0].id == "REQUIREMENTS"):
+                    
+                    if isinstance(node.value, ast.List):
+                        return [elt.value for elt in node.value.elts if isinstance(elt, ast.Constant)]
+
+                # Handle annotated assignment: REQUIREMENTS: List[str] = [...]
+                if (isinstance(node, ast.AnnAssign) and 
+                    isinstance(node.target, ast.Name) and 
+                    node.target.id == "REQUIREMENTS" and 
+                    node.value is not None):
+                    
+                    if isinstance(node.value, ast.List):
+                        return [elt.value for elt in node.value.elts if isinstance(elt, ast.Constant)]
+            return []
+        except Exception as e:
+            logger.warning(f"Could not parse REQUIREMENTS from {path}: {e}")
+            return []
 
     @staticmethod
     def load_plugin_from_path(path: Path, name: str) -> ModuleType:
@@ -82,17 +114,21 @@ class PluginManager(Generic[T]):
         if not path.exists():
             raise FileNotFoundError(f"Path does not exist: {path}")
 
-        config = get_or_create_config()
-        plugins_dict = self._get_config_dict(config)
-
         file_hash = hash_from_file(path, 8)
         filename = f"{file_hash}.py"
 
-        if file_hash in plugins_dict:
+        if self.db.get_plugin(file_hash):
             raise PluginAlreadyInstalled(path.resolve().as_posix())
 
+        # Handle dependencies BEFORE loading the module
+        requirements = self.extract_requirements(path)
+        if requirements:
+            logger.info(f"Installing dependencies for {self.plugin_type_name} plugin: {', '.join(requirements)}")
+            site_packages = get_or_create_site_packages_dir()
+            uv_install(requirements, target=site_packages)
+
         module = self.load_plugin_from_path(path, file_hash)
-        cls = self.get_class_from_plugin(module)
+        _ = self.get_class_from_plugin(module) # Validation
 
         target_dir = self.get_target_dir()
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -101,41 +137,45 @@ class PluginManager(Generic[T]):
 
         extensions = self.key_getter(module)
 
-        plugins_dict[file_hash] = PluginEntry(
-            extensions=extensions,
-            path=plugin_path.as_posix(),
-            original_name=path.name,
+        self.db.add_plugin(
+            PluginRecord(
+                id=file_hash,
+                name=path.stem,
+                type=self.plugin_type_name,
+                path=plugin_path.as_posix(),
+                original_name=path.name,
+                extensions=extensions
+            )
         )
 
-        save_config(config)
+        for dep in requirements:
+            self.db.add_plugin_dependency(file_hash, dep)
 
     def uninstall(self, plugin_id: str) -> None:
-        config = get_or_create_config()
-        plugins_dict = self._get_config_dict(config)
-
         if plugin_id == "*":
-            for entry in list(plugins_dict.values()):
-                path = Path(entry.path)
-                if path.exists() and path.is_file():
-                    path.unlink()
-            plugins_dict.clear()
-            save_config(config)
+            plugins = self.db.list_plugins(self.plugin_type_name)
+            for p in plugins:
+                self._uninstall_single(p.id)
             return
 
-        if plugin_id not in plugins_dict:
+        self._uninstall_single(plugin_id)
+
+    def _uninstall_single(self, plugin_id: str) -> None:
+        plugin = self.db.get_plugin(plugin_id)
+        if not plugin:
             raise KeyError(f"{self.plugin_type_name.capitalize()} plugin not installed: {plugin_id}")
 
-        entry = plugins_dict[plugin_id]
-        path = Path(entry.path)
+        path = Path(plugin.path)
         if path.exists() and path.is_file():
             path.unlink()
 
-        del plugins_dict[plugin_id]
-        save_config(config)
+        unused_deps = self.db.remove_plugin(plugin_id)
+        if unused_deps:
+            site_packages = get_or_create_site_packages_dir()
+            uv_purge(unused_deps, target=site_packages)
 
-    def list(self) -> Dict[str, PluginEntry]:
-        config = get_or_create_config()
-        return self._get_config_dict(config).copy()
+    def list(self) -> List[PluginRecord]:
+        return self.db.list_plugins(self.plugin_type_name)
 
     def get_plugin_type(self, path: Path) -> str:
         """Detect the plugin type by checking its class inheritance."""
@@ -158,13 +198,11 @@ class PluginManager(Generic[T]):
         return cls
 
     def load_plugin_and_class(self, plugin_id: str) -> Tuple[ModuleType, Type[T]]:
-        config = get_or_create_config()
-        plugins_dict = self._get_config_dict(config)
+        entry = self.db.get_plugin(plugin_id)
 
-        if plugin_id not in plugins_dict:
+        if not entry:
             raise KeyError(f"{self.plugin_type_name.capitalize()} plugin not installed: {plugin_id}")
 
-        entry = plugins_dict[plugin_id]
         path = Path(entry.path)
         if not path.exists() or not path.is_file():
             raise FileNotFoundError(f"Plugin file not found: {path}")
@@ -174,11 +212,11 @@ class PluginManager(Generic[T]):
         return module, cls
 
     def load_all(self) -> Dict[str, Type[T]]:
-        config = get_or_create_config()
-        plugins_dict = self._get_config_dict(config)
+        plugins = self.db.list_plugins(self.plugin_type_name)
         loaded: Dict[str, Type[T]] = {}
 
-        for plugin_id, entry in plugins_dict.items():
+        for entry in plugins:
+            plugin_id = entry.id
             path = Path(entry.path)
             if not path.exists() or not path.is_file():
                 continue
@@ -201,10 +239,10 @@ class PluginManager(Generic[T]):
         return loaded
 
     def validate_all(self) -> None:
-        config = get_or_create_config()
-        plugins_dict = self._get_config_dict(config)
+        plugins = self.db.list_plugins(self.plugin_type_name)
 
-        for plugin_id, entry in plugins_dict.items():
+        for entry in plugins:
+            plugin_id = entry.id
             path = Path(entry.path)
             if not path.exists() or not path.is_file():
                 raise FileNotFoundError(f"{self.plugin_type_name.capitalize()} plugin file not found: {path}")

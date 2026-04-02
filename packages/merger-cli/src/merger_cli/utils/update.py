@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from .version import get_version
+from .config import get_merger_dir
 from ..logging.constants import LOG_COLORS
 from rich.console import Console
 from rich.panel import Panel
@@ -149,7 +150,7 @@ def check_for_updates():
     if current_version == "unknown":
         return
 
-    cache_dir = Path.home() / ".merger-cli"
+    cache_dir = get_merger_dir()
     cache_file = cache_dir / "update_check.json"
     
     now = time.time()

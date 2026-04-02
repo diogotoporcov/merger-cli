@@ -5,22 +5,23 @@ import pytest
 from merger_cli.exceptions import InvalidPlugin, PluginAlreadyInstalled
 from merger_plugin_api import Parser as Base
 from merger_cli.utils.plugin_loader import PluginManager
+from merger_cli.utils.db import PluginRecord
 
 
 def test_plugin_loader_load_invalid_path():
-    mm = PluginManager("test", Base, "parsers", lambda: Path("."), "cls", lambda _m: [])
+    mm = PluginManager("test", Base, lambda: Path("."), "cls", lambda _m: [])
     with pytest.raises(FileNotFoundError):
         mm.load_plugin_from_path(Path("non_existent.py"), "test")
 
 def test_plugin_loader_load_directory(tmp_path):
-    mm = PluginManager("test", Base, "parsers", lambda: Path("."), "cls", lambda _m: [])
+    mm = PluginManager("test", Base, lambda: Path("."), "cls", lambda _m: [])
     dir_path = tmp_path / "somedir"
     dir_path.mkdir()
     with pytest.raises(IsADirectoryError):
         mm.load_plugin_from_path(dir_path, "test")
 
 def test_plugin_loader_get_class_from_plugin():
-    mm = PluginManager("test", Base, "parsers", lambda: Path("."), "test_cls", lambda _m: [])
+    mm = PluginManager("test", Base, lambda: Path("."), "test_cls", lambda _m: [])
     
     # Valid Plugin
     class ValidSub(Base): pass
@@ -49,12 +50,15 @@ def mock_config_dir(tmp_path, monkeypatch):
     monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
-def test_plugin_loader_install_uninstall(tmp_path, mock_config_dir):
+def test_plugin_loader_install_uninstall(tmp_path, mock_config_dir, monkeypatch):
+    # Mock uv_install and uv_purge
+    monkeypatch.setattr("merger_cli.utils.plugin_loader.uv_install", lambda *args, **kwargs: None)
+    monkeypatch.setattr("merger_cli.utils.plugin_loader.uv_purge", lambda *args, **kwargs: None)
+
     target_dir = mock_config_dir / "test_Plugins"
     mm = PluginManager(
         "test", 
         Base, 
-        "parsers", 
         lambda: target_dir, 
         "test_cls", 
         lambda _m: ["key"]
@@ -64,6 +68,7 @@ def test_plugin_loader_install_uninstall(tmp_path, mock_config_dir):
 from merger_plugin_api import Parser
 class MyPlugin(Parser):
     EXTENSIONS = [".test"]
+    REQUIREMENTS = ["pkgA"]
 test_cls = MyPlugin
 """
     plugin_path = tmp_path / "my_mod.py"
@@ -75,8 +80,8 @@ test_cls = MyPlugin
     # Verify installation
     installed = mm.list()
     assert len(installed) == 1
-    plugin_id = list(installed.keys())[0]
-    entry = installed[plugin_id]
+    plugin_id = installed[0].id
+    entry = installed[0]
     assert entry.original_name == "my_mod.py"
     assert Path(entry.path).exists()
     assert target_dir.exists()
@@ -95,30 +100,32 @@ test_cls = MyPlugin
     assert len(mm.list()) == 0
     assert not Path(entry.path).exists()
 
-def test_plugin_loader_uninstall_all(tmp_path, mock_config_dir):
+def test_plugin_loader_uninstall_all(tmp_path, mock_config_dir, monkeypatch):
+    # Mock uv_purge
+    monkeypatch.setattr("merger_cli.utils.plugin_loader.uv_purge", lambda *args, **kwargs: None)
+
     target_dir = mock_config_dir / "test_Plugins"
-    mm = PluginManager("test", Base, "parsers", lambda: target_dir, "test_cls", lambda _m: [])
+    mm = PluginManager("test", Base, lambda: target_dir, "test_cls", lambda _m: [])
     
-    # Create two dummy Plugins in target_dir and register them in config
+    # Create two dummy Plugins in target_dir and register them in DB
     target_dir.mkdir()
-    (target_dir / "m1.py").touch()
-    (target_dir / "m2.py").touch()
+    p1_path = target_dir / "m1.py"
+    p2_path = target_dir / "m2.py"
+    p1_path.touch()
+    p2_path.touch()
     
-    from merger_cli.utils.config import get_or_create_config, save_config, PluginEntry
-    config = get_or_create_config()
-    config.parsers["id1"] = PluginEntry(extensions=[], path=(target_dir / "m1.py").as_posix(), original_name="m1.py")
-    config.parsers["id2"] = PluginEntry(extensions=[], path=(target_dir / "m2.py").as_posix(), original_name="m2.py")
-    save_config(config)
+    mm.db.add_plugin(PluginRecord(id="id1", name="m1", type="test", path=str(p1_path), original_name="m1.py", extensions=[]))
+    mm.db.add_plugin(PluginRecord(id="id2", name="m2", type="test", path=str(p2_path), original_name="m2.py", extensions=[]))
     
     assert len(mm.list()) == 2
     
     mm.uninstall("*")
     assert len(mm.list()) == 0
-    assert not (target_dir / "m1.py").exists()
-    assert not (target_dir / "m2.py").exists()
+    assert not p1_path.exists()
+    assert not p2_path.exists()
 
 def test_plugin_loader_get_plugin_type(tmp_path):
-    mm = PluginManager("test_type", Base, "parsers", lambda: Path("."), "test_cls", lambda _m: [])
+    mm = PluginManager("test_type", Base, lambda: Path("."), "test_cls", lambda _m: [])
     
     Plugin_content = """
 from merger_plugin_api import Parser

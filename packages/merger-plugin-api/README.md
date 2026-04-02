@@ -26,6 +26,9 @@ from merger_plugin_api import Parser
 
 # The list of file extensions this parser supports (e.g., {".pdf"})
 EXTENSIONS: Set[str] = {".mock"}
+# Optional: List of Python packages required for this plugin (e.g., ["pymupdf"])
+# These will be automatically installed via 'uv' when the plugin is installed.
+REQUIREMENTS: List[str] = ["requests"]
 
 class MockParser(Parser):
     # Optional: Max number of bytes required to validate a file (default: 1024)
@@ -71,6 +74,8 @@ from merger_plugin_api import TreeExporter, FileTree
 NAME = "MY_EXPORTER"
 # The extension of the output file
 FILE_EXTENSION = ".txt"
+# Optional: List of Python packages required for this plugin
+REQUIREMENTS: List[str] = ["xmltodict"]
 
 class MyExporter(TreeExporter):
     @classmethod

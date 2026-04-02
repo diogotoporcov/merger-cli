@@ -23,7 +23,7 @@ _EXPORTER_CACHE: Dict[str, ExporterInfo] = {}
 def _get_all_exporter_names() -> List[str]:
     names = list(_STATIC_EXPORTERS.keys())
     exporters_meta = list_exporters()
-    for meta in exporters_meta.values():
+    for meta in exporters_meta:
         for name in meta.extensions:
             names.append(name.upper())
 
@@ -47,8 +47,9 @@ def get_exporter_strategy(strategy_name: str) -> ExporterInfo:
 
     # Loading from plugins
     exporters_meta = list_exporters()
-    for plugin_id, meta in exporters_meta.items():
+    for meta in exporters_meta:
         if strategy_name_upper in [name.upper() for name in meta.extensions]:
+            plugin_id = meta.id
             module, cls = load_exporter_and_plugin(plugin_id)
             info = ExporterInfo(
                 cls=cls,

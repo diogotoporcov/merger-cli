@@ -11,11 +11,7 @@ datas += collect_data_files('python_magic_bin')
 datas += copy_metadata('merger-cli')
 datas += copy_metadata('merger-plugin-api')
 
-hiddenimports = ['merger_cli.cli.main', 'pydantic.deprecated.decorator', 'pip', 'setuptools', 'wheel', 'pkg_resources', 'merger_plugin_api']
-hiddenimports += collect_submodules('pip')
-hiddenimports += collect_submodules('setuptools')
-hiddenimports += collect_submodules('wheel')
-hiddenimports += collect_submodules('pkg_resources')
+hiddenimports = ['merger_cli.cli.main', 'pydantic.deprecated.decorator', 'uv', 'sqlite3', 'pkg_resources', 'merger_plugin_api']
 
 block_cipher = None
 

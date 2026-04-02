@@ -23,7 +23,6 @@ from ..parsing.registry import (
 )
 from ..utils.ignore_templates import read_ignore_template, list_ignore_templates
 from ..utils.version import get_version
-from ..utils.config import get_or_create_site_packages_dir
 
 console = Console()
 
@@ -73,8 +72,8 @@ def handle_plugin_list() -> None:
         table.add_column("Original Name", style="magenta")
         table.add_column("Extensions", style="green")
 
-        for plugin_id, meta in parsers.items():
-            table.add_row(plugin_id, meta.original_name, ", ".join(meta.extensions))
+        for p in parsers:
+            table.add_row(p.id, p.original_name, ", ".join(p.extensions))
 
         console.print(table)
 
@@ -87,9 +86,9 @@ def handle_plugin_list() -> None:
         table.add_column("Original Name", style="magenta")
         table.add_column("Extension", style="green")
 
-        for exporter_id, meta in exporters.items():
-            ext = meta.extensions[0] if meta.extensions else "unknown"
-            table.add_row(exporter_id, meta.original_name, ext)
+        for p in exporters:
+            ext = p.extensions[0] if p.extensions else "unknown"
+            table.add_row(p.id, p.original_name, ext)
 
         console.print(table)
 
@@ -155,143 +154,11 @@ def handle_uninstall(plugin_id: str, force: bool = False) -> None:
         logger.error(f"Could not uninstall plugin: {e}")
 
 
-def handle_inject(packages: list = None, package_file: Path = None) -> None:
-    """Installs external packages into the merger-cli site-packages directory."""
-    site_packages = get_or_create_site_packages_dir()
-
-    if getattr(sys, "frozen", False):
-        try:
-            # For bundled apps, we try to use the internal pip
-            # Using pip._internal.cli.main is generally more robust for modern pip
-            try:
-                from pip._internal.cli.main import main as pip_main
-            except ImportError:
-                import pip
-                pip_main = getattr(pip, "main", None)
-
-            if not pip_main:
-                logger.error("Could not find internal 'pip' module in the bundle.")
-                return
-
-            cmd_args = ["install", "--target", str(site_packages), "--upgrade", "--no-input"]
-            if package_file:
-                if not package_file.exists():
-                    logger.error(f"Package file not found: {package_file}")
-                    return
-                cmd_args.extend(["-r", str(package_file)])
-            if packages:
-                cmd_args.extend(packages)
-
-            logger.info(f"Injecting packages into '{site_packages.as_posix()}' using internal pip...")
-            
-            # We must ensure pip doesn't try to use a non-existent python executable
-            # for subprocesses if possible, or we just hope it works for simple packages.
-            # Some pip versions/operations require a real python.exe.
-            exit_code = pip_main(cmd_args)
-            if exit_code == 0:
-                logger.info("Successfully injected packages.")
-            else:
-                logger.error(f"Pip injection failed with exit code {exit_code}.")
-            return
-
-        except Exception as e:
-            logger.error(f"Failed to inject packages using internal pip: {e}")
-            return
-
-    # We use sys.executable to ensure we use the same Python interpreter as the caller
-    cmd = [sys.executable, "-m", "pip", "install", "--target", str(site_packages), "--upgrade"]
-
-    if package_file:
-        if not package_file.exists():
-            logger.error(f"Package file not found: {package_file}")
-            return
-        cmd.extend(["-r", str(package_file)])
-
-    if packages:
-        cmd.extend(packages)
-
-    logger.info(f"Injecting packages into '{site_packages.as_posix()}'...")
-    try:
-        # Note: --no-input is used for non-interactive professional installs
-        subprocess.check_call(cmd + ["--no-input"])
-        logger.info("Successfully injected packages.")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to inject packages. Ensure 'pip' is available in the bundle. Error: {e}")
-
-
-def handle_purge_packages(force: bool = False) -> None:
-    """Removes all injected packages while keeping the core merger dependencies intact."""
-    site_packages = get_or_create_site_packages_dir()
-    if not site_packages.exists() or not any(site_packages.iterdir()):
-        logger.info("No injected packages found to purge.")
-        return
-
-    if not force and not Confirm.ask(f"Are you sure you want to purge [bold red]ALL[/bold red] injected packages in '{site_packages.as_posix()}'?"):
-        logger.info("Purge cancelled.")
-        return
-
-    try:
-        shutil.rmtree(site_packages)
-        site_packages.mkdir(parents=True, exist_ok=True)
-        logger.info("All injected packages have been purged.")
-    except Exception as e:
-        logger.error(f"Could not purge packages: {e}")
-
-
 def handle_update() -> None:
     """Updates the merger-cli tool itself."""
-    if getattr(sys, "frozen", False):
-        logger.info("You are using a standalone binary version of merger-cli.")
-        logger.info("To update, please download the latest release from: ")
-        logger.info("[bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]")
-        return
-
-    # Since merger-cli is not on PyPI anymore, we recommend using the installers or checking GitHub.
     logger.info("merger-cli is now distributed via standalone installers and GitHub releases.")
-    logger.info("If you installed this version from source, please update by pulling from the repository.")
-    logger.info("For the most professional experience, consider using the official installers from: ")
+    logger.info("To update, please download the latest release from: ")
     logger.info("[bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]")
-
-
-def handle_update_injected() -> None:
-    """Updates all injected packages in the site-packages directory."""
-    site_packages = get_or_create_site_packages_dir()
-    if not site_packages.exists() or not any(site_packages.iterdir()):
-        logger.info("No injected packages found to update.")
-        return
-
-    # Find all packages in the site-packages directory using importlib.metadata if available
-    packages = []
-    try:
-        from importlib.metadata import distributions
-        dists = list(distributions(path=[str(site_packages)]))
-        for dist in dists:
-            # metadata['Name'] or dist.name (depending on version)
-            name = getattr(dist, 'name', None)
-            if not name and hasattr(dist, 'metadata'):
-                name = dist.metadata.get('Name')
-
-            if name and name.lower() not in ("merger-cli", "merger-cli-api"):
-                packages.append(name)
-    except Exception as e:
-        logger.debug(f"Metadata lookup failed: {e}. Falling back to directory scan.")
-        # Fallback to simple directory listing
-        for path in site_packages.iterdir():
-            if path.is_dir() and path.suffix == ".dist-info":
-                # name-version.dist-info
-                name = path.stem.split("-")[0]
-                if name and name.lower() not in ("merger-cli", "merger-cli-api"):
-                    packages.append(name)
-
-    # Deduplicate
-    packages = list(set(packages))
-
-    if not packages:
-        logger.info("Could not identify any injected packages to update.")
-        return
-
-    logger.info(f"Updating {len(packages)} injected package(s): {', '.join(packages)}...")
-    handle_inject(packages=packages)
 
 
 def setup_argparse() -> RichArgumentParser:
@@ -348,41 +215,9 @@ def setup_argparse() -> RichArgumentParser:
     )
 
     plugin_group.add_argument(
-        "--inject",
-        nargs="+",
-        metavar="PACKAGE",
-        help="Inject Python packages (e.g. 'pymupdf' or 'pydantic>=2.0'). Wrap requirements with quotes if they contain special characters.",
-    )
-
-    plugin_group.add_argument(
-        "--inject-package",
-        action="store_true",
-        help="Inject packages from a requirements file (requires --install-package-file)",
-    )
-
-    plugin_group.add_argument(
-        "--purge-packages",
-        action="store_true",
-        help="Remove all injected packages and their dependencies",
-    )
-
-    plugin_group.add_argument(
         "--update",
         action="store_true",
         help="Update merger-cli and its dependencies to the latest version",
-    )
-
-    plugin_group.add_argument(
-        "--update-injected",
-        action="store_true",
-        help="Update all injected packages to their latest versions",
-    )
-
-    parser.add_argument(
-        "--install-package-file",
-        type=Path,
-        metavar="FILE",
-        help="Path to requirements.txt (or similar) for --inject-package",
     )
 
     parser.add_argument(
