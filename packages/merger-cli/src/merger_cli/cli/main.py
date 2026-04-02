@@ -17,6 +17,7 @@ from .utils import (
     handle_install,
     handle_uninstall,
     handle_update,
+    handle_plugin_update,
     setup_argparse
 )
 from ..utils.ignore_templates import list_ignore_templates
@@ -39,19 +40,23 @@ def main() -> None:
             handle_ignore_creation(args.create_ignore)
             return
 
-        if args.install:
-            handle_install(args.install)
+        if args.install_plugin:
+            handle_install(args.install_plugin)
             return
 
-        if args.uninstall:
-            handle_uninstall(args.uninstall, force=args.yes)
+        if args.uninstall_plugin:
+            handle_uninstall(args.uninstall_plugin, force=args.yes)
             return
 
         if args.update:
             handle_update()
             return
 
-        if args.list:
+        if args.update_plugins:
+            handle_plugin_update(force=args.yes)
+            return
+
+        if args.list_plugins:
             handle_plugin_list()
             return
 

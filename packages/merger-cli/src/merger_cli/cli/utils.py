@@ -161,6 +161,57 @@ def handle_update() -> None:
     logger.info("[bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]")
 
 
+def handle_plugin_update(force: bool = False) -> None:
+    """Updates all installed custom plugins and their dependencies."""
+    from ..utils.db import DatabaseManager
+    from ..utils.plugin_loader import PluginManager
+    from ..utils.uv import uv_install
+    from ..utils.config import get_or_create_site_packages_dir
+
+    db = DatabaseManager()
+    plugins = db.list_plugins()
+    if not plugins:
+        logger.info("No custom plugins installed to update.")
+        return
+
+    all_requirements = set()
+    for plugin in plugins:
+        reqs = PluginManager.extract_requirements(Path(plugin.path))
+        for req in reqs:
+            all_requirements.add(req)
+            db.add_plugin_dependency(plugin.id, req)
+
+    if not all_requirements:
+        logger.info("No dependencies found for any installed plugins.")
+    else:
+        logger.info(f"Updating dependencies: {', '.join(all_requirements)}")
+        site_packages = get_or_create_site_packages_dir()
+        try:
+            uv_install(list(all_requirements), target=site_packages)
+            logger.info("Plugin dependencies updated successfully.")
+        except Exception as e:
+            logger.error(f"Failed to update plugin dependencies: {e}")
+
+    # Core dependencies update confirmation
+    if not force:
+        if not Confirm.ask("Do you wish to update core dependencies too?"):
+            return
+    
+    logger.info("Updating core dependencies...")
+    try:
+        # Since we are in a bundled environment, we update them in site-packages as well if they were installed there
+        # or we just try to pip install --upgrade the core ones. 
+        # Actually core dependencies are bundled, so we can't easily update them in the frozen binary.
+        # But if the user is running from source, it will work.
+        # For professional CLI, we focus on what we CAN update.
+        core_deps = ["pydantic", "rich", "pathspec", "packaging", "rich-argparse"]
+        site_packages = get_or_create_site_packages_dir()
+        uv_install(core_deps, target=site_packages)
+        logger.info("Core dependencies updated in plugin environment.")
+    except Exception as e:
+        logger.error(f"Failed to update core dependencies: {e}")
+
+
 def setup_argparse() -> RichArgumentParser:
     parser = RichArgumentParser(
         prog="merger",
@@ -196,20 +247,20 @@ def setup_argparse() -> RichArgumentParser:
     plugin_group = parser.add_mutually_exclusive_group()
 
     plugin_group.add_argument(
-        "-i", "--install",
+        "-i", "--install-plugin",
         type=Path,
         metavar="PATH",
         help="Install a custom plugin (parser or exporter)",
     )
 
     plugin_group.add_argument(
-        "-u", "--uninstall",
+        "-u", "--uninstall-plugin",
         metavar="PLUGIN_ID",
         help="Uninstall a plugin by ID (use '*' to remove all plugins including parsers and exporters)",
     )
 
     plugin_group.add_argument(
-        "-l", "--list",
+        "-l", "--list-plugins",
         action="store_true",
         help="List all installed plugins",
     )
@@ -218,6 +269,12 @@ def setup_argparse() -> RichArgumentParser:
         "--update",
         action="store_true",
         help="Update merger-cli and its dependencies to the latest version",
+    )
+
+    plugin_group.add_argument(
+        "--update-plugins",
+        action="store_true",
+        help="Update all installed custom plugins and their dependencies",
     )
 
     parser.add_argument(
