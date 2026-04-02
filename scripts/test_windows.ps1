@@ -23,8 +23,8 @@ if (-not (Test-Path $merger_exe)) {
 }
 
 # 4. Run tests with pytest
-Write-Host "Running standalone tests with pytest..."
-pytest tests/test_standalone.py --merger-bin=$merger_exe
+Write-Host "Running standalone tests with pytest..." -ForegroundColor Cyan
+pytest packages/merger-cli/tests/test_standalone.py --merger-bin=$merger_exe
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Standalone tests failed!" -ForegroundColor Red
     exit $LASTEXITCODE

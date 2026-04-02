@@ -10,7 +10,7 @@ To run these tests manually:
 1.  **Build the binary**: `pyinstaller merger.spec`
 2.  **Run pytest**:
     ```bash
-    pytest tests/test_standalone.py --merger-bin=dist/merger-cli
+    pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli
     ```
 
 The suite covers:
@@ -31,7 +31,7 @@ Helper scripts are provided to handle the build process and then invoke the `pyt
 These scripts:
 1. Clean previous build artifacts.
 2. Build the standalone binary with PyInstaller.
-3. **Execute `pytest tests/test_standalone.py --merger-bin=...`**.
+3. **Execute `pytest packages/merger-cli/tests/test_standalone.py --merger-bin=...`**.
 4. (Optional) Build installers (e.g., Inno Setup on Windows, `.deb` on Linux).
 
 ## Linux Artifacts (via Docker)

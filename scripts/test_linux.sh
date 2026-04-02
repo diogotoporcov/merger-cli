@@ -20,7 +20,7 @@ fi
 
 # 4. Run tests with pytest
 echo "Running standalone tests with pytest..."
-pytest tests/test_standalone.py --merger-bin=dist/merger-cli
+pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli
 
 # 5. Build and verify .deb package (if nfpm is available)
 if command -v nfpm >/dev/null 2>&1; then
@@ -34,11 +34,11 @@ if command -v nfpm >/dev/null 2>&1; then
     if [ "$(id -u)" -eq 0 ]; then
         echo "Running as root, testing .deb installation..."
         apt-get update && apt-get install -y ./dist/merger-cli.deb
-        pytest tests/test_standalone.py --merger-bin=/usr/bin/merger
+        pytest packages/merger-cli/tests/test_standalone.py --merger-bin=/usr/bin/merger
     elif command -v sudo >/dev/null 2>&1; then
         echo "sudo available, testing .deb installation..."
         sudo apt-get update && sudo apt-get install -y ./dist/merger-cli.deb
-        pytest tests/test_standalone.py --merger-bin=/usr/bin/merger
+        pytest packages/merger-cli/tests/test_standalone.py --merger-bin=/usr/bin/merger
     fi
 else
     echo "nfpm not found. Skipping .deb package build."

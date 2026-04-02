@@ -20,6 +20,6 @@ fi
 
 # 4. Run tests with pytest
 echo "Running standalone tests with pytest..."
-pytest tests/test_standalone.py --merger-bin=dist/merger-cli
+pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli
 
 echo "--- macOS tests completed successfully ---"
