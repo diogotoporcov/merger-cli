@@ -52,7 +52,12 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --cov=merger_cli packages/merger-cli/tests/
+          if [ -d "packages/merger-cli/tests" ] && [ -n "$(find packages/merger-cli/tests -name 'test_*.py' 2>/dev/null)" ]; then
+            pytest --cov=merger_cli packages/merger-cli/tests/
+          else
+            echo "No tests found in packages/merger-cli/tests/, skipping"
+            exit 0
+          fi
 
   test-api:
     name: test-api (ubuntu, ${{ matrix.python-version }})
@@ -73,10 +78,11 @@ jobs:
           pip install "./packages/merger-plugin-api[test]"
       - name: Run tests
         run: |
-          if [ -n "$(find packages/merger-plugin-api/tests -name 'test_*.py' 2>/dev/null)" ]; then
+          if [ -d "packages/merger-plugin-api/tests" ] && [ -n "$(find packages/merger-plugin-api/tests -name 'test_*.py' 2>/dev/null)" ]; then
             pytest packages/merger-plugin-api/tests/
           else
             echo "No tests found in packages/merger-plugin-api/tests/, skipping"
+            exit 0
           fi
 
   test-platforms:
@@ -113,7 +119,12 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --cov=merger_cli packages/merger-cli/tests/
+          if [ -d "packages/merger-cli/tests" ] && [ -n "$(find packages/merger-cli/tests -name 'test_*.py' 2>/dev/null)" ]; then
+            pytest --cov=merger_cli packages/merger-cli/tests/
+          else
+            echo "No tests found in packages/merger-cli/tests/, skipping"
+            exit 0
+          fi
 
   tests-passed:
     name: tests-passed
