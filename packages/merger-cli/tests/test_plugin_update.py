@@ -25,10 +25,10 @@ def test_handle_plugin_update_no_plugins(capsys, mock_config_dir):
     with patch.object(sys, 'argv', ['merger', '--update-plugins']):
         with patch("merger_cli.cli.utils.Confirm.ask", return_value=False):
             main()
-    
+
     captured = capsys.readouterr()
     all_out = captured.out + captured.err
-    assert "No custom plugins installed to update." in all_out
+    assert "No custom plugins installed to check for dependency updates." in all_out
 
 def test_handle_plugin_update_with_plugins(tmp_path, monkeypatch, capsys, mock_config_dir):
     # Setup a dummy plugin in DB

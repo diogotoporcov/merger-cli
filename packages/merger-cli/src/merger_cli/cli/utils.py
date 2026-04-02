@@ -162,7 +162,7 @@ def handle_update() -> None:
 
 
 def handle_plugin_update(force: bool = False) -> None:
-    """Updates all installed custom plugins and their dependencies."""
+    """Updates the dependencies for all installed custom plugins."""
     from ..utils.db import DatabaseManager
     from ..utils.plugin_loader import PluginManager
     from ..utils.uv import uv_install
@@ -171,7 +171,7 @@ def handle_plugin_update(force: bool = False) -> None:
     db = DatabaseManager()
     plugins = db.list_plugins()
     if not plugins:
-        logger.info("No custom plugins installed to update.")
+        logger.info("No custom plugins installed to check for dependency updates.")
         return
 
     all_requirements = set()
@@ -274,7 +274,7 @@ def setup_argparse() -> RichArgumentParser:
     plugin_group.add_argument(
         "--update-plugins",
         action="store_true",
-        help="Update all installed custom plugins and their dependencies",
+        help="Update all custom plugin dependencies",
     )
 
     parser.add_argument(

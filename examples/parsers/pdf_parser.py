@@ -4,8 +4,10 @@ from typing import Union, Optional, Set, Type
 import pymupdf
 from merger_plugin_api import Parser
 
+# Optional: List of Python packages required for this plugin
 REQUIREMENTS = ["pymupdf"]
 
+# File extensions this parser supports
 EXTENSIONS: Set[str] = {".pdf"}
 
 
