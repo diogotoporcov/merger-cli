@@ -10,7 +10,7 @@ license = {file = "LICENSE"}
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "merger-api>=1.0.0",
+    "merger-cli-api>=1.0.0",
     "charset-normalizer>=3.0.0",
     "pydantic>=2.0.0",
     "rich>=13.0.0",

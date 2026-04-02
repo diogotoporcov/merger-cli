@@ -10,7 +10,7 @@ This package provides:
 ## Installation
 
 ```bash
-pip install merger-api
+pip install merger-cli-api
 ```
 
 ## Core Interfaces

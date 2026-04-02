@@ -5,6 +5,7 @@ include pyproject.toml
 recursive-include src/merger-cli/merger_cli *.py
 include src/merger-cli/merger_cli/resources/ignore_files/*.ignore
 recursive-exclude src/merger-api *
+recursive-exclude src/merger-cli-api *
 recursive-exclude packaging *
 recursive-exclude scripts *
 recursive-exclude tests *

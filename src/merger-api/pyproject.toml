@@ -1,5 +1,5 @@
 [project]
-name = "merger-api"
+name = "merger-cli-api"
 version = "1.0.0"
 description = "Interfaces and data models for the Merger CLI tool."
 keywords = ["merger", "file system", "api", "interfaces", "typing"]

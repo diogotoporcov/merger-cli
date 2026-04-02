@@ -271,7 +271,7 @@ def handle_update_injected() -> None:
             if not name and hasattr(dist, 'metadata'):
                 name = dist.metadata.get('Name')
 
-            if name and name.lower() != "merger-cli":  # Should not happen, but for safety
+            if name and name.lower() not in ("merger-cli", "merger-cli-api"):
                 packages.append(name)
     except Exception as e:
         logger.debug(f"Metadata lookup failed: {e}. Falling back to directory scan.")

@@ -9,7 +9,7 @@ ROOT = os.path.abspath(os.path.join(SPEC_DIR, ".."))
 datas = [(os.path.join(ROOT, 'src/merger-cli/merger_cli/resources'), 'merger_cli/resources')]
 datas += collect_data_files('python_magic_bin')
 datas += copy_metadata('merger-cli')
-datas += copy_metadata('merger-api')
+datas += copy_metadata('merger-cli-api')
 
 hiddenimports = ['merger_cli.cli.main', 'pydantic.deprecated.decorator', 'pip', 'setuptools', 'wheel', 'pkg_resources', 'merger_api']
 hiddenimports += collect_submodules('pip')

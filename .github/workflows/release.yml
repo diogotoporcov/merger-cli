@@ -64,9 +64,11 @@ jobs:
 
       - name: (Linux) Create .deb Package
         if: matrix.os == 'ubuntu-latest'
-        uses: goreleaser/nfpm-action@v2
-        with:
-          args: package --config packaging/nfpm.yaml --target dist/merger-cli.deb
+        run: |
+          NFPM_VERSION="2.41.3"
+          curl -L "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz" -o nfpm.tar.gz
+          tar -xzf nfpm.tar.gz nfpm
+          ./nfpm package --config packaging/nfpm.yaml --target dist/merger-cli.deb
         env:
           VERSION: ${{ env.PKG_VERSION }}
 

@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/merger-api.svg?color=orange)](https://pypi.org/project/merger-api/)
+[![PyPI](https://img.shields.io/pypi/v/merger-cli-api.svg?color=orange)](https://pypi.org/project/merger-cli-api/)
 
 Merger is a **command-line utility** for developers that **scans a directory**, **filters files** using customizable ignore patterns, and **merges all readable content** into a **single output file**, suitable both for **human reading** and for **use by AI models**.
 It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** (e.g., `.pdf`) and **custom exporters** (e.g., `.xml`, `.md`).
@@ -19,7 +19,7 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
     *   **Windows**: Automatically downloaded
     *   **Linux**: `sudo apt-get update && sudo apt-get install libmagic1`  
     *   **macOS**: `brew install libmagic`
-4.  **Install the API**: `pip install merger-api` (Note: The CLI is now distributed as standalone binaries or installed from source).
+4.  **Install the API**: `pip install merger-cli-api` (Note: The CLI is now distributed as standalone binaries or installed from source).
 5.  **Verify the installation**: `merger --version`
 6.  **Navigate to your project folder**: `cd path/to/your/project`
 7.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (See [Custom Ignore Templates](#custom-ignore-templates))
@@ -228,9 +228,9 @@ Supported templates: `DEFAULT`, `PYTHON`, `JAVASCRIPT`, `TYPESCRIPT`, `JAVA`, `G
 
 ---
 
-### Custom Modules and `merger-api`
+### Custom Modules and `merger-cli-api`
 
-If you want to extend `merger-cli` with custom parsers or exporters, you should use the `merger-api` package. This package provides the necessary interfaces and data models without the full overhead of the CLI tool.
+If you want to extend `merger-cli` with custom parsers or exporters, you should use the `merger-cli-api` package. This package provides the necessary interfaces and data models without the full overhead of the CLI tool.
 
 For detailed documentation and examples on how to create custom modules, please refer to the [Merger API Documentation](src/merger-api/README.md).
 
