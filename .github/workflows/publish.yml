@@ -43,10 +43,19 @@ jobs:
 
   publish-skipped:
     needs: [test, version-check]
-    if: ${{ needs.test.result == 'success' && needs.version-check.outputs.should_publish != 'true' }}
+    if: ${{ always() && needs.test.result == 'success' && needs.version-check.result == 'success' && needs.version-check.outputs.should_publish != 'true' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Explain why publish was skipped
         run: |
-          echo "Skipping PyPI publish because version ${{ needs.version-check.outputs.version }} of ${{ needs.version-check.outputs.package_name }} already exists on PyPI."
+          echo "Project: ${{ needs.version-check.outputs.package_name }}"
+          echo "Version: ${{ needs.version-check.outputs.version }}"
+          echo "PyPI Exists: ${{ needs.version-check.outputs.pypi_exists }}"
+          echo "GitHub Exists: ${{ needs.version-check.outputs.github_exists }}"
+          echo ""
+          if [ "${{ needs.version-check.outputs.pypi_exists }}" = "true" ]; then
+            echo "Publish skipped because this version is already available on PyPI."
+          else
+            echo "Publish skipped (check version-check logs for details)."
+          fi

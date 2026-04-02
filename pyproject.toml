@@ -1,7 +1,7 @@
 [project]
 name = "merger-cli"
 version = "3.6.0"
-description = "Merger is a tool that scans a directory, filters files using customizable patterns, and merges readable content into a single output file."
+description = "Merger is a command-line utility for developers that scans a directory, filters files using customizable ignore patterns, and merges all readable content into a single structured output file."
 keywords = ["merger", "file system", "concatenation", "automation", "development"]
 authors = [
     { name = "Diogo Toporcov", email = "diogotoporcov@gmail.com" }
@@ -31,6 +31,9 @@ test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0"
 ]
+dev = [
+    "pyinstaller>=6.0.0"
+]
 
 
 [project.urls]
@@ -53,4 +56,3 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 merger = "merger.cli:main"
-merger-cli = "merger.cli:main"

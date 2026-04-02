@@ -40,7 +40,7 @@ def get_latest_version(package_name: str = "merger-cli", etag: Optional[str] = N
         if etag:
             req.add_header("If-None-Match", etag)
 
-        with urllib.request.urlopen(req, timeout=5) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:
             if response.getcode() == 200:
                 data = json.loads(response.read().decode())
                 latest = data.get("info", {}).get("version")
@@ -55,6 +55,28 @@ def get_latest_version(package_name: str = "merger-cli", etag: Optional[str] = N
         pass
 
     return None, None, False
+
+def get_latest_github_version(repo_url: str = "https://github.com/diogotoporcov/merger-cli") -> Optional[str]:
+    """Fetch the latest release version from GitHub."""
+    parts = repo_url.rstrip("/").split("/")
+    if len(parts) < 2:
+        return None
+    owner, repo = parts[-2], parts[-1]
+    url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
+    try:
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", f"merger-cli/{get_version()} (update-check)")
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.getcode() == 200:
+                data = json.loads(response.read().decode())
+                tag = data.get("tag_name", "")
+                # Remove 'v' prefix if present
+                if tag.startswith("v"):
+                    tag = tag[1:]
+                return tag
+    except Exception:
+        pass
+    return None
 
 def is_newer_version(latest: str, current: str) -> bool:
     """Compare two version strings with support for pre-releases and post-releases."""
@@ -162,9 +184,19 @@ def check_for_updates():
     _update_thread.start()
 
 def _update_worker(current_version, cache_file, cache_dir, cached_version, cached_etag):
-    """Background worker to check PyPI for updates."""
+    """Background worker to check for updates."""
+    # Check PyPI (default for pip installs)
     latest_version, new_etag, changed = get_latest_version(etag=cached_etag)
     
+    # If using a frozen (standalone) binary, also check GitHub Releases
+    is_frozen = getattr(sys, "frozen", False)
+    if is_frozen:
+        github_latest = get_latest_github_version()
+        if github_latest and (not latest_version or is_newer_version(github_latest, latest_version)):
+            latest_version = github_latest
+            changed = True
+            new_etag = None # ETag doesn't apply to GitHub check this way
+
     if not changed:
         latest_version = cached_version
         new_etag = cached_etag
@@ -190,9 +222,15 @@ def _update_worker(current_version, cache_file, cache_dir, cached_version, cache
 def set_pending_update_message(current: str, latest: str):
     """Prepare the update message to be displayed later."""
     global _pending_message
+    
+    if getattr(sys, "frozen", False):
+        update_cmd = "Download new version: [bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]"
+    else:
+        update_cmd = f"Update with: [bold magenta]pip install --upgrade merger-cli[/bold magenta] or [bold magenta]pipx upgrade merger-cli[/bold magenta]"
+
     _pending_message = (
         f"New merger version available: [bold white]{current}[/bold white] -> [bold green]{latest}[/bold green]\n"
-        f"Update with: [bold magenta]pip install --upgrade merger-cli[/bold magenta] or [bold magenta]pipx upgrade merger-cli[/bold magenta]"
+        f"{update_cmd}"
     )
 
 def finalize_update_check():

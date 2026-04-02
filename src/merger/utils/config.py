@@ -48,6 +48,13 @@ def get_or_create_exporters_dir() -> Path:
     return merger_dir
 
 
+def get_or_create_site_packages_dir() -> Path:
+    """Returns the path to the directory where injected packages are installed."""
+    merger_dir = get_merger_dir() / "site-packages"
+    merger_dir.mkdir(parents=True, exist_ok=True)
+    return merger_dir
+
+
 def get_config_path() -> Path:
     return get_merger_dir() / "config.json"
 

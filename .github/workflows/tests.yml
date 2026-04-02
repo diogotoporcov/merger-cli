@@ -90,8 +90,52 @@ jobs:
     needs:
       - test-ubuntu
       - test-platforms
+      - test-standalone
     if: ${{ success() }}
 
     steps:
       - name: All tests passed
         run: echo "All tests passed"
+
+  test-standalone:
+    name: build & test standalone (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [test-ubuntu, test-platforms]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[test,dev]"
+
+      - name: (Linux) Install libmagic & nfpm
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update && sudo apt-get install -y libmagic1
+          echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt-get update && sudo apt-get install -y nfpm
+
+      - name: (macOS) Install libmagic
+        if: matrix.os == 'macos-latest'
+        run: brew install libmagic
+
+      - name: Build and verify standalone
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            bash scripts/test_linux.sh
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            bash scripts/test_macos.sh
+          else
+            powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1
+          fi

@@ -1,4 +1,5 @@
 import logging
+import sys
 from pathlib import Path
 
 from ..exporters.factory import get_exporter_strategy
@@ -8,17 +9,27 @@ from ..file_tree.tree import FileTree
 from ..logging import setup_logger, logger
 from ..utils.files import read_merger_ignore_file
 from ..utils.update import check_for_updates, finalize_update_check
+from ..utils.config import get_or_create_site_packages_dir
 from .utils import (
     handle_ignore_creation,
     handle_module_list,
     handle_install,
     handle_uninstall,
+    handle_inject,
+    handle_purge_packages,
+    handle_update,
+    handle_update_injected,
     setup_argparse
 )
 from ..utils.ignore_templates import list_ignore_templates
 
 
 def main() -> None:
+    # 1. Initialize injected packages path as the highest priority
+    injected_path = get_or_create_site_packages_dir()
+    if injected_path.exists() and str(injected_path) not in sys.path:
+        sys.path.insert(0, str(injected_path))
+
     parser = setup_argparse()
     args = parser.parse_args()
     setup_logger(level=getattr(logging, args.log_level.upper()))
@@ -35,7 +46,29 @@ def main() -> None:
             return
 
         if args.uninstall:
-            handle_uninstall(args.uninstall)
+            handle_uninstall(args.uninstall, force=args.yes)
+            return
+
+        if args.inject:
+            handle_inject(packages=args.inject)
+            return
+
+        if args.inject_package:
+            if not args.requirements:
+                parser.error("--inject-package requires a requirements file via -r")
+            handle_inject(requirements_file=args.requirements)
+            return
+
+        if args.purge_packages:
+            handle_purge_packages(force=args.yes)
+            return
+
+        if args.update:
+            handle_update()
+            return
+
+        if args.update_injected:
+            handle_update_injected()
             return
 
         if args.list:

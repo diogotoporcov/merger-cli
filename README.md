@@ -90,9 +90,9 @@ All Python package requirements are listed in [`requirements.txt`](requirements.
     merger --version
     ```
 
-### Global Installation
+### Global Installation (Python-based)
 
-If you want the CLI to be available globally, it is recommended to use **pipx**:
+If you have Python installed and want the CLI to be available globally, it is recommended to use **pipx**:
 
 1. **Install pipx** (if you don't have it):
    * **Windows**: `python -m pip install --user pipx`
@@ -120,6 +120,53 @@ If you want the CLI to be available globally, it is recommended to use **pipx**:
 > ```bash
 > pipx inject merger-cli pymupdf
 > ```
+
+### Standalone Installation (No Python Required)
+
+For a professional, zero-dependency experience, you can download standalone installers from the [GitHub Releases](https://github.com/diogotoporcov/merger-cli/releases) page. These bundles include their own Python interpreter and `pip`.
+
+#### Windows
+Download and run the `merger-cli-windows-installer.exe`. This will automatically add `merger` to your system PATH.
+
+#### Linux (.deb / Ubuntu / Debian)
+Download the `merger-cli.deb` and install it:
+```bash
+sudo apt install ./merger-cli.deb
+```
+This will also install the necessary `libmagic1` dependency.
+
+#### macOS (Homebrew)
+You can install via Homebrew by tapping the official repository (if available) or using the released tarball:
+```bash
+brew install diogotoporcov/merger-cli/merger-cli
+```
+Alternatively, download `merger-cli-macos.tar.gz`, extract it, and move the `merger` binary to your `/usr/local/bin`.
+
+#### Managing Dependencies in Standalone Mode
+Since standalone bundles are isolated, you can't use your system's `pip` to add dependencies. Use the built-in injection commands instead:
+```bash
+# Inject specific packages
+merger --inject pymupdf "pydantic>=2.0"
+
+# Inject from a requirements file
+merger --inject-package -r requirements.txt
+
+# Purge all injected packages
+merger --purge-packages
+
+# Update injected packages to the latest versions
+merger --update-injected
+```
+
+### Updating merger-cli
+
+To update the tool itself to the latest version:
+```bash
+merger --update
+```
+This command is context-aware:
+- **Pip/Pipx**: Automatically executes the correct upgrade command.
+- **Standalone**: Directs you to the GitHub releases page for the latest installer.
 
 ---
 
