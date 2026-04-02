@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 from pathlib import Path
-from merger.parsing.impl.default_parser import DefaultParser
-from merger.utils.magic import check_libmagic_availability
+from merger_cli.parsing.impl.default_parser import DefaultParser
+from merger_cli.utils.magic import check_libmagic_availability
 
 class TestMagicUtils(unittest.TestCase):
     def test_magic_missing_error(self):

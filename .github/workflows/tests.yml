@@ -35,8 +35,7 @@ jobs:
           cache: pip
           cache-dependency-path: |
             pyproject.toml
-            setup.cfg
-            setup.py
+            src/merger-api/pyproject.toml
 
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libmagic1
@@ -44,10 +43,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install ./src/merger-api
           pip install ".[test]"
 
       - name: Run tests
-        run: pytest --cov=merger tests/
+        run: pytest --cov=merger_cli tests/
 
   test-platforms:
     name: test (${{ matrix.os }}, ${{ matrix.python-version }})
@@ -69,8 +69,7 @@ jobs:
           cache: pip
           cache-dependency-path: |
             pyproject.toml
-            setup.cfg
-            setup.py
+            src/merger-api/pyproject.toml
 
       - name: Install system dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -79,10 +78,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install ./src/merger-api
           pip install ".[test]"
 
       - name: Run tests
-        run: pytest --cov=merger tests/
+        run: pytest --cov=merger_cli tests/
 
   tests-passed:
     name: tests-passed
@@ -116,6 +116,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install ./src/merger-api
           pip install ".[test,dev]"
 
       - name: (Linux) Install libmagic & nfpm

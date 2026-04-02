@@ -4,12 +4,12 @@ from pathlib import Path
 import sys
 import shutil
 
-from merger.cli.utils import handle_inject, handle_purge_packages
-from merger.utils.config import get_or_create_site_packages_dir
+from merger_cli.cli.utils import handle_inject, handle_purge_packages
+from merger_cli.utils.config import get_or_create_site_packages_dir
 
 @pytest.fixture
 def mock_merger_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
 def test_get_or_create_site_packages_dir(mock_merger_dir):
@@ -55,7 +55,7 @@ def test_handle_inject_requirements_not_found(mock_check_call, mock_merger_dir, 
     mock_check_call.assert_not_called()
     assert "Requirements file not found" in caplog.text
 
-@patch("merger.cli.utils.Confirm.ask")
+@patch("merger_cli.cli.utils.Confirm.ask")
 def test_handle_purge_packages(mock_confirm, mock_merger_dir):
     site_packages = get_or_create_site_packages_dir()
     site_packages.mkdir(parents=True, exist_ok=True)
@@ -67,7 +67,7 @@ def test_handle_purge_packages(mock_confirm, mock_merger_dir):
     assert site_packages.exists()
     assert not any(site_packages.iterdir())
 
-@patch("merger.cli.utils.Confirm.ask")
+@patch("merger_cli.cli.utils.Confirm.ask")
 def test_handle_purge_packages_no_confirm(mock_confirm, mock_merger_dir):
     site_packages = get_or_create_site_packages_dir()
     site_packages.mkdir(parents=True, exist_ok=True)

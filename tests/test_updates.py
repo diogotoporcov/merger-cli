@@ -4,16 +4,16 @@ from pathlib import Path
 import sys
 import os
 
-from merger.cli.utils import handle_update, handle_update_injected
-from merger.utils.config import get_or_create_site_packages_dir
+from merger_cli.cli.utils import handle_update, handle_update_injected
+from merger_cli.utils.config import get_or_create_site_packages_dir
 
 @pytest.fixture
 def mock_merger_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
-@patch("subprocess.check_call")
-def test_handle_update_pip(mock_check_call, mock_merger_dir):
+@patch("merger_cli.cli.utils.logger.info")
+def test_handle_update_pip(mock_logger_info, mock_merger_dir):
     # Ensure sys.frozen is False
     if hasattr(sys, "frozen"):
         delattr(sys, "frozen")
@@ -21,14 +21,10 @@ def test_handle_update_pip(mock_check_call, mock_merger_dir):
     with patch("os.environ", {}):
         handle_update()
         
-        mock_check_call.assert_called_once()
-        args = mock_check_call.call_args[0][0]
-        assert "pip" in args
-        assert "install" in args
-        assert "--upgrade" in args
-        assert "merger-cli" in args
+        messages = [call.args[0] for call in mock_logger_info.call_args_list]
+        assert any("distributed via standalone installers" in msg for msg in messages)
 
-@patch("merger.cli.utils.logger.info")
+@patch("merger_cli.cli.utils.logger.info")
 def test_handle_update_frozen(mock_logger_info, mock_merger_dir):
     with patch("sys.frozen", True, create=True):
         handle_update()
@@ -36,17 +32,18 @@ def test_handle_update_frozen(mock_logger_info, mock_merger_dir):
         messages = [call.args[0] for call in mock_logger_info.call_args_list]
         assert any("standalone binary" in msg for msg in messages)
 
-@patch("subprocess.run")
-def test_handle_update_pipx(mock_run, mock_merger_dir):
+@patch("merger_cli.cli.utils.logger.info")
+def test_handle_update_pipx(mock_logger_info, mock_merger_dir):
     if hasattr(sys, "frozen"):
         delattr(sys, "frozen")
         
     with patch("os.environ", {"PIPX_BIN_DIR": "/path/to/pipx"}):
         handle_update()
-        mock_run.assert_called_once()
-        assert mock_run.call_args[0][0] == ["pipx", "upgrade", "merger-cli"]
+        
+        messages = [call.args[0] for call in mock_logger_info.call_args_list]
+        assert any("distributed via standalone installers" in msg for msg in messages)
 
-@patch("merger.cli.utils.handle_inject")
+@patch("merger_cli.cli.utils.handle_inject")
 @patch("importlib.metadata.distributions")
 def test_handle_update_injected_metadata(mock_distributions, mock_handle_inject, mock_merger_dir):
     site_packages = get_or_create_site_packages_dir()
@@ -61,7 +58,7 @@ def test_handle_update_injected_metadata(mock_distributions, mock_handle_inject,
     
     mock_handle_inject.assert_called_once_with(packages=["package1"])
 
-@patch("merger.cli.utils.handle_inject")
+@patch("merger_cli.cli.utils.handle_inject")
 def test_handle_update_injected_fallback(mock_handle_inject, mock_merger_dir):
     site_packages = get_or_create_site_packages_dir()
     site_packages.mkdir(parents=True, exist_ok=True)

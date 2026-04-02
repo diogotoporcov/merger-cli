@@ -1,0 +1,13 @@
+name: "merger-cli"
+arch: "amd64"
+platform: "linux"
+version: "${VERSION}"
+section: "default"
+priority: "extra"
+maintainer: "Diogo Toporcov <diogotoporcov@gmail.com>"
+description: "Merger is a command-line utility for developers that scans a directory, filters files using customizable ignore patterns, and merges all readable content into a single structured output file."
+depends:
+  - libmagic1
+contents:
+  - src: ../dist/merger-cli
+    dst: /usr/bin/merger

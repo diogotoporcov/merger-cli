@@ -36,7 +36,10 @@ jobs:
           pip install build
 
       - name: Build distribution
-        run: python -m build
+        run: |
+          cd src/merger-api
+          python -m build
+          mv dist ../../dist
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

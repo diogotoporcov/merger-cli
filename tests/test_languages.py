@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 from unittest.mock import patch
-from merger.utils.patterns import matches_pattern
-from merger.utils.ignore_templates import read_ignore_template
+from merger_cli.utils.patterns import matches_pattern
+from merger_cli.utils.ignore_templates import read_ignore_template
 
 def check_template(template_name, path_to_test, should_match=True):
     body = read_ignore_template(template_name)

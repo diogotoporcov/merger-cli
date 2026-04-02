@@ -2,18 +2,18 @@ import sys
 from unittest.mock import patch
 
 import pytest
-from merger.cli import main
+from merger_cli.cli import main
 
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
 def test_unified_module_system(tmp_path, mock_config_dir, capsys):
     # 1. Create a mock parser module
     parser_content = """
-from merger.parsing.parser import Parser
+from merger_api import Parser
 EXTENSIONS = [".mock"]
 class MockParser(Parser):
     @classmethod
@@ -27,7 +27,7 @@ parser_cls = MockParser
 
     # 2. Create a mock exporter module
     exporter_content = """
-from merger.exporters.tree_exporter import TreeExporter
+from merger_api import TreeExporter
 NAME = "MOCK"
 FILE_EXTENSION = ".mock"
 class MockExporter(TreeExporter):
@@ -64,7 +64,7 @@ exporter_cls = MockExporter
     # 6. Uninstall parser using unified -u
     # We need to find the ID. ModuleManager uses hash of file.
     # But since we only have one, we can just check if "mock_parser.py" disappeared from list.
-    from merger.parsing.registry import list_parsers
+    from merger_cli.parsing.registry import list_parsers
     parsers = list_parsers()
     parser_id = list(parsers.keys())[0]
 
@@ -82,14 +82,14 @@ exporter_cls = MockExporter
     assert "mock_exporter.py" in captured.out
 
     # 8. Uninstall all (cancelled)
-    with patch("merger.cli.utils.Confirm.ask", return_value=False), \
+    with patch("merger_cli.cli.utils.Confirm.ask", return_value=False), \
          patch.object(sys, 'argv', ['merger', '-u', '*']):
         main()
     captured = capsys.readouterr()
     assert "Uninstallation cancelled" in captured.out or "Uninstallation cancelled" in captured.err
 
     # 9. Uninstall all (confirmed)
-    with patch("merger.cli.utils.Confirm.ask", return_value=True), \
+    with patch("merger_cli.cli.utils.Confirm.ask", return_value=True), \
          patch.object(sys, 'argv', ['merger', '-u', '*']):
         main()
     captured = capsys.readouterr()

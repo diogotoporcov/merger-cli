@@ -4,7 +4,7 @@ import io
 
 from PIL import Image
 from easyocr import Reader
-from merger.parsing.parser import Parser
+from merger import Parser
 
 
 EXTENSIONS: Set[str] = {

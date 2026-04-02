@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/merger-cli.svg?color=orange)](https://pypi.org/project/merger-cli/)
+[![PyPI](https://img.shields.io/pypi/v/merger-api.svg?color=orange)](https://pypi.org/project/merger-api/)
 
 Merger is a **command-line utility** for developers that **scans a directory**, **filters files** using customizable ignore patterns, and **merges all readable content** into a **single output file**, suitable both for **human reading** and for **use by AI models**.
 It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** (e.g., `.pdf`) and **custom exporters** (e.g., `.xml`, `.md`).
@@ -19,7 +19,7 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
     *   **Windows**: Automatically downloaded
     *   **Linux**: `sudo apt-get update && sudo apt-get install libmagic1`  
     *   **macOS**: `brew install libmagic`
-4.  **Install the package**: `pip install merger-cli`
+4.  **Install the API**: `pip install merger-api` (Note: The CLI is now distributed as standalone binaries or installed from source).
 5.  **Verify the installation**: `merger --version`
 6.  **Navigate to your project folder**: `cd path/to/your/project`
 7.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (See [Custom Ignore Templates](#custom-ignore-templates))
@@ -69,20 +69,22 @@ All Python package requirements are listed in [`requirements.txt`](requirements.
 
 ## Installation
 
-### Virtual Environment (Recommended)
+### Installation from Source (Recommended for Developers)
 
-1. Create a virtual environment:
+1. Clone the repository:
     ```bash
-    python3 -m venv .venv
+    git clone https://github.com/diogotoporcov/merger-cli.git
+    cd merger-cli
     ```
 
-2. Activate the virtual environment:
-   * **Windows**: `.venv\Scripts\activate`
-   * **Linux/macOS**: `source .venv/bin/activate`
-
-3. Install the package:
+2. Install the API first:
     ```bash
-    pip install merger-cli
+    pip install -e ./src/merger-api
+    ```
+
+3. Install the CLI in editable mode:
+    ```bash
+    pip install -e .
     ```
 
 4. Verify the installation:
@@ -90,36 +92,14 @@ All Python package requirements are listed in [`requirements.txt`](requirements.
     merger --version
     ```
 
-### Global Installation (Python-based)
+### Global Installation
 
-If you have Python installed and want the CLI to be available globally, it is recommended to use **pipx**:
+For a professional, zero-dependency experience, it is recommended to use the **Standalone Installers**.
 
-1. **Install pipx** (if you don't have it):
-   * **Windows**: `python -m pip install --user pipx`
-   * **Linux**: `sudo apt update && sudo apt install pipx`
-   * **macOS**: `brew install pipx`
-
-2. **Install merger-cli**:
-   ```bash
-   pipx install merger-cli
-   ```
-
-3. **Ensure path**:
-   ```bash
-   pipx ensurepath
-   ```
-
-4. **Restart your terminal**.
-
-5. **Verify the installation**:
-   ```bash
-   merger --version
-   ```
-
-> **Note:** If you want to use custom modules that require external libraries (e.g., `pymupdf`), you need to inject them into the `merger-cli` environment:
-> ```bash
-> pipx inject merger-cli pymupdf
-> ```
+If you still prefer to use **pipx** from source:
+```bash
+pipx install .
+```
 
 ### Standalone Installation (No Python Required)
 
@@ -248,13 +228,11 @@ Supported templates: `DEFAULT`, `PYTHON`, `JAVASCRIPT`, `TYPESCRIPT`, `JAVA`, `G
 
 ---
 
-### Custom modules (Parsers & Exporters)
+### Custom Modules and `merger-api`
 
-List all installed custom modules (parsers and exporters):
+If you want to extend `merger-cli` with custom parsers or exporters, you should use the `merger-api` package. This package provides the necessary interfaces and data models without the full overhead of the CLI tool.
 
-```bash
-merger --list
-```
+For detailed documentation and examples on how to create custom modules, please refer to the [Merger API Documentation](src/merger-api/README.md).
 
 ---
 
@@ -359,122 +337,25 @@ Merger writes **one output file** to the output directory, named `merger.<extens
 
 Merger uses **parser strategies** to support parsing of non-text file formats (e.g., PDF, images with OCR, etc.).
 
----
+For instructions on how to implement your own parser, see the [Merger API Documentation](src/merger-api/README.md).
 
-### Parser Abstract Class
+### Managing Custom Modules
 
-All parsers must inherit from `Parser`:
-
-```python
-from merger.parsing.parser import Parser
-```
-
-Required structure:
-
-*   `EXTENSIONS: Set[str]` (e.g., `{".pdf"}`) - **Module-level variable**
-*   `parser_cls: Type[Parser]` - **Module-level variable** referencing the parser class
-*   `MAX_BYTES_FOR_VALIDATION: Optional[int]` - Class attribute
-*   `validate(cls, file_chunk_bytes, file_path) -> bool` - Class method
-*   `parse(cls, file_bytes, file_path) -> str` - Class method
-
----
-
-### Managing Custom Parsers
-
-To install a module:
-
+To install a custom module (parser or exporter):
 ```bash
-merger --install path/to/parser.py
+merger --install path/to/module.py
 ```
 
-To uninstall a module (`*` removes all modules including parsers and exporters):
-
-```bash
-merger --uninstall <module_id>
-```
-
-To list installed modules:
-
+To list all installed modules:
 ```bash
 merger --list
 ```
 
----
-
-### Custom Parser Example (PDF)
-
-```python
-from pathlib import Path
-from typing import Union, Optional, Set, Type
-
-import pymupdf
-from merger.parsing.parser import Parser
-
-
-EXTENSIONS: Set[str] = {".pdf"}
-
-
-class PdfParser(Parser):
-    MAX_BYTES_FOR_VALIDATION: Optional[int] = None
-
-    @classmethod
-    def validate(
-        cls,
-        file_chunk_bytes: Union[bytes, bytearray],
-        file_path: Path
-    ) -> bool:
-        """
-        Validate that the given file represents a readable PDF document.
-
-        Args:
-            file_chunk_bytes: Binary contents of the file being validated, sufficient to perform validation.
-            file_path: Path of the file being validated.
-
-        Returns:
-            bool: True if the file is a readable PDF, False otherwise.
-        """
-        try:
-            with pymupdf.open(stream=file_chunk_bytes) as doc:
-                _ = doc[0]
-            return True
-
-        except Exception:
-            return False
-
-    @classmethod
-    def parse(
-        cls,
-        file_bytes: Union[bytes, bytearray],
-        file_path: Path,
-    ) -> str:
-        """
-        Extracts and concatenates text from all pages of a PDF file.
-
-        Args:
-            file_bytes: Binary contents of the file being parsed.
-            file_path: Path of the file being parsed.
-
-        Returns:
-            str: Full text content of the PDF.
-        """
-        texts = []
-        with pymupdf.open(stream=file_bytes) as doc:
-            for page in doc:
-                text = page.get_text()
-                if text:
-                    text = text.replace("\n\n", "")
-                    texts.append(text)
-
-        full_text = " ".join(texts)
-        return full_text
-
-
-parser_cls: Type[Parser] = PdfParser
+To uninstall a module by its ID:
+```bash
+merger --uninstall <module_id>
 ```
-
-Available at [`examples/custom_parsers/pdf_parser.py`](examples/custom_parsers/pdf_parser.py).
-
-> The module **must expose a `parser_cls` object** referencing the parser class.
+*(Use `*` to uninstall all custom modules)*
 
 ---
 
@@ -482,124 +363,7 @@ Available at [`examples/custom_parsers/pdf_parser.py`](examples/custom_parsers/p
 
 You can also extend Merger with **custom export strategies** to output data in any format (e.g., XML, Markdown, CSV).
 
----
-
-### Exporter Abstract Class
-
-All exporters must inherit from `TreeExporter`:
-
-```python
-from merger.exporters.tree_exporter import TreeExporter
-```
-
-Required structure:
-
-*   `NAME: str` (The name used in `--exporter`) - **Module-level variable**
-*   `FILE_EXTENSION: str` (The output file extension) - **Module-level variable**
-*   `exporter_cls: Type[TreeExporter]` - **Module-level variable** referencing the exporter class
-*   `export(cls, tree: FileTree) -> bytes` - Class method
-
----
-
-### Managing Custom Exporters
-
-To install an exporter:
-
-```bash
-merger --install path/to/exporter.py
-```
-
-To uninstall an exporter (`*` removes all modules including parsers and exporters):
-
-```bash
-merger --uninstall <exporter_id>
-```
-
-To list installed exporters:
-
-```bash
-merger --list
-```
-
----
-
-### Custom Exporter Example (XML)
-
-```python
-import xml.etree.ElementTree as ET
-
-from merger.file_tree.entries import FileEntry, DirectoryEntry, FileTreeEntry
-from merger.exporters.tree_exporter import TreeExporter
-from merger.file_tree.tree import FileTree
-
-
-NAME = "XML"
-FILE_EXTENSION = ".xml"
-
-
-class XmlExporter(TreeExporter):
-    """
-    A custom exporter that generates an XML representation of the file tree.
-    """
-
-    @classmethod
-    def export(cls, tree: FileTree) -> bytes:
-        root = ET.Element("filetree")
-        cls._to_xml(tree.root, root)
-
-        cls._indent(root)
-
-        return ET.tostring(root, encoding="utf-8", xml_declaration=True)
-
-    @classmethod
-    def _to_xml(cls, entry: FileTreeEntry, parent: ET.Element):
-        if isinstance(entry, FileEntry):
-            file_el = ET.SubElement(parent, "file", {
-                "name": entry.name,
-                "path": entry.path.as_posix()
-            })
-            content_el = ET.SubElement(file_el, "content")
-            content_el.text = entry.content
-
-        elif isinstance(entry, DirectoryEntry):
-            dir_el = ET.SubElement(parent, "directory", {
-                "name": entry.name,
-                "path": entry.path.as_posix()
-            })
-            for child in sorted(entry.children.values(), key=lambda e: e.name.lower()):
-                cls._to_xml(child, dir_el)
-
-    @classmethod
-    def _indent(cls, elem: ET.Element, level: int = 0):
-        """
-        Recursive function to indent XML elements while preserving text content.
-        """
-        i = "\n" + level * "  "
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = i + "  "
-
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-
-            for child in elem:
-                cls._indent(child, level + 1)
-
-            if len(elem) > 0:
-                last_child = elem[-1]
-                if not last_child.tail or not last_child.tail.strip():
-                    last_child.tail = i
-
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
-
-exporter_cls = XmlExporter
-```
-
-Available at [`examples/custom_exporters/xml_exporter.py`](examples/custom_exporters/xml_exporter.py).
-
-> The module **must expose an `exporter_cls` object** referencing the exporter class.
+For instructions on how to implement your own exporter, see the [Merger API Documentation](src/merger-api/README.md).
 
 ---
 

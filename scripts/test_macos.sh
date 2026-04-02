@@ -10,7 +10,7 @@ rm -rf dist build
 
 # 2. Build with PyInstaller
 echo "Building standalone binary with PyInstaller..."
-pyinstaller merger.spec
+pyinstaller packaging/merger.spec
 
 # 3. Verify standalone binary exists
 if [ ! -f dist/merger-cli ]; then

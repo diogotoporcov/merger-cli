@@ -8,11 +8,16 @@ from pathlib import Path
 
 def get_project_metadata():
     """Extract name and version from pyproject.toml."""
-    pyproject_path = Path("pyproject.toml")
+    # Prioritize the API package as it's the one we publish to PyPI
+    pyproject_path = Path("src/merger-api/pyproject.toml")
+    if not pyproject_path.exists():
+        pyproject_path = Path("pyproject.toml")
+    
     if not pyproject_path.exists():
         print("Error: pyproject.toml not found.")
         sys.exit(1)
     
+    print(f"Checking version from: {pyproject_path}")
     content = pyproject_path.read_text(encoding="utf-8")
     name_match = re.search(r'name\s*=\s*"([^"]+)"', content)
     version_match = re.search(r'version\s*=\s*"([^"]+)"', content)
@@ -25,7 +30,13 @@ def get_project_metadata():
 
 def get_repo_url():
     """Extract GitHub repository URL from pyproject.toml."""
-    content = Path("pyproject.toml").read_text(encoding="utf-8")
+    # We always use the root pyproject.toml for repo URL if available, 
+    # but the API one should have it too.
+    pyproject_path = Path("src/merger-api/pyproject.toml")
+    if not pyproject_path.exists():
+        pyproject_path = Path("pyproject.toml")
+    
+    content = pyproject_path.read_text(encoding="utf-8")
     repo_match = re.search(r'Homepage\s*=\s*"([^"]+)"', content)
     return repo_match.group(1) if repo_match else None
 

@@ -9,7 +9,7 @@ if (Test-Path "build") { Remove-Item -Recurse -Force "build" }
 
 # 2. Build with PyInstaller
 Write-Host "Building standalone binary with PyInstaller..."
-pyinstaller merger.spec
+pyinstaller packaging\merger.spec
 if ($LASTEXITCODE -ne 0) {
     Write-Host "PyInstaller build failed!" -ForegroundColor Red
     exit $LASTEXITCODE
@@ -34,7 +34,7 @@ if ($LASTEXITCODE -ne 0) {
 $iscc_path = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 if (Test-Path $iscc_path) {
     Write-Host "Building Windows installer..."
-    & $iscc_path installer.iss
+    & $iscc_path packaging\installer.iss
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Installer built successfully at dist\merger-cli-windows-installer.exe" -ForegroundColor Green
     } else {

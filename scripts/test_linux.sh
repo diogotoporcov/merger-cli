@@ -10,7 +10,7 @@ rm -rf dist build
 
 # 2. Build with PyInstaller
 echo "Building standalone binary with PyInstaller..."
-pyinstaller merger.spec
+pyinstaller packaging/merger.spec
 
 # 3. Verify standalone binary exists
 if [ ! -f dist/merger-cli ]; then
@@ -27,7 +27,7 @@ if command -v nfpm >/dev/null 2>&1; then
     echo "Building .deb package..."
     # Extract version from pyproject.toml
     PKG_VERSION=$(grep -Po '(?<=version = ")[^"]+' pyproject.toml)
-    VERSION=$PKG_VERSION nfpm package --config nfpm.yaml --target dist/merger-cli.deb
+    VERSION=$PKG_VERSION nfpm package --config packaging/nfpm.yaml --target dist/merger-cli.deb
     echo "Installer built successfully at dist/merger-cli.deb"
     
     # Optional: Try to install and test if we have sudo or are root

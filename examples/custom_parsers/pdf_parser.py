@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Union, Optional, Set, Type
 
 import pymupdf
-from merger.parsing.parser import Parser
+from merger import Parser
 
 
 EXTENSIONS: Set[str] = {".pdf"}

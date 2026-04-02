@@ -1,8 +1,6 @@
 from typing import List
 
-from merger.file_tree.entries import FileEntry, DirectoryEntry, FileTreeEntry
-from merger.exporters.tree_exporter import TreeExporter
-from merger.file_tree.tree import FileTree
+from merger import FileEntry, DirectoryEntry, FileTreeEntry, TreeExporter, FileTree
 
 
 NAME = "MARKDOWN"

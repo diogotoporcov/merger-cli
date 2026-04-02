@@ -1,6 +1,6 @@
 import pytest
-from merger.parsing.parser import Parser
-from merger.utils.module_manager import ModuleManager
+from merger_api import Parser
+from merger_cli.utils.module_manager import ModuleManager
 
 
 class MockParser(Parser):
@@ -18,7 +18,7 @@ def module_dir(tmp_path):
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
 def test_module_manager_install(module_dir, mock_config_dir, tmp_path):
@@ -32,7 +32,7 @@ def test_module_manager_install(module_dir, mock_config_dir, tmp_path):
     )
     
     module_content = """
-from merger.parsing.parser import Parser
+from merger_api import Parser
 EXTENSIONS = [".mock"]
 class MockParser(Parser):
     @classmethod
@@ -67,7 +67,7 @@ def test_module_manager_uninstall(module_dir, mock_config_dir, tmp_path):
     module_source = tmp_path / "my_module.py"
     module_source.write_text("parser_cls = None")
     
-    from merger.utils.config import get_or_create_config, save_config, ModuleEntry
+    from merger_cli.utils.config import get_or_create_config, save_config, ModuleEntry
     config = get_or_create_config()
     target_path = module_dir / "abc.py"
     target_path.touch()
@@ -89,7 +89,7 @@ def test_module_manager_load_all_with_broken_module(module_dir, mock_config_dir,
         key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")]
     )
     
-    from merger.utils.config import get_or_create_config, save_config, ModuleEntry
+    from merger_cli.utils.config import get_or_create_config, save_config, ModuleEntry
     config = get_or_create_config()
     
     broken_path = module_dir / "broken.py"

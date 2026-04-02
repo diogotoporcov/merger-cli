@@ -2,9 +2,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from merger.exceptions import InvalidModule, ModuleAlreadyInstalled
-from merger.parsing.parser import Parser as Base
-from merger.utils.module_manager import ModuleManager
+from merger_cli.exceptions import InvalidModule, ModuleAlreadyInstalled
+from merger_api import Parser as Base
+from merger_cli.utils.module_manager import ModuleManager
 
 
 def test_module_manager_load_invalid_path():
@@ -46,7 +46,7 @@ def test_module_manager_get_class_from_module():
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
 def test_module_manager_install_uninstall(tmp_path, mock_config_dir):
@@ -61,7 +61,7 @@ def test_module_manager_install_uninstall(tmp_path, mock_config_dir):
     )
     
     module_content = """
-from merger.parsing.parser import Parser
+from merger_api import Parser
 class MyModule(Parser):
     EXTENSIONS = [".test"]
 test_cls = MyModule
@@ -104,7 +104,7 @@ def test_module_manager_uninstall_all(tmp_path, mock_config_dir):
     (target_dir / "m1.py").touch()
     (target_dir / "m2.py").touch()
     
-    from merger.utils.config import get_or_create_config, save_config, ModuleEntry
+    from merger_cli.utils.config import get_or_create_config, save_config, ModuleEntry
     config = get_or_create_config()
     config.modules["id1"] = ModuleEntry(extensions=[], path=(target_dir / "m1.py").as_posix(), original_name="m1.py")
     config.modules["id2"] = ModuleEntry(extensions=[], path=(target_dir / "m2.py").as_posix(), original_name="m2.py")
@@ -121,7 +121,7 @@ def test_module_manager_get_module_type(tmp_path):
     mm = ModuleManager("test_type", Base, "modules", lambda: Path("."), "test_cls", lambda _m: [])
     
     module_content = """
-from merger.parsing.parser import Parser
+from merger_api import Parser
 class MyModule(Parser): pass
 test_cls = MyModule
 """

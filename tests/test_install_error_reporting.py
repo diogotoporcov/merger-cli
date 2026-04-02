@@ -2,19 +2,19 @@ import sys
 from unittest.mock import patch
 
 import pytest
-from merger.cli import main
+from merger_cli.cli import main
 
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
 def test_install_failure_with_details(tmp_path, mock_config_dir, capsys):
     # Create a broken module that imports something non-existent
     broken_content = """
 import non_existent_module_foo_bar
-from merger.parsing.parser import Parser
+from merger_api import Parser
 EXTENSIONS = [".broken"]
 class BrokenParser(Parser):
     @classmethod

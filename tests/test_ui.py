@@ -8,7 +8,7 @@ import time
 # Add src to sys.path
 sys.path.insert(0, str(Path("src").resolve()))
 
-import merger.utils.update
+import merger_cli.utils.update
 from rich.console import Console
 
 # Mock version to 1.0.0

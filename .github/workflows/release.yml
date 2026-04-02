@@ -33,6 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install ./src/merger-api
           pip install . pyinstaller
 
       - name: (Linux) Install libmagic
@@ -44,12 +45,12 @@ jobs:
         run: brew install libmagic
 
       - name: Build with PyInstaller
-        run: pyinstaller merger.spec
+        run: pyinstaller packaging/merger.spec
 
       - name: (Windows) Create Installer
         if: matrix.os == 'windows-latest'
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging/installer.iss
         shell: powershell
 
       - name: Set Package Version
@@ -62,9 +63,21 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         uses: goreleaser/nfpm-action@v2
         with:
-          args: package --config nfpm.yaml --target dist/merger-cli.deb
+          args: package --config packaging/nfpm.yaml --target dist/merger-cli.deb
         env:
           VERSION: ${{ env.PKG_VERSION }}
+
+      - name: Prepare Binary Names
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            mv dist/merger-cli.exe dist/merger-cli-windows.exe
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            mv dist/merger-cli dist/merger-cli-macos
+            tar -czf dist/merger-cli-macos.tar.gz -C dist merger-cli-macos
+          else
+            mv dist/merger-cli dist/merger-cli-linux
+          fi
+        shell: bash
 
       - name: Calculate and Save SHA256 (macOS)
         if: matrix.os == 'macos-latest'
@@ -78,18 +91,6 @@ jobs:
         with:
           name: macos-sha256
           path: dist/macos_sha256.txt
-
-      - name: Prepare Binary Names
-        run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            mv dist/merger-cli.exe dist/merger-cli-windows.exe
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            mv dist/merger-cli dist/merger-cli-macos
-            tar -czf dist/merger-cli-macos.tar.gz -C dist merger-cli-macos
-          else
-            mv dist/merger-cli dist/merger-cli-linux
-          fi
-        shell: bash
 
       - name: Release
         uses: softprops/action-gh-release@v2

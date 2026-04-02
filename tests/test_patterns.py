@@ -1,6 +1,6 @@
 import pytest
 import platform
-from merger.utils.patterns import matches_pattern
+from merger_cli.utils.patterns import matches_pattern
 
 @pytest.fixture
 def root(tmp_path):

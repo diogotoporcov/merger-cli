@@ -1,12 +1,12 @@
 import json
 
 import pytest
-from merger.utils.config import get_or_create_config, save_config, ConfigModel, ModuleEntry
+from merger_cli.utils.config import get_or_create_config, save_config, ConfigModel, ModuleEntry
 
 
 @pytest.fixture
 def mock_merger_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
 def test_config_creation(mock_merger_dir):
