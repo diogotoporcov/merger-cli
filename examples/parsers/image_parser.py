@@ -39,14 +39,7 @@ class ImageParser(Parser):
         file_path: Path
     ) -> bool:
         """
-        Validate that the given file represents a readable image supported by Pillow.
-
-        Args:
-            file_chunk_bytes: Binary contents of the file being validated.
-            file_path: Path of the file being validated.
-
-        Returns:
-            bool: True if the file is a readable image, False otherwise.
+        Validate that the given file bytes represent a readable image supported by Pillow.
         """
         try:
             with Image.open(io.BytesIO(file_chunk_bytes)) as img:
@@ -65,13 +58,6 @@ class ImageParser(Parser):
     ) -> str:
         """
         Extracts text from an image using EasyOCR.
-
-        Args:
-            file_bytes: Binary contents of the file being parsed.
-            file_path: Path of the file being parsed.
-
-        Returns:
-            str: Full text content extracted from the image.
         """
         try:
             reader = cls._get_reader()

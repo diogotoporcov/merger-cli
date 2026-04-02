@@ -14,6 +14,9 @@ class MarkdownExporter(TreeExporter):
 
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
+        """
+        Export the file tree into a Markdown representation.
+        """
         lines = ["# Project File Tree", ""]
         cls._to_markdown(tree.root, lines, level=2)
         return "\n".join(lines).encode("utf-8")

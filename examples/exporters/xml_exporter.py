@@ -14,6 +14,9 @@ class XmlExporter(TreeExporter):
 
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
+        """
+        Export the file tree into an XML representation.
+        """
         root = ET.Element("filetree")
         cls._to_xml(tree.root, root)
 
