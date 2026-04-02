@@ -6,7 +6,7 @@ keywords = ["merger", "file system", "api", "interfaces", "typing"]
 authors = [
     { name = "Diogo Toporcov", email = "diogotoporcov@gmail.com" }
 ]
-license = {text = "MIT"}
+license = {file = "LICENSE"}
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = []

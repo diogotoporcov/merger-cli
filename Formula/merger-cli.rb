@@ -3,6 +3,7 @@ class MergerCli < Formula
   homepage "https://github.com/diogotoporcov/merger-cli"
   url "https://github.com/diogotoporcov/merger-cli/releases/download/{{VERSION}}/merger-cli-macos.tar.gz"
   sha256 "{{SHA256}}"
+  license "GPLv3"
 
   depends_on "libmagic"
 
@@ -11,6 +12,11 @@ class MergerCli < Formula
   end
 
   test do
-    system "#{bin}/merger", "--version"
+    # Basic check to ensure the binary is functional
+    assert_match "merger", shell_output("#{bin}/merger --version")
+    # Test merge logic with a simple test directory
+    (testpath/"test.txt").write("Hello, World!")
+    shell_output("#{bin}/merger . -o merged.txt")
+    assert_predicate testpath/"merged.txt", :exist?
   end
 end

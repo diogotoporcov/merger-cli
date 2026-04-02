@@ -117,7 +117,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: feature/packaging
 
       - name: Download SHA256 Artifact
         uses: actions/download-artifact@v4
@@ -139,5 +139,5 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "chore: update homebrew formula to ${{ github.ref_name }}"
-            git push origin master
+            git push origin HEAD:feature/packaging
           fi
