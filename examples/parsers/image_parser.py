@@ -70,4 +70,5 @@ class ImageParser(Parser):
             return f"[OCR Error in {file_path.name}]: {str(e)}"
 
 
+# Export the parser class
 parser_cls: Type[Parser] = ImageParser

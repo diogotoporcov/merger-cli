@@ -69,4 +69,5 @@ class XmlExporter(TreeExporter):
             if level and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i
 
+# Export the exporter class
 exporter_cls = XmlExporter

@@ -25,11 +25,14 @@ Plugins are standalone Python modules that define a `Parser` or `TreeExporter` c
 
 ### Custom Parsers
 
-To support non-text file formats (e.g., PDF, Images), implement a custom parser. Here is an example of a PDF parser using `pymupdf`:
+To support non-text file formats (e.g., PDF, Images), implement a custom parser. More complete examples like this one are available in the `examples/parsers/` directory.
+
+Here is an example of a PDF parser using `pymupdf`:
 
 ```python
 from pathlib import Path
 from typing import Union, Optional, Set, Type
+
 import pymupdf
 from merger_plugin_api import Parser
 
@@ -39,30 +42,47 @@ REQUIREMENTS = ["pymupdf"]
 # File extensions this parser supports
 EXTENSIONS: Set[str] = {".pdf"}
 
+
 class PdfParser(Parser):
-    # Optional: Max number of bytes required to validate a file (default: 1024)
     MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
     @classmethod
-    def validate(cls, file_chunk_bytes: Union[bytes, bytearray], file_path: Path) -> bool:
-        """Validate that the given file bytes represent a readable PDF document."""
+    def validate(
+        cls,
+        file_chunk_bytes: Union[bytes, bytearray],
+        file_path: Path
+    ) -> bool:
+        """
+        Validate that the given file bytes represent a readable PDF document.
+        """
         try:
             with pymupdf.open(stream=file_chunk_bytes) as doc:
                 _ = doc[0]
             return True
+
         except Exception:
             return False
 
     @classmethod
-    def parse(cls, file_bytes: Union[bytes, bytearray], file_path: Path) -> str:
-        """Extracts and concatenates text from all pages of a PDF file."""
+    def parse(
+        cls,
+        file_bytes: Union[bytes, bytearray],
+        file_path: Path,
+    ) -> str:
+        """
+        Extracts and concatenates text from all pages of a PDF file.
+        """
         texts = []
         with pymupdf.open(stream=file_bytes) as doc:
             for page in doc:
                 text = page.get_text()
                 if text:
-                    texts.append(text.replace("\n\n", ""))
-        return " ".join(texts)
+                    text = text.replace("\n\n", "")
+                    texts.append(text)
+
+        full_text = " ".join(texts)
+        return full_text
+
 
 # Export the parser class
 parser_cls: Type[Parser] = PdfParser
@@ -70,36 +90,82 @@ parser_cls: Type[Parser] = PdfParser
 
 ### Custom Exporters
 
-To output the merged data in a custom format (e.g., XML, Markdown), implement a `TreeExporter`. Here is an example of a Markdown exporter:
+To output the merged data in a custom format (e.g., XML, Markdown), implement a `TreeExporter`. More complete examples like this one are available in the `examples/exporters/` directory.
+
+Here is an example of an XML exporter:
 
 ```python
-from typing import Type, List
-from merger_plugin_api import TreeExporter, FileTree, FileEntry, DirectoryEntry
+import xml.etree.ElementTree as ET
+from typing import Type
+from merger_plugin_api import FileEntry, DirectoryEntry, FileTreeEntry, TreeExporter, FileTree
 
 # The name of the exporter (used in --exporter argument)
-NAME = "MARKDOWN"
+NAME = "XML"
 # The extension of the output file
-FILE_EXTENSION = ".md"
+FILE_EXTENSION = ".xml"
 
-class MarkdownExporter(TreeExporter):
+class XmlExporter(TreeExporter):
+    """
+    A custom exporter that generates an XML representation of the file tree.
+    """
+
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
-        """Transform the FileTree into a Markdown string."""
-        lines = ["# Project File Tree", ""]
-        cls._to_markdown(tree.root, lines, level=2)
-        return "\n".join(lines).encode("utf-8")
+        """
+        Export the file tree into an XML representation.
+        """
+        root = ET.Element("filetree")
+        cls._to_xml(tree.root, root)
+
+        cls._indent(root)
+
+        return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
     @classmethod
-    def _to_markdown(cls, entry, lines: List[str], level: int):
+    def _to_xml(cls, entry: FileTreeEntry, parent: ET.Element):
         if isinstance(entry, FileEntry):
-            lines.append(f"{'#' * level} File: `{entry.name}`\nPath: `{entry.path.as_posix()}`\n\n```\n{entry.content}\n```\n")
+            file_el = ET.SubElement(parent, "file", {
+                "name": entry.name,
+                "path": entry.path.as_posix()
+            })
+            content_el = ET.SubElement(file_el, "content")
+            content_el.text = entry.content
+
         elif isinstance(entry, DirectoryEntry):
-            lines.append(f"{'#' * level} Directory: `{entry.name}`\nPath: `{entry.path.as_posix()}`\n")
+            dir_el = ET.SubElement(parent, "directory", {
+                "name": entry.name,
+                "path": entry.path.as_posix()
+            })
             for child in sorted(entry.children.values(), key=lambda e: e.name.lower()):
-                cls._to_markdown(child, lines, level + 1)
+                cls._to_xml(child, dir_el)
+
+    @classmethod
+    def _indent(cls, elem: ET.Element, level: int = 0):
+        """
+        Recursive function to indent XML elements while preserving text content.
+        """
+        i = "\n" + level * "  "
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + "  "
+
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+
+            for child in elem:
+                cls._indent(child, level + 1)
+
+            if len(elem) > 0:
+                last_child = elem[-1]
+                if not last_child.tail or not last_child.tail.strip():
+                    last_child.tail = i
+
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
 
 # Export the exporter class
-exporter_cls: Type[TreeExporter] = MarkdownExporter
+exporter_cls: Type[TreeExporter] = XmlExporter
 ```
 
 ---

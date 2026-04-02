@@ -41,4 +41,5 @@ class MarkdownExporter(TreeExporter):
             for child in sorted(entry.children.values(), key=lambda e: e.name.lower()):
                 cls._to_markdown(child, lines, level + 1)
 
+# Export the exporter class
 exporter_cls = MarkdownExporter

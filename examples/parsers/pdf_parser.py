@@ -52,4 +52,5 @@ class PdfParser(Parser):
         return full_text
 
 
+# Export the parser class
 parser_cls: Type[Parser] = PdfParser
