@@ -65,8 +65,8 @@ Merger CLI is distributed as standalone binaries.
 
 For developers:
 1. Clone the repository.
-2. Install the API: `pip install -e ./packages/merger-plugin-api`
-3. Install the CLI: `pip install -e ./packages/merger-cli`
+2. Install the API: `pip install -e "./packages/merger-plugin-api[test]"`
+3. Install the CLI: `pip install -e "./packages/merger-cli[test,dev]"`
 
 ---
 

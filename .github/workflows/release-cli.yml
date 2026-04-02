@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ./packages/merger-plugin-api
-          pip install ./packages/merger-cli pyinstaller
+          pip install "./packages/merger-plugin-api"
+          pip install "./packages/merger-cli[dev]"
 
       - name: (Linux) Install libmagic
         if: matrix.os == 'ubuntu-latest'
