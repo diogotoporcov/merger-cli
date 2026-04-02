@@ -8,7 +8,6 @@ from .config import get_or_create_site_packages_dir
 
 def get_uv_executable() -> str:
     """Finds the uv executable. Fallbacks to using 'uv' if not found in common places."""
-    # Check if uv is in the path
     try:
         subprocess.run(["uv", "--version"], capture_output=True, check=True)
         return "uv"

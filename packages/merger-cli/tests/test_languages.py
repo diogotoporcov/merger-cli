@@ -11,7 +11,7 @@ def check_template(template_name, path_to_test, should_match=True):
     root = Path("/root")
     path = root / path_to_test
     
-    # We want to see if ANY pattern in the template matches the path
+    # Checking if ANY pattern in the template matches the path
     matched = any(matches_pattern(path, root, p) for p in patterns)
     assert matched == should_match, f"Template {template_name} {'should' if should_match else 'should not'} match {path_to_test}"
 
@@ -55,10 +55,10 @@ def check_template(template_name, path_to_test, should_match=True):
 ])
 def test_language_templates(template, path, should_match):
     # Some patterns might require directory vs. file distinction
-    # For testing purposes, we assume directories if they end with / in the test path
+    # For testing purposes, directories are assumed if they end with / in the test path
     # or if they are common directory names.
     
-    # Mocking is_dir() for the path
+    # Mock is_dir() for the path
     is_dir = path.endswith("/") or "." not in path.split("/")[-1]
     
     with patch("pathlib.Path.is_dir", return_value=is_dir):

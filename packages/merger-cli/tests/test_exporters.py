@@ -16,8 +16,6 @@ def complex_tree(tmp_path):
     (tmp_path / "README.md").write_text("# Project", encoding="utf-8")
     (tmp_path / "data").mkdir()
     (tmp_path / "data" / "info.txt").write_text("some data", encoding="utf-8")
-    # FileTree.from_path will use the default parser and merger.ignore if it existed
-    # but we can pass an empty list for ignore_patterns
     return FileTreeScanner.scan(tmp_path, ignore_patterns=[])
 
 def test_plain_text_exporter(complex_tree):

@@ -2,15 +2,6 @@ import logging
 import sys
 from pathlib import Path
 
-from ..exporters.factory import get_exporter_strategy
-from ..exporters.registry import validate_exporters
-from ..parsing.registry import validate_parsers
-from merger_plugin_api import FileTree
-from ..file_tree.scanner import FileTreeScanner
-from ..logging import setup_logger, logger
-from ..utils.files import read_merger_ignore_file
-from ..utils.update import check_for_updates, finalize_update_check
-from ..utils.config import get_or_create_site_packages_dir
 from .utils import (
     handle_ignore_creation,
     handle_plugin_list,
@@ -20,7 +11,15 @@ from .utils import (
     handle_plugin_update,
     setup_argparse
 )
+from ..exporters.factory import get_exporter_strategy
+from ..exporters.registry import validate_exporters
+from ..file_tree.scanner import FileTreeScanner
+from ..logging import setup_logger, logger
+from ..parsing.registry import validate_parsers
+from ..utils.config import get_or_create_site_packages_dir
+from ..utils.files import read_merger_ignore_file
 from ..utils.ignore_templates import list_ignore_templates
+from ..utils.update import check_for_updates, finalize_update_check
 
 
 def main() -> None:
@@ -78,6 +77,7 @@ def main() -> None:
         if args.merger_ignore.exists():
             logger.info(f"Using ignore file: {args.merger_ignore}")
             ignore_patterns.extend(read_merger_ignore_file(args.merger_ignore))
+
         else:
             templates = ", ".join(list_ignore_templates())
             parser.error(
@@ -110,6 +110,7 @@ def main() -> None:
         
     except Exception as e:
         logger.error(f"An error occurred: {e}", exc_info=args.log_level == "DEBUG")
+
     finally:
         finalize_update_check()
 

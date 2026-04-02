@@ -25,24 +25,24 @@ def test_plugin_loader_get_class_from_plugin():
     
     # Valid Plugin
     class ValidSub(Base): pass
-    Plugin = MagicMock()
-    Plugin.test_cls = ValidSub
-    Plugin.__file__ = "valid.py"
-    assert mm.get_class_from_plugin(Plugin) == ValidSub
+    plugin = MagicMock()
+    plugin.test_cls = ValidSub
+    plugin.__file__ = "valid.py"
+    assert mm.get_class_from_plugin(plugin) == ValidSub
     
     # Missing attribute
-    Plugin_missing = MagicMock()
-    del Plugin_missing.test_cls
+    plugin_missing = MagicMock()
+    del plugin_missing.test_cls
     with pytest.raises(InvalidPlugin) as exc:
-        mm.get_class_from_plugin(Plugin_missing)
+        mm.get_class_from_plugin(plugin_missing)
     assert "test_cls attribute not provided" in str(exc.value)
     
     # Not a subclass
     class NotSub: pass
-    Plugin_not_sub = MagicMock()
-    Plugin_not_sub.test_cls = NotSub
+    plugin_not_sub = MagicMock()
+    plugin_not_sub.test_cls = NotSub
     with pytest.raises(InvalidPlugin) as exc:
-        mm.get_class_from_plugin(Plugin_not_sub)
+        mm.get_class_from_plugin(plugin_not_sub)
     assert f"is not a subclass of {Base.__name__}" in str(exc.value)
 
 @pytest.fixture
@@ -51,7 +51,6 @@ def mock_config_dir(tmp_path, monkeypatch):
     return tmp_path
 
 def test_plugin_loader_install_uninstall(tmp_path, mock_config_dir, monkeypatch):
-    # Mock uv_install and uv_purge
     monkeypatch.setattr("merger_cli.utils.plugin_loader.uv_install", lambda *args, **kwargs: None)
     monkeypatch.setattr("merger_cli.utils.plugin_loader.uv_purge", lambda *args, **kwargs: None)
 
@@ -74,10 +73,8 @@ test_cls = MyPlugin
     plugin_path = tmp_path / "my_mod.py"
     plugin_path.write_text(Plugin_content)
     
-    # Install
     mm.install(plugin_path)
     
-    # Verify installation
     installed = mm.list()
     assert len(installed) == 1
     plugin_id = installed[0].id
@@ -86,28 +83,23 @@ test_cls = MyPlugin
     assert Path(entry.path).exists()
     assert target_dir.exists()
     
-    # Already installed
     with pytest.raises(PluginAlreadyInstalled):
         mm.install(plugin_path)
     
-    # Load all
     loaded = mm.load_all()
     assert "key" in loaded
     assert loaded["key"].__name__ == "MyPlugin"
     
-    # Uninstall
     mm.uninstall(plugin_id)
     assert len(mm.list()) == 0
     assert not Path(entry.path).exists()
 
 def test_plugin_loader_uninstall_all(tmp_path, mock_config_dir, monkeypatch):
-    # Mock uv_purge
     monkeypatch.setattr("merger_cli.utils.plugin_loader.uv_purge", lambda *args, **kwargs: None)
 
     target_dir = mock_config_dir / "test_Plugins"
     mm = PluginManager("test", Base, lambda: target_dir, "test_cls", lambda _m: [])
     
-    # Create two dummy Plugins in target_dir and register them in DB
     target_dir.mkdir()
     p1_path = target_dir / "m1.py"
     p2_path = target_dir / "m2.py"

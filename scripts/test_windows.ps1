@@ -22,7 +22,7 @@ if (-not (Test-Path $merger_exe)) {
     exit 1
 }
 
-# 4. Run enterprise-grade tests with pytest
+# 4. Run tests with pytest
 Write-Host "Running standalone tests with pytest..."
 pytest tests/test_standalone.py --merger-bin=$merger_exe
 if ($LASTEXITCODE -ne 0) {

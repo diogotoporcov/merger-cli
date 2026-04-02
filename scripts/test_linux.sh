@@ -18,7 +18,7 @@ if [ ! -f dist/merger-cli ]; then
     exit 1
 fi
 
-# 4. Run enterprise-grade tests with pytest
+# 4. Run tests with pytest
 echo "Running standalone tests with pytest..."
 pytest tests/test_standalone.py --merger-bin=dist/merger-cli
 
@@ -30,7 +30,7 @@ if command -v nfpm >/dev/null 2>&1; then
     VERSION=$PKG_VERSION nfpm package --config packaging/nfpm.yaml --target dist/merger-cli.deb
     echo "Installer built successfully at dist/merger-cli.deb"
     
-    # Optional: Try to install and test if we have sudo or are root
+    # Try to install and test if sudo is available or running as root
     if [ "$(id -u)" -eq 0 ]; then
         echo "Running as root, testing .deb installation..."
         apt-get update && apt-get install -y ./dist/merger-cli.deb

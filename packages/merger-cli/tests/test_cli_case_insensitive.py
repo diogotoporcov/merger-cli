@@ -48,5 +48,4 @@ def test_cli_log_level_case_insensitive(tmp_path, monkeypatch, capsys, mock_conf
         main()
     
     captured = capsys.readouterr()
-    # If debug was set correctly, we might see debug messages in stderr if setup_logger worked
-    # However, testing if it DIDN'T crash is already good enough as it would crash if 'debug' was invalid choice
+    # Verify no crash when 'debug' is passed as lowercase.

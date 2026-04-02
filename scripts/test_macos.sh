@@ -18,7 +18,7 @@ if [ ! -f dist/merger-cli ]; then
     exit 1
 fi
 
-# 4. Run enterprise-grade tests with pytest
+# 4. Run tests with pytest
 echo "Running standalone tests with pytest..."
 pytest tests/test_standalone.py --merger-bin=dist/merger-cli
 

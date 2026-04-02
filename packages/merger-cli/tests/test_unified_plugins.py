@@ -67,8 +67,7 @@ exporter_cls = MockExporter
     assert "mock_exporter.py" in captured.out
 
     # 6. Uninstall parser using unified -u
-    # We need to find the ID. PluginManager uses hash of file.
-    # But since we only have one, we can just check if "mock_parser.py" disappeared from list.
+    # The ID must be found using list_parsers().
     from merger_cli.parsing.registry import list_parsers
     parsers = list_parsers()
     parser_id = parsers[0].id

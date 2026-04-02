@@ -1,10 +1,10 @@
 # Testing Merger CLI Artifacts
 
-This guide explains how to test the standalone installers and packages generated for `merger-cli` using our enterprise-grade integration test suite.
+This guide explains how to test the standalone installers and packages generated for `merger-cli` using the integration test suite.
 
 ## The Standalone Test Suite
 
-We use a unified `pytest` suite located at `tests/test_standalone.py` to verify the functionality of built artifacts (binaries, `.deb` packages, etc.) across all platforms. This ensures consistent verification and framework-standard reporting.
+A unified `pytest` suite located at `tests/test_standalone.py` is used to verify the functionality of built artifacts (binaries, `.deb` packages, etc.) across all platforms. This ensures consistent verification and framework-standard reporting.
 
 To run these tests manually:
 1.  **Build the binary**: `pyinstaller merger.spec`
@@ -22,7 +22,7 @@ The suite covers:
 
 ## Quick Automation Scripts
 
-We provide helper scripts that handle the build process and then invoke the `pytest` suite:
+Helper scripts are provided to handle the build process and then invoke the `pytest` suite:
 
 - **Windows**: `.\scripts\test_windows.ps1` (PowerShell)
 - **Linux**: `.\scripts\test_linux.ps1` (PowerShell) - Runs tests inside a clean Docker container.

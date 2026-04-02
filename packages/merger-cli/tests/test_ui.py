@@ -5,13 +5,9 @@ from pathlib import Path
 import json
 import time
 
-# Add src to sys.path
-sys.path.insert(0, str(Path("src").resolve()))
-
 import merger_cli.utils.update
 from rich.console import Console
 
-# Mock version to 1.0.0
 def mock_get_version():
     return "1.0.0"
 
@@ -22,8 +18,6 @@ cache_dir = Path.home() / ".merger"
 cache_file = cache_dir / "update_check.json"
 cache_dir.mkdir(parents=True, exist_ok=True)
 
-# Backup current cache if exists
-old_cache = None
 if cache_file.exists():
     old_cache = cache_file.read_text()
 
@@ -41,7 +35,7 @@ try:
 
     print("\n--- Test 2: CI Environment (Should skip) ---")
     os.environ["CI"] = "true"
-    # We need to reset pending message if it was set
+    # The pending message must be reset if it was set
     merger_cli.utils.update._pending_message = None 
     
     merger_cli.utils.update.check_for_updates()
@@ -49,7 +43,6 @@ try:
     del os.environ["CI"]
 
     print("\n--- Test 3: Non-TTY (Should skip display) ---")
-    # Mock is_terminal
     original_is_terminal = merger_cli.utils.update._update_console.is_terminal
     merger_cli.utils.update._update_console = Console(force_terminal=False)
     
@@ -58,7 +51,6 @@ try:
     merger_cli.utils.update.finalize_update_check()
     
 finally:
-    # Restore old cache
     if old_cache:
         cache_file.write_text(old_cache)
     else:

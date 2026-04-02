@@ -39,7 +39,7 @@ class DefaultParser(Parser):
         # Forms / encoded text files
         "application/x-www-form-urlencoded",
 
-        # JavaScript files (yes, real files)
+        # JavaScript files
         "application/javascript",
 
         # Script / source files
@@ -51,7 +51,7 @@ class DefaultParser(Parser):
         # Text-based document format
         "application/rtf",
 
-        # Patch / diff files (VERY common in repos)
+        # Patch / diff files
         "application/vnd.github.v3.diff",
         "application/vnd.github.v3.patch",
 

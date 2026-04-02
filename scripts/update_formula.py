@@ -16,17 +16,17 @@ def update_formula(version, sha256):
         tag_name = f'v{tag_name}'
     
     # Replace URL
-    # Matches /download/{{VERSION}}/ or /download/v3.6.0/ etc
+    # Matches /download/{{VERSION}}/ or /download/vX.Y.Z/ etc
     content = re.sub(
         r'url "https://github.com/diogotoporcov/merger-cli/releases/download/[^/]+/merger-cli-macos.tar.gz"',
         f'url "https://github.com/diogotoporcov/merger-cli/releases/download/{tag_name}/merger-cli-macos.tar.gz"',
         content
     )
     
-    # Replace SHA256 (both placeholder and existing hex)
+    # Replace SHA256
     # Matches "REPLACE_WITH_ACTUAL_SHA256", "{{SHA256}}", or a 64-char hex string
     content = re.sub(
-        r'sha256 "(?:REPLACE_WITH_ACTUAL_SHA256|\{\{SHA256\}\}|[a-fA-F0-9]{64})"',
+        r'sha256 "(?:REPLACE_WITH_ACTUAL_SHA256|\{\{SHA256}}|[a-fA-F0-9]{64})"',
         f'sha256 "{sha256}"',
         content
     )

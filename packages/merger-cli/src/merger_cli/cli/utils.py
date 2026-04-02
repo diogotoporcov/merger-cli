@@ -1,22 +1,18 @@
 import argparse
-import logging
-import os
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
 from rich.console import Console
-from rich.table import Table
 from rich.prompt import Confirm
+from rich.table import Table
 from rich_argparse import RichHelpFormatter
 
 from ..exceptions import UnknownIgnoreTemplate
 from ..exporters.factory import get_exporter_strategy_names
+from ..exporters.impl.tree_with_plain_text_exporter import NAME as TREE_PLAIN_TEXT_NAME
 from ..exporters.registry import (
     install_exporter, uninstall_exporter, list_exporters, get_exporter_plugin_type
 )
-from ..exporters.impl.tree_with_plain_text_exporter import TreeWithPlainTextExporter, NAME as TREE_PLAIN_TEXT_NAME
 from ..logging import logger
 from ..parsing.registry import (
     install_parser, uninstall_parser, list_parsers, get_parser_plugin_type
@@ -199,15 +195,11 @@ def handle_plugin_update(force: bool = False) -> None:
     
     logger.info("Updating core dependencies...")
     try:
-        # Since we are in a bundled environment, we update them in site-packages as well if they were installed there
-        # or we just try to pip install --upgrade the core ones. 
-        # Actually core dependencies are bundled, so we can't easily update them in the frozen binary.
-        # But if the user is running from source, it will work.
-        # For professional CLI, we focus on what we CAN update.
         core_deps = ["pydantic", "rich", "pathspec", "packaging", "rich-argparse"]
         site_packages = get_or_create_site_packages_dir()
         uv_install(core_deps, target=site_packages)
         logger.info("Core dependencies updated in plugin environment.")
+
     except Exception as e:
         logger.error(f"Failed to update core dependencies: {e}")
 
