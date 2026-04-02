@@ -1,4 +1,4 @@
-# Merger CLI
+# Merger CLI & Plugin API
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
@@ -14,7 +14,11 @@ This repository is a monorepo containing:
 
 ---
 
-## Quick Start (CLI)
+## Merger CLI
+
+The `merger-cli` is the primary tool for scanning and merging your project files. It is distributed as standalone binaries, meaning you don't even need Python installed to use it.
+
+### Quick Start (CLI)
 
 1.  **Install the CLI**: Download the standalone installer for your OS from [Releases](https://github.com/diogotoporcov/merger-cli/releases).
 2.  **Verify the installation**:
@@ -35,11 +39,23 @@ This repository is a monorepo containing:
     ```
     This creates `merger.txt` in the current directory.
 
+### CLI Features
+* **Recursive merge** of all readable files under a root directory.
+* **Custom glob-like ignore patterns** with specialized type qualifiers.
+* **Intelligent plugin system**: SQLite-backed tracking with automatic dependency management via `uv`.
+* **Automatic file encoding detection**.
+* **Multiple export formats**: Built-in support for Plain Text, JSON, Directory Trees, and more.
+* **Modern CLI interface**: Update notifications and non-interactive mode.
+
+For detailed CLI documentation, installation methods, and usage guides, see the [Merger CLI README](packages/merger-cli/README.md).
+
 ---
 
-## Plugin Development (API)
+## Merger Plugin API
 
-If you want to extend Merger with custom parsers or exporters, use the `merger-plugin-api`.
+The `merger-plugin-api` is a lightweight library that provides interfaces and data models for extending `merger-cli`. It allows developers to build custom parsers (to read non-text files) and custom exporters (to output data in any format).
+
+### Quick Start (API)
 
 1. **Install the API**:
    ```bash
@@ -55,6 +71,7 @@ If you want to extend Merger with custom parsers or exporters, use the `merger-p
    class MyParser(Parser):
        @classmethod
        def validate(cls, file_chunk_bytes: Union[bytes, bytearray], file_path: Path) -> bool:
+           # The name of the parser (used in --install-plugin argument)
            return file_path.suffix == ".custom"
 
        @classmethod
@@ -69,106 +86,12 @@ If you want to extend Merger with custom parsers or exporters, use the `merger-p
    merger --install-plugin my_parser.py
    ```
 
-For detailed documentation, see the [Merger Plugin API README](packages/merger-plugin-api/README.md).
+### API Features
+- **Abstract base classes** for custom Parsers and Exporters.
+- **Data models** for the File Tree structure (`FileTree`, `FileEntry`, `DirectoryEntry`).
+- **Dependency tracking**: Define a `REQUIREMENTS` list in your plugin, and the CLI will handle the installation.
 
----
-
-## Features
-
-* **Recursive merge** of all readable files under a root directory.
-* **Custom glob-like ignore patterns** with specialized type qualifiers.
-* **Intelligent plugin system**: SQLite-backed tracking with automatic dependency management via `uv`.
-* **Automatic file encoding detection**.
-* **Multiple export formats**: Built-in support for Plain Text, JSON, Directory Trees, and more.
-* **Professional CLI**: Modern interface with update notifications and non-interactive mode.
-
----
-
-## Installation
-
-### Standalone Installation (Recommended)
-
-Merger CLI is distributed as standalone binaries. These include their own Python 3.11 environment and `uv` package manager, requiring **no local Python installation**.
-
-*   **Windows**: Download and run `merger-cli-windows-installer.exe`.
-*   **Linux (.deb)**:
-    ```bash
-    sudo apt install ./merger-cli.deb
-    ```
-*   **macOS (Homebrew)**:
-    ```bash
-    brew tap diogotoporcov/merger-cli
-    brew install merger-cli
-    ```
-
-### From Source
-
-For developers:
-1. Clone the repository.
-2. Install the API: `pip install -e ./packages/merger-plugin-api`
-3. Install the CLI: `pip install -e ./packages/merger-cli`
-
----
-
-## Plugin System
-
-Merger CLI features a professional plugin architecture. Plugins are standalone Python files that can define their own dependencies via a `REQUIREMENTS` list.
-
-### Managing Plugins
-*   **Install**: `merger --install-plugin path/to/plugin.py`
-*   **List**: `merger --list-plugins`
-*   **Update**: `merger --update-plugins` (Updates dependencies for all installed plugins)
-*   **Uninstall**: `merger --uninstall-plugin <plugin_id>` (Automatically purges unused dependencies)
-
-For developers looking to build plugins, see the [Merger Plugin API Documentation](packages/merger-plugin-api/README.md).
-
----
-
-## Usage Guide
-
-### Output Formats (`-e` / `--exporter`)
-
-| Exporter Name     | File Extension | Description                                                                                    |
-|-------------------|----------------|------------------------------------------------------------------------------------------------|
-| `TREE_PLAIN_TEXT` | `.txt`         | Directory tree + plain-text merged file contents (**default**).                                |
-| `PLAIN_TEXT`      | `.txt`         | Plain-text merged contents with file delimiters.                                               |
-| `TREE`            | `.txt`         | Directory tree only.                                                                           |
-| `JSON`            | `.json`        | JSON mapping file paths to parsed contents.                                                    |
-| `JSON_TREE`       | `.json`        | Structured JSON with hierarchy and metadata.                                                   |
-
-### Ignore Pattern Syntax
-
-Patterns are relative to the scan root. Merger uses **Git-style matching** with custom type qualifiers:
-
-*   `*` matches any number of characters within a path segment.
-*   `**` matches zero or more directories.
-*   Trailing `/` matches only **directories**.
-*   Trailing `:` matches only **files**.
-*   Trailing `!` disables type qualification (treats trailing `/` or `:` as literal).
-
-#### Examples
-* `*.log`: Ignore all `.log` files recursively.
-* `dist/`: Ignore the `dist` directory at the root.
-* `src/*.py:`: Ignore all `.py` files directly under the `src` directory.
-
----
-
-## CLI Options
-
-| Option                     | Description                                                                                 |
-|----------------------------|---------------------------------------------------------------------------------------------|
-| `INPUT_DIR_PATH`           | Root directory to scan.                                                                     |
-| `OUTPUT_FILE_DIR_PATH`     | Directory to save the output (default: `.`).                                                |
-| `-e, --exporter`           | Choose the exporter strategy.                                                               |
-| `-i, --install-plugin`     | Install a custom parser or exporter plugin.                                                 |
-| `-u, --uninstall-plugin`   | Uninstall a plugin by ID (use `*` for all).                                                 |
-| `-l, --list-plugins`       | List all installed custom plugins.                                                          |
-| `--update-plugins`         | Update dependencies for all installed plugins.                          |
-| `--update`                 | Check for CLI updates and provide download links.                                           |
-| `--ignore`                 | Glob-style patterns to ignore.                                                              |
-| `--merger-ignore`          | Path to ignore file (default: `./merger.ignore`).                                           |
-| `-c, --create-ignore`      | Create an ignore file from template (e.g., `PYTHON`, `RUST`).                               |
-| `-y, --yes`                | Enable non-interactive mode (auto-confirm prompts).                                         |
+For detailed documentation, implementation examples (like PDF parsers or Markdown exporters), and data model definitions, see the [Merger Plugin API README](packages/merger-plugin-api/README.md).
 
 ---
 
