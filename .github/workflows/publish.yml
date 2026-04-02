@@ -2,9 +2,8 @@ name: Publish to PyPI
 
 on:
   push:
-    branches:
-      - master
-  workflow_dispatch:
+    tags:
+      - 'api-v*'
 
 permissions:
   id-token: write
@@ -14,12 +13,9 @@ jobs:
   test:
     uses: ./.github/workflows/tests.yml
 
-  version-check:
-    uses: ./.github/workflows/version-check.yml
-
   build-and-publish:
-    needs: [test, version-check]
-    if: ${{ needs.version-check.outputs.should_publish == 'true' }}
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/api-v')
     runs-on: ubuntu-latest
     environment: pypi
 
@@ -43,22 +39,3 @@ jobs:
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-
-  publish-skipped:
-    needs: [test, version-check]
-    if: ${{ always() && needs.test.result == 'success' && needs.version-check.result == 'success' && needs.version-check.outputs.should_publish != 'true' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Explain why publish was skipped
-        run: |
-          echo "Project: ${{ needs.version-check.outputs.package_name }}"
-          echo "Version: ${{ needs.version-check.outputs.version }}"
-          echo "PyPI Exists: ${{ needs.version-check.outputs.pypi_exists }}"
-          echo "GitHub Exists: ${{ needs.version-check.outputs.github_exists }}"
-          echo ""
-          if [ "${{ needs.version-check.outputs.pypi_exists }}" = "true" ]; then
-            echo "Publish skipped because this version is already available on PyPI."
-          else
-            echo "Publish skipped (check version-check logs for details)."
-          fi

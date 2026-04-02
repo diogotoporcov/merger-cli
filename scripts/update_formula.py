@@ -10,15 +10,16 @@ def update_formula(version, sha256):
         
     content = formula_path.read_text()
     
-    # Update URL - version is expected without 'v' prefix here, but the URL has 'v'
-    # The release tag usually has 'v', e.g., v3.6.0
-    v_version = version if version.startswith('v') else f'v{version}'
+    # Update URL - version should be the tag name (e.g., cli-v4.0.0-alpha or v4.0.0-alpha)
+    tag_name = version
+    if not tag_name.startswith('v') and not tag_name.startswith('cli-v') and not tag_name.startswith('api-v'):
+        tag_name = f'v{tag_name}'
     
     # Replace URL
     # Matches /download/{{VERSION}}/ or /download/v3.6.0/ etc
     content = re.sub(
         r'url "https://github.com/diogotoporcov/merger-cli/releases/download/[^/]+/merger-cli-macos.tar.gz"',
-        f'url "https://github.com/diogotoporcov/merger-cli/releases/download/{v_version}/merger-cli-macos.tar.gz"',
+        f'url "https://github.com/diogotoporcov/merger-cli/releases/download/{tag_name}/merger-cli-macos.tar.gz"',
         content
     )
     
@@ -31,7 +32,7 @@ def update_formula(version, sha256):
     )
     
     formula_path.write_text(content)
-    print(f"Updated Formula/merger-cli.rb with version {v_version} and SHA256 {sha256}")
+    print(f"Updated Formula/merger-cli.rb with version {tag_name} and SHA256 {sha256}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

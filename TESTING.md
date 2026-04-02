@@ -91,4 +91,4 @@ To test the installer:
 *   **libmagic**: On Linux, the `.deb` package automatically handles `libmagic1`. On Windows, the binary includes `python-magic-bin` which contains all required DLLs.
 
 ## Automated CI Testing
-The project includes GitHub Actions workflows to build and release these artifacts automatically on tags (`v*`). You can also trigger them manually from the "Actions" tab to verify the build process.
+The project includes GitHub Actions workflows to build and release these artifacts automatically on tags (`api-v*` for the API and `cli-v*` for the CLI).

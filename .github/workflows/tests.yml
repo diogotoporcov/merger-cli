@@ -2,8 +2,12 @@ name: Tests
 
 on:
   push:
-    branches-ignore:
-      - master
+    branches:
+      - '*'
+    tags-ignore:
+      - 'api-v*'
+      - 'cli-v*'
+      - 'v*'
   pull_request:
   workflow_dispatch:
   workflow_call:
