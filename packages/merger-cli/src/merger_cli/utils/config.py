@@ -3,7 +3,7 @@ import platform
 from pathlib import Path
 
 def get_merger_dir() -> Path:
-    dir_name = "merger-cli"
+    dir_name = "MergerCLI"
 
     system = platform.system()
     if system == "Windows":
