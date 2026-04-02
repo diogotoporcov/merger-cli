@@ -1,61 +1,55 @@
-import logging
 import sys
 from pathlib import Path
 
-from .utils import (
-    handle_ignore_creation,
-    handle_plugin_list,
-    handle_install,
-    handle_uninstall,
-    handle_update,
-    handle_plugin_update,
-    setup_argparse
-)
-from ..exporters.factory import get_exporter_strategy
-from ..exporters.registry import validate_exporters
-from ..file_tree.scanner import FileTreeScanner
-from ..logging import setup_logger, logger
-from ..parsing.registry import validate_parsers
-from ..utils.config import get_or_create_site_packages_dir
-from ..utils.files import read_merger_ignore_file
-from ..utils.ignore_templates import list_ignore_templates
-from ..utils.update import check_for_updates, finalize_update_check
-
 
 def main() -> None:
-    # 1. Initialize injected packages path as the highest priority
-    injected_path = get_or_create_site_packages_dir()
-    if injected_path.exists() and str(injected_path) not in sys.path:
-        sys.path.insert(0, str(injected_path))
+    import logging
+    from .utils import setup_argparse
+    from ..logging import setup_logger
+
+    # Defer heavy imports
+    from ..utils.config import get_or_create_site_packages_dir
+    from ..utils.update import check_for_updates, finalize_update_check
 
     parser = setup_argparse()
     args = parser.parse_args()
     setup_logger(level=getattr(logging, args.log_level.upper()))
 
+    # 1. Initialize injected packages path as the highest priority
+    injected_path = get_or_create_site_packages_dir()
+    if injected_path.exists() and str(injected_path) not in sys.path:
+        sys.path.insert(0, str(injected_path))
+
     check_for_updates()
 
     try:
         if args.create_ignore:
+            from .utils import handle_ignore_creation
             handle_ignore_creation(args.create_ignore)
             return
 
         if args.install_plugin:
+            from .utils import handle_install
             handle_install(args.install_plugin)
             return
 
         if args.uninstall_plugin:
+            from .utils import handle_uninstall
             handle_uninstall(args.uninstall_plugin, force=args.yes)
             return
 
         if args.update:
+            from .utils import handle_update
             handle_update()
             return
 
         if args.update_plugins:
+            from .utils import handle_plugin_update
             handle_plugin_update(force=args.yes)
             return
 
         if args.list_plugins:
+            from .utils import handle_plugin_list
             handle_plugin_list()
             return
 
@@ -63,6 +57,9 @@ def main() -> None:
             parser.error("input_dir is required for merging.")
 
         # Validate all custom plugins before execution
+        from ..parsing.registry import validate_parsers
+        from ..exporters.registry import validate_exporters
+        from ..logging import logger
         try:
             validate_parsers()
             validate_exporters()
@@ -74,11 +71,13 @@ def main() -> None:
 
         ignore_patterns = args.ignore.copy()
 
+        from ..utils.files import read_merger_ignore_file
         if args.merger_ignore.exists():
             logger.info(f"Using ignore file: {args.merger_ignore}")
             ignore_patterns.extend(read_merger_ignore_file(args.merger_ignore))
 
         else:
+            from ..utils.ignore_templates import list_ignore_templates
             templates = ", ".join(list_ignore_templates())
             parser.error(
                 f"Ignore file '{args.merger_ignore}' is required.\n"
@@ -92,6 +91,8 @@ def main() -> None:
         from ..utils.magic import check_libmagic_availability
         check_libmagic_availability()
 
+        from ..file_tree.scanner import FileTreeScanner
+        from ..exporters.factory import get_exporter_strategy
         tree = FileTreeScanner.scan(args.input_dir, ignore_patterns)
         exporter_info = get_exporter_strategy(args.exporter)
         logger.info(f"Using {exporter_info.name} exporter.")

@@ -3,14 +3,22 @@ import re
 from pathlib import Path
 
 
+_VERSION_CACHE = None
+
+
 def get_version() -> str:
     """
     Retrieve the version of the merger-cli package.
     Tries metadata for installed distributions first, then falls back to 
     parsing pyproject.toml for local development from source.
     """
+    global _VERSION_CACHE
+    if _VERSION_CACHE is not None:
+        return _VERSION_CACHE
+
     try:
-        return importlib.metadata.version("merger-cli")
+        _VERSION_CACHE = importlib.metadata.version("merger-cli")
+        return _VERSION_CACHE
         
     except Exception:
         pass
@@ -23,9 +31,11 @@ def get_version() -> str:
             content = path.read_text(encoding="utf-8")
             match = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"', content)
             if match:
-                return match.group(1)
+                _VERSION_CACHE = match.group(1)
+                return _VERSION_CACHE
                 
     except Exception:
         pass
 
-    return "unknown"
+    _VERSION_CACHE = "unknown"
+    return _VERSION_CACHE

@@ -2,11 +2,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from rich.console import Console
-from rich.prompt import Confirm
-from rich.table import Table
-from rich_argparse import RichHelpFormatter
-
 from ..exceptions import UnknownIgnoreTemplate
 from ..exporters.factory import get_exporter_strategy_names
 from ..exporters.impl.tree_with_plain_text_exporter import NAME as TREE_PLAIN_TEXT_NAME
@@ -20,7 +15,29 @@ from ..parsing.registry import (
 from ..utils.ignore_templates import read_ignore_template, list_ignore_templates
 from ..utils.version import get_version
 
-console = Console()
+
+class LazyChoices:
+    """
+    A container for argparse choices that evaluates the list of choices 
+    lazily only when needed (e.g., for validation or help generation).
+    """
+    def __init__(self, loader):
+        self._loader = loader
+        self._choices = None
+
+    def _get_choices(self):
+        if self._choices is None:
+            self._choices = self._loader()
+        return self._choices
+
+    def __contains__(self, item):
+        return item in self._get_choices()
+
+    def __iter__(self):
+        return iter(self._get_choices())
+
+    def __len__(self):
+        return len(self._get_choices())
 
 
 class RichArgumentParser(argparse.ArgumentParser):
@@ -30,7 +47,11 @@ class RichArgumentParser(argparse.ArgumentParser):
     """
     def __init__(self, *args, **kwargs):
         if "formatter_class" not in kwargs:
-            kwargs["formatter_class"] = RichHelpFormatter
+            try:
+                from rich_argparse import RichHelpFormatter
+                kwargs["formatter_class"] = RichHelpFormatter
+            except ImportError:
+                pass
         super().__init__(*args, **kwargs)
 
     def error(self, message: str) -> None:
@@ -55,6 +76,10 @@ def handle_ignore_creation(template: str) -> None:
 
 
 def handle_plugin_list() -> None:
+    from rich.console import Console
+    from rich.table import Table
+    console = Console()
+    
     parsers = list_parsers()
     exporters = list_exporters()
 
@@ -107,6 +132,7 @@ def handle_install(plugin_path: Path) -> None:
 
 
 def handle_uninstall(plugin_id: str, force: bool = False) -> None:
+    from rich.prompt import Confirm
     try:
         if plugin_id == "*":
             parsers_count = len(list_parsers())
@@ -159,6 +185,7 @@ def handle_update() -> None:
 
 def handle_plugin_update(force: bool = False) -> None:
     """Updates the dependencies for all installed custom plugins."""
+    from rich.prompt import Confirm
     from ..utils.db import DatabaseManager
     from ..utils.plugin_loader import PluginManager
     from ..utils.uv import uv_install
@@ -231,7 +258,7 @@ def setup_argparse() -> RichArgumentParser:
         "-e",
         "--exporter",
         type=lambda s: str(s).upper(),
-        choices=get_exporter_strategy_names(),
+        choices=LazyChoices(get_exporter_strategy_names),
         default=TREE_PLAIN_TEXT_NAME,
         help=f"Output exporter strategy (default: {TREE_PLAIN_TEXT_NAME})",
     )
@@ -307,7 +334,7 @@ def setup_argparse() -> RichArgumentParser:
         const="DEFAULT",
         default=None,
         type=lambda s: str(s).upper(),
-        choices=list_ignore_templates(),
+        choices=LazyChoices(list_ignore_templates),
         help="Create a merger.ignore file using a built-in template.",
     )
     

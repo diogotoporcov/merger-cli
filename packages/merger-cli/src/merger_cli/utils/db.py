@@ -1,28 +1,37 @@
 import sqlite3
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Set, Tuple, Optional
-from pydantic import BaseModel, Field
+from typing import List, Optional
+
 from . import config
 
-class PluginRecord(BaseModel):
+
+@dataclass
+class PluginRecord:
     id: str
     name: str
     type: str
     path: str
     original_name: str
-    extensions: List[str] = Field(default_factory=list)
+    extensions: List[str] = field(default_factory=list)
 
 class DatabaseManager:
     def __init__(self, db_path: Optional[Path] = None):
         self.db_path = db_path or config.get_merger_dir() / "merger.db"
-        self._init_db()
+        self._initialized = False
+
+    def _ensure_initialized(self):
+        if not self._initialized:
+            self._init_db()
+            self._initialized = True
 
     def _get_connection(self):
+        self._ensure_initialized()
         return sqlite3.connect(self.db_path)
 
     def _init_db(self):
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        with self._get_connection() as conn:
+        with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS plugins (
                     id TEXT PRIMARY KEY,

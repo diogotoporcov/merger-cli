@@ -2,22 +2,15 @@ import json
 import os
 import re
 import sys
-import time
-import urllib.request
-import urllib.error
 import threading
-from pathlib import Path
+import time
+import urllib.error
+import urllib.request
 from typing import Optional, Tuple
 
-from .version import get_version
 from .config import get_merger_dir
+from .version import get_version
 from ..logging.constants import LOG_COLORS
-from rich.console import Console
-from rich.panel import Panel
-
-# Use a separate console to ensure update messages are always displayed 
-# even if logging is disabled or set to a higher level.
-_update_console = Console(stderr=True)
 
 # Minimum interval between network requests to PyPI (in seconds)
 MIN_CHECK_INTERVAL = 3600
@@ -233,10 +226,19 @@ def set_pending_update_message(current: str, latest: str):
         f"{update_cmd}"
     )
 
+_update_console = None
+
+
 def finalize_update_check():
     """Display the update message if one is pending. Call this at the end of the program."""
-    global _pending_message
+    global _pending_message, _update_console
     if _pending_message:
+        from rich.console import Console
+        from rich.panel import Panel
+
+        if _update_console is None:
+            _update_console = Console(stderr=True)
+
         # Only show update notifications in interactive terminals
         if _update_console.is_terminal:
             color = LOG_COLORS.get("UPDATE", "yellow")

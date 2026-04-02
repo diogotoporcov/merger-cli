@@ -1,10 +1,3 @@
-import os
-from pathlib import Path
-import json
-import time
-
-import merger_cli.utils.update
-from rich.console import Console
 import json
 import os
 import time
@@ -50,6 +43,8 @@ try:
     del os.environ["CI"]
 
     print("\n--- Test 3: Non-TTY (Should skip display) ---")
+    if merger_cli.utils.update._update_console is None:
+        merger_cli.utils.update._update_console = Console(stderr=True)
     original_is_terminal = merger_cli.utils.update._update_console.is_terminal
     merger_cli.utils.update._update_console = Console(force_terminal=False)
     

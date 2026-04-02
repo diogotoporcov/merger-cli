@@ -1,10 +1,10 @@
 import re
 from pathlib import Path
+from types import ModuleType
 from typing import Type, Dict
 
-from types import ModuleType
-from .impl.default_parser import DefaultParser
 from merger_plugin_api import Parser
+
 from ..exceptions import InvalidPlugin
 from ..utils.config import get_or_create_parsers_dir
 from ..utils.plugin_loader import PluginManager
@@ -51,6 +51,7 @@ _PARSER_CACHE: Dict[str, Type[Parser]] = {}
 
 
 def get_parser(filename: str) -> Type[Parser]:
+    from .impl.default_parser import DefaultParser
     filename_lower = filename.lower()
     parsers_meta = list_parsers()
 

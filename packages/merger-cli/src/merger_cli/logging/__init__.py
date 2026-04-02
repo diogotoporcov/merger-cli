@@ -1,9 +1,5 @@
 import logging
 
-from rich.logging import RichHandler
-from rich.console import Console
-
-
 from .constants import LOG_COLORS
 
 
@@ -23,6 +19,9 @@ class RichColorFormatter(logging.Formatter):
 
 
 def setup_logger(name: str = "merger", level: int = logging.INFO) -> logging.Logger:
+    from rich.logging import RichHandler
+    from rich.console import Console
+
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
@@ -44,4 +43,4 @@ def setup_logger(name: str = "merger", level: int = logging.INFO) -> logging.Log
     return logger
 
 
-logger = setup_logger()
+logger = logging.getLogger("merger")
