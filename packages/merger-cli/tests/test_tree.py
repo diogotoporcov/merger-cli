@@ -1,7 +1,9 @@
-import pytest
 from pathlib import Path
-from merger_plugin_api import FileTree, FileEntry, DirectoryEntry
+
+import pytest
 from merger_cli.file_tree.scanner import FileTreeScanner
+from merger_plugin_api import FileEntry, DirectoryEntry
+
 
 @pytest.fixture
 def sample_project(tmp_path):

@@ -1,5 +1,3 @@
-
-import sys
 import os
 from pathlib import Path
 import json
@@ -7,6 +5,14 @@ import time
 
 import merger_cli.utils.update
 from rich.console import Console
+import json
+import os
+import time
+from pathlib import Path
+
+import merger_cli.utils.update
+from rich.console import Console
+
 
 def mock_get_version():
     return "1.0.0"
@@ -18,6 +24,7 @@ cache_dir = Path.home() / ".merger"
 cache_file = cache_dir / "update_check.json"
 cache_dir.mkdir(parents=True, exist_ok=True)
 
+old_cache = None
 if cache_file.exists():
     old_cache = cache_file.read_text()
 
@@ -51,8 +58,7 @@ try:
     merger_cli.utils.update.finalize_update_check()
     
 finally:
-    if old_cache:
+    if old_cache is not None:
         cache_file.write_text(old_cache)
     else:
-        # cache_file.unlink()
-        pass
+        cache_file.unlink(missing_ok=True)
