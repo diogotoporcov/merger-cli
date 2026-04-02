@@ -222,7 +222,7 @@ def set_pending_update_message(current: str, latest: str):
         update_cmd = "Check for updates at: [bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]"
 
     _pending_message = (
-        f"New merger version available: [bold white]{current}[/bold white] -> [bold green]{latest}[/bold green]\n"
+        f"New Merger CLI version available: [bold white]{current}[/bold white] -> [bold green]{latest}[/bold green]\n"
         f"{update_cmd}"
     )
 

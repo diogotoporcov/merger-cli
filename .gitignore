@@ -57,6 +57,7 @@ instance/
 # Tool-specific output (when running tests)
 merger.txt
 merger.json
+merger.ignore
 test_project_windows/
 test_project_macos/
 test_project/

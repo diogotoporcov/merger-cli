@@ -1,6 +1,6 @@
 [Setup]
 AppName=Merger CLI
-AppVersion=4.0.0-alpha.1
+AppVersion=4.0.0-alpha.2
 
 AppPublisher=Diogo Toporcov
 AppPublisherURL=https://github.com/diogotoporcov/merger-cli
@@ -22,9 +22,9 @@ PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 DisableProgramGroupPage=yes
 
-VersionInfoVersion=4.0.0.1
-VersionInfoProductVersion=4.0.0.1
-VersionInfoProductTextVersion=4.0.0-alpha.1
+VersionInfoVersion=4.0.0.2
+VersionInfoProductVersion=4.0.0.2
+VersionInfoProductTextVersion=4.0.0-alpha.2
 VersionInfoCompany=Diogo Losacco Toporcov
 VersionInfoDescription=Installer for Merger CLI
 VersionInfoProductName=Merger CLI
