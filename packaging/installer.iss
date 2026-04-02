@@ -1,13 +1,44 @@
 [Setup]
 AppName=Merger CLI
-AppVersion=4.0.0-alpha
-DefaultDirName={autopf}\MergerCLI
+AppVersion=4.0.0-alpha.1
+
+AppPublisher=Diogo Losacco Toporcov
+AppPublisherURL=https://github.com/diogotoporcov/merger-cli
+AppSupportURL=https://github.com/diogotoporcov/merger-cli/issues
+AppUpdatesURL=https://github.com/diogotoporcov/merger-cli/releases
+AppContact=diogotoporcov@gmail.com
+
+DefaultDirName={localappdata}\Programs\MergerCLI
 DefaultGroupName=Merger CLI
+
 OutputDir=..\dist
 OutputBaseFilename=merger-cli-windows-installer
+
 Compression=lzma
 SolidCompression=yes
 ChangesEnvironment=yes
+WizardStyle=modern
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
+DisableProgramGroupPage=yes
+
+VersionInfoVersion=4.0.0.1
+VersionInfoProductVersion=4.0.0-alpha.1
+VersionInfoCompany=Diogo Losacco Toporcov
+VersionInfoDescription=Installer for Merger CLI
+VersionInfoProductName=Merger CLI
+VersionInfoCopyright=Copyright (C) 2026 Diogo Losacco Toporcov
+
+; Optional if you have these files:
+; SetupIconFile=..\assets\merger.ico
+; LicenseFile=..\LICENSE.txt
+; InfoBeforeFile=..\INSTALLER-README.txt
+; InfoAfterFile=..\RELEASE-NOTES.txt
+
+UninstallDisplayIcon={app}\merger.exe
+
+[Tasks]
+Name: "addtopath"; Description: "Add Merger CLI to PATH"; Flags: checkedonce
 
 [Files]
 Source: "..\dist\merger-cli.exe"; DestDir: "{app}"; DestName: "merger.exe"; Flags: ignoreversion
@@ -54,7 +85,7 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-    if CurStep = ssPostInstall then
+    if (CurStep = ssPostInstall) and WizardIsTaskSelected('addtopath') then
         AddToPath(ExpandConstant('{app}'));
 end;
 
