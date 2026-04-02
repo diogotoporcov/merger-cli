@@ -1,0 +1,41 @@
+name: Publish Plugin API to PyPI
+
+on:
+  push:
+    tags:
+      - 'api-v*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  build-and-publish:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/api-v')
+    runs-on: ubuntu-latest
+    environment: pypi
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build distribution
+        run: |
+          cd packages/merger-plugin-api
+          python -m build
+          mv dist ../../dist
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

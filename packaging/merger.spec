@@ -6,12 +6,12 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy
 SPEC_DIR = os.path.dirname(os.path.abspath(SPEC))
 ROOT = os.path.abspath(os.path.join(SPEC_DIR, ".."))
 
-datas = [(os.path.join(ROOT, 'src/merger-cli/merger_cli/resources'), 'merger_cli/resources')]
+datas = [(os.path.join(ROOT, 'packages/merger-cli/src/merger_cli/resources'), 'merger_cli/resources')]
 datas += collect_data_files('python_magic_bin')
 datas += copy_metadata('merger-cli')
-datas += copy_metadata('merger-cli-api')
+datas += copy_metadata('merger-plugin-api')
 
-hiddenimports = ['merger_cli.cli.main', 'pydantic.deprecated.decorator', 'pip', 'setuptools', 'wheel', 'pkg_resources', 'merger_api']
+hiddenimports = ['merger_cli.cli.main', 'pydantic.deprecated.decorator', 'pip', 'setuptools', 'wheel', 'pkg_resources', 'merger_plugin_api']
 hiddenimports += collect_submodules('pip')
 hiddenimports += collect_submodules('setuptools')
 hiddenimports += collect_submodules('wheel')
@@ -21,7 +21,7 @@ block_cipher = None
 
 a = Analysis(
     [os.path.join(SPEC_DIR, 'merger_wrapper.py')],
-    pathex=[os.path.join(ROOT, 'src/merger-cli'), os.path.join(ROOT, 'src/merger-api')],
+    pathex=[os.path.join(ROOT, 'packages/merger-cli/src'), os.path.join(ROOT, 'packages/merger-plugin-api/src')],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,

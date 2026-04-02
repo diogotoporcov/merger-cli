@@ -1,0 +1,30 @@
+[project]
+name = "merger-plugin-api"
+version = "1.0.0"
+description = "Interfaces and data models for the Merger CLI plugin system."
+keywords = ["merger", "file system", "api", "interfaces", "typing", "plugins"]
+authors = [
+    { name = "Diogo Toporcov", email = "diogotoporcov@gmail.com" }
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[project.urls]
+Homepage = "https://github.com/diogotoporcov/merger-cli"
+Documentation = "https://github.com/diogotoporcov/merger-cli"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["merger_plugin_api"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
