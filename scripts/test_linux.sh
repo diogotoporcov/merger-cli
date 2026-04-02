@@ -13,14 +13,14 @@ echo "Building standalone binary with PyInstaller..."
 pyinstaller packaging/merger.spec
 
 # 3. Verify standalone binary exists
-if [ ! -f dist/merger-cli ]; then
-    echo "Standalone binary not found at dist/merger-cli"
+if [ ! -f dist/merger-cli/merger ]; then
+    echo "Standalone binary not found at dist/merger-cli/merger"
     exit 1
 fi
 
 # 4. Run tests with pytest
 echo "Running standalone tests with pytest..."
-pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli
+pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli/merger
 
 # 5. Build and verify .deb package (if nfpm is available)
 if command -v nfpm >/dev/null 2>&1; then

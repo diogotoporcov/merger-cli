@@ -75,12 +75,14 @@ jobs:
       - name: Prepare Binary Names
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            mv dist/merger-cli.exe dist/merger-cli-windows.exe
+            # No single binary to move for onedir mode on Windows
+            echo "Windows: Using onedir for installer"
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
             mv dist/merger-cli dist/merger-cli-macos
             tar -czf dist/merger-cli-macos.tar.gz -C dist merger-cli-macos
           else
-            mv dist/merger-cli dist/merger-cli-linux
+            # Linux: Keep dist/merger-cli for nfpm
+            echo "Linux: Keeping onedir for .deb package"
           fi
         shell: bash
 

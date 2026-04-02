@@ -8,7 +8,8 @@ class MergerCli < Formula
   depends_on "libmagic"
 
   def install
-    bin.install "merger-cli-macos" => "merger"
+    libexec.install Dir["merger-cli-macos/*"]
+    bin.install_symlink libexec/"merger"
   end
 
   test do

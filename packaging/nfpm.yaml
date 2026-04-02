@@ -10,4 +10,7 @@ depends:
   - libmagic1
 contents:
   - src: dist/merger-cli
+    dst: /usr/lib/merger-cli
+  - src: /usr/lib/merger-cli/merger
     dst: /usr/bin/merger
+    type: symlink

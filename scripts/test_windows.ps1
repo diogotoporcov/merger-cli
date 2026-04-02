@@ -16,7 +16,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 3. Verify standalone binary exists
-$merger_exe = "dist\merger-cli.exe"
+$merger_exe = "dist\merger-cli\merger.exe"
 if (-not (Test-Path $merger_exe)) {
     Write-Host "Standalone binary not found at $merger_exe" -ForegroundColor Red
     exit 1

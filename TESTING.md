@@ -7,10 +7,10 @@ This guide explains how to test the standalone installers and packages generated
 A unified `pytest` suite located at `tests/test_standalone.py` is used to verify the functionality of built artifacts (binaries, `.deb` packages, etc.) across all platforms. This ensures consistent verification and framework-standard reporting.
 
 To run these tests manually:
-1.  **Build the binary**: `pyinstaller merger.spec`
+1.  **Build the binary**: `pyinstaller packaging/merger.spec`
 2.  **Run pytest**:
     ```bash
-    pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli
+    pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli/merger
     ```
 
 The suite covers:
@@ -63,23 +63,23 @@ This script will:
 To verify the standalone `.exe` works:
 1.  Build it locally:
     ```powershell
-    pyinstaller merger.spec
+    pyinstaller packaging/merger.spec
     ```
 2.  Run the generated binary:
     ```powershell
-    .\dist\merger-cli.exe --version
+    .\dist\merger-cli\merger.exe --version
     ```
 3.  Test merge functionality:
     ```powershell
     cd some_project
-    ..\dist\merger-cli.exe .
+    ..\dist\merger-cli\merger.exe .
     ```
 
 ### 2. MSI/EXE Installer (Inno Setup)
 To test the installer:
 1.  Compile the installer using Inno Setup (requires `ISCC.exe` in PATH):
     ```powershell
-    ISCC.exe installer.iss
+    ISCC.exe packaging/installer.iss
     ```
 2.  Run `dist\merger-cli-windows-installer.exe` and follow the steps.
 3.  Verify `merger` is added to your PATH (you may need to restart your terminal).

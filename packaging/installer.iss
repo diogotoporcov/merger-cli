@@ -42,7 +42,7 @@ UninstallDisplayIcon={app}\merger.exe
 Name: "addtopath"; Description: "Add Merger CLI to PATH"; Flags: checkedonce
 
 [Files]
-Source: "..\dist\merger-cli.exe"; DestDir: "{app}"; DestName: "merger.exe"; Flags: ignoreversion
+Source: "..\dist\merger-cli\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\Merger CLI"; Filename: "{app}\merger.exe"
