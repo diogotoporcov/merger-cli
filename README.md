@@ -55,6 +55,8 @@ For detailed CLI documentation, installation methods, and usage guides, see the 
 
 The `merger-plugin-api` is a lightweight library that provides interfaces and data models for extending `merger-cli`. It allows developers to build custom parsers (to read non-text files) and custom exporters (to output data in any format).
 
+- **Supported Python Versions**: 3.8, 3.9, 3.10, and 3.11.
+
 ### Quick Start (API)
 
 1. **Install the API**:

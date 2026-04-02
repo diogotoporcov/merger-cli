@@ -1,5 +1,6 @@
 # Merger Plugin API
 
+[![Python](https://img.shields.io/badge/python-3.8--3.11-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/pypi/v/merger-plugin-api.svg?color=orange)](https://pypi.org/project/merger-plugin-api/)
 
 Interfaces and data models for extending the `merger-cli` tool with custom parsers and exporters.
@@ -8,6 +9,14 @@ This package provides:
 - Abstract base classes for custom **Parsers** and **Exporters**.
 - Data models for the **File Tree** structure.
 - Type definitions for seamless integration with `merger-cli`.
+
+---
+
+## Compatibility
+
+The `merger-plugin-api` is designed to be highly compatible to allow plugin developers to use a variety of environments.
+
+- **Supported Python Versions**: 3.8, 3.9, 3.10, and 3.11.
 
 ---
 
