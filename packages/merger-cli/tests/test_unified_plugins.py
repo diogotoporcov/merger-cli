@@ -86,14 +86,14 @@ exporter_cls = MockExporter
     assert "mock_exporter.py" in captured.out
 
     # 8. Uninstall all (cancelled)
-    with patch("merger_cli.cli.utils.Confirm.ask", return_value=False), \
+    with patch("rich.prompt.Confirm.ask", return_value=False), \
          patch.object(sys, 'argv', ['merger', '-u', '*']):
         main()
     captured = capsys.readouterr()
     assert "Uninstallation cancelled" in captured.out or "Uninstallation cancelled" in captured.err
 
     # 9. Uninstall all (confirmed)
-    with patch("merger_cli.cli.utils.Confirm.ask", return_value=True), \
+    with patch("rich.prompt.Confirm.ask", return_value=True), \
          patch.object(sys, 'argv', ['merger', '-u', '*']):
         main()
     captured = capsys.readouterr()

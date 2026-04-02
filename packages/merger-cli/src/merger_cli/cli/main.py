@@ -14,6 +14,7 @@ def main() -> None:
     parser = setup_argparse()
     args = parser.parse_args()
     setup_logger(level=getattr(logging, args.log_level.upper()))
+    from ..logging import logger
 
     # 1. Initialize injected packages path as the highest priority
     injected_path = get_or_create_site_packages_dir()
@@ -55,19 +56,6 @@ def main() -> None:
 
         if not args.input_dir:
             parser.error("input_dir is required for merging.")
-
-        # Validate all custom plugins before execution
-        from ..parsing.registry import validate_parsers
-        from ..exporters.registry import validate_exporters
-        from ..logging import logger
-        try:
-            validate_parsers()
-            validate_exporters()
-
-        except Exception as e:
-            logger.error(f"Plugin validation failed: {e}")
-            logger.error("Please fix or uninstall the invalid plugin(s) before proceeding.")
-            return
 
         ignore_patterns = args.ignore.copy()
 

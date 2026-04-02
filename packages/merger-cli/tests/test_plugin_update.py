@@ -1,9 +1,10 @@
-import pytest
 import sys
-from unittest.mock import patch, MagicMock
-from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 from merger_cli.cli import main
 from merger_cli.utils.db import PluginRecord
+
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
@@ -23,7 +24,7 @@ def mock_config_dir(tmp_path, monkeypatch):
 
 def test_handle_plugin_update_no_plugins(capsys, mock_config_dir):
     with patch.object(sys, 'argv', ['merger', '--update-plugins']):
-        with patch("merger_cli.cli.utils.Confirm.ask", return_value=False):
+        with patch("rich.prompt.Confirm.ask", return_value=False):
             main()
 
     captured = capsys.readouterr()
@@ -46,7 +47,7 @@ def test_handle_plugin_update_with_plugins(tmp_path, monkeypatch, capsys, mock_c
     ))
 
     # Mock uv_install and Confirm.ask
-    with patch("merger_cli.cli.utils.Confirm.ask", return_value=True) as mock_confirm:
+    with patch("rich.prompt.Confirm.ask", return_value=True) as mock_confirm:
         with patch("merger_cli.utils.uv.uv_install") as mock_uv:
             with patch.object(sys, 'argv', ['merger', '--update-plugins']):
                 main()
@@ -70,7 +71,7 @@ def test_handle_plugin_update_yes_flag(tmp_path, monkeypatch, capsys, mock_confi
         extensions=[".test"]
     ))
 
-    with patch("merger_cli.cli.utils.Confirm.ask") as mock_confirm:
+    with patch("rich.prompt.Confirm.ask") as mock_confirm:
         with patch("merger_cli.utils.uv.uv_install") as mock_uv:
             with patch.object(sys, 'argv', ['merger', '--update-plugins', '-y']):
                 main()
