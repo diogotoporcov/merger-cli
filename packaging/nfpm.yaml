@@ -9,5 +9,5 @@ description: "Merger is a command-line utility for developers that scans a direc
 depends:
   - libmagic1
 contents:
-  - src: ../dist/merger-cli
+  - src: dist/merger-cli
     dst: /usr/bin/merger
