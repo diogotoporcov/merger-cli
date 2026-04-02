@@ -13,8 +13,8 @@
 *.swo
 
 # Build & Distribution
-/build/
-/dist/
+build/
+dist/
 /sdist/
 *.egg-info/
 /__pycache__/
