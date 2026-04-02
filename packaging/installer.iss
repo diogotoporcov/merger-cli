@@ -2,7 +2,7 @@
 AppName=Merger CLI
 AppVersion=4.0.0-alpha.1
 
-AppPublisher=Diogo Losacco Toporcov
+AppPublisher=Diogo Toporcov
 AppPublisherURL=https://github.com/diogotoporcov/merger-cli
 AppSupportURL=https://github.com/diogotoporcov/merger-cli/issues
 AppUpdatesURL=https://github.com/diogotoporcov/merger-cli/releases
