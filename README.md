@@ -1,369 +1,155 @@
 # Merger CLI
 
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/merger-plugin-api.svg?color=orange)](https://pypi.org/project/merger-plugin-api/)
 
 Merger is a **command-line utility** for developers that **scans a directory**, **filters files** using customizable ignore patterns, and **merges all readable content** into a **single output file**, suitable both for **human reading** and for **use by AI models**.
+
 It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** (e.g., `.pdf`) and **custom exporters** (e.g., `.xml`, `.md`).
 
----
-
-## TLDR
-
-1.  **Install Python 3.8 or newer**
-2.  **Create and activate a virtual environment**: (If you want the CLI to be available globally, see [Global Installation](#global-installation))
-    *   **Windows**: `python -m venv .venv && .venv\Scripts\activate`
-    *   **Linux/macOS**: `python3 -m venv .venv && source .venv/bin/activate`
-3.  **Install libmagic** if not installed:
-    *   **Windows**: Automatically downloaded
-    *   **Linux**: `sudo apt-get update && sudo apt-get install libmagic1`  
-    *   **macOS**: `brew install libmagic`
-4.  **Install the API**: `pip install merger-plugin-api` (Note: The CLI is now distributed as standalone binaries or installed from source).
-5.  **Verify the installation**: `merger --version`
-6.  **Navigate to your project folder**: `cd path/to/your/project`
-7.  **Create a merger ignore file**: Manually or with `merger -c [TEMPLATE]` (See [Custom Ignore Templates](#custom-ignore-templates))
-8.  **Execute merger-cli**: `merger .` to create a single combined file called `merger.txt`
-
-For more options, refer to the [Usage](#usage) section below.
+This repository is a monorepo containing:
+- **`merger-cli`**: The main command-line tool.
+- **`merger-plugin-api`**: A lightweight library for building custom plugins.
 
 ---
 
-## Summary
+## Quick Start (CLI)
 
-1. [Features](#features)
-2. [Dependencies](#dependencies)
-3. [Installation](#installation)
-4. [Usage](#usage)
-5. [Ignore Pattern Syntax](#ignore-pattern-syntax)
-6. [Output Formats](#output-formats)
-7. [Custom Parsers](#custom-parsers)
-8. [Custom Exporters](#custom-exporters)
-9. [CLI Options](#cli-options)
-10. [License](#license)
+1.  **Install the CLI**: Download the standalone installer for your OS from [Releases](https://github.com/diogotoporcov/merger-cli/releases).
+2.  **Verify the installation**:
+    ```bash
+    merger --version
+    ```
+3.  **Navigate to your project**:
+    ```bash
+    cd path/to/your/project
+    ```
+4.  **Create an ignore file**:
+    ```bash
+    merger -c PYTHON
+    ```
+5.  **Run Merger**:
+    ```bash
+    merger .
+    ```
+    This creates `merger.txt` in the current directory.
+
+---
+
+## Plugin Development (API)
+
+If you want to extend Merger with custom parsers or exporters, use the `merger-plugin-api`.
+
+1. **Install the API**:
+   ```bash
+   pip install merger-plugin-api
+   ```
+
+2. **Create a Parser**:
+   ```python
+   from pathlib import Path
+   from typing import Union, Type
+   from merger_plugin_api import Parser
+
+   class MyParser(Parser):
+       @classmethod
+       def validate(cls, file_chunk_bytes: Union[bytes, bytearray], file_path: Path) -> bool:
+           return file_path.suffix == ".custom"
+
+       @classmethod
+       def parse(cls, file_bytes: Union[bytes, bytearray], file_path: Path) -> str:
+           return file_bytes.decode("utf-8").upper()
+
+   parser_cls: Type[Parser] = MyParser
+   ```
+
+3. **Install your plugin**:
+   ```bash
+   merger --install-plugin my_parser.py
+   ```
+
+For detailed documentation, see the [Merger Plugin API README](packages/merger-plugin-api/README.md).
 
 ---
 
 ## Features
 
 * **Recursive merge** of all readable files under a root directory.
-* **Custom glob-like ignore patterns** for filtering.
+* **Custom glob-like ignore patterns** with specialized type qualifiers.
+* **Intelligent plugin system**: SQLite-backed tracking with automatic dependency management via `uv`.
 * **Automatic file encoding detection**.
-* **Modular parser & exporter system** for custom formats and outputs with easy CLI management.
-* **Multiple export formats** (built-in and custom).
-* **Modern CLI interface**.
-
----
-
-## Dependencies
-
-* **Python** (3.8+)
-* **libmagic**
-    *   **Windows**: Automatically downloaded
-    *   **Linux**: `sudo apt-get update && sudo apt-get install libmagic1`  
-    *   **macOS**: `brew install libmagic`
-
-All Python package requirements are listed in [`requirements.txt`](requirements.txt).
+* **Multiple export formats**: Built-in support for Plain Text, JSON, Directory Trees, and more.
+* **Professional CLI**: Modern interface with update notifications and non-interactive mode.
 
 ---
 
 ## Installation
 
-### Installation from Source (Recommended for Developers)
+### Standalone Installation (Recommended)
 
-1. Clone the repository:
+Merger CLI is distributed as standalone binaries. These include their own Python 3.11 environment and `uv` package manager, requiring **no local Python installation**.
+
+*   **Windows**: Download and run `merger-cli-windows-installer.exe`.
+*   **Linux (.deb)**:
     ```bash
-    git clone https://github.com/diogotoporcov/merger-cli.git
-    cd merger-cli
+    sudo apt install ./merger-cli.deb
+    ```
+*   **macOS (Homebrew)**:
+    ```bash
+    brew tap diogotoporcov/merger-cli
+    brew install merger-cli
     ```
 
-2. Install the API first:
-    ```bash
-    pip install -e ./packages/merger-plugin-api
-    ```
+### From Source
 
-3. Install the CLI in editable mode:
-    ```bash
-    pip install -e .
-    ```
-
-4. Verify the installation:
-    ```bash
-    merger --version
-    ```
-
-### Global Installation
-
-For a professional, zero-dependency experience, it is recommended to use the **Standalone Installers**.
-
-If you still prefer to use **pipx** from source:
-```bash
-pipx install .
-```
-
-### Standalone Installation (No Python Required)
-
-For a professional, zero-dependency experience, you can download standalone installers from the [GitHub Releases](https://github.com/diogotoporcov/merger-cli/releases) page. These bundles include their own Python interpreter and `pip`.
-
-#### Windows
-Download and run the `merger-cli-windows-installer.exe`. This will automatically add `merger` to your system PATH.
-
-#### Linux (.deb / Ubuntu / Debian)
-Download the `merger-cli.deb` and install it:
-```bash
-sudo apt install ./merger-cli.deb
-```
-This will also install the necessary `libmagic1` dependency.
-
-#### macOS (Homebrew)
-You can install via Homebrew by tapping the official repository (if available) or using the released tarball:
-```bash
-brew install diogotoporcov/merger-cli/merger-cli
-```
-Alternatively, download `merger-cli-macos.tar.gz`, extract it, and move the `merger` binary to your `/usr/local/bin`.
-
-#### Managing Dependencies in Standalone Mode
-Since standalone bundles are isolated, you can't use your system's `pip` to add dependencies. Use the built-in injection commands instead:
-```bash
-# Inject specific packages
-merger --inject pymupdf "pydantic>=2.0"
-
-# Inject from a requirements file
-merger --inject-package --install-package-file requirements.txt
-
-# Purge all injected packages
-merger --purge-packages
-
-# Update injected packages to the latest versions
-merger --update-injected
-```
-
-### Updating merger-cli
-
-To update the tool itself to the latest version:
-```bash
-merger --update
-```
-This command is context-aware:
-- **Pip/Pipx**: Automatically executes the correct upgrade command.
-- **Standalone**: Directs you to the GitHub releases page for the latest installer.
+For developers:
+1. Clone the repository.
+2. Install the API: `pip install -e ./packages/merger-plugin-api`
+3. Install the CLI: `pip install -e ./packages/merger-cli`
 
 ---
 
-## Usage
+## Plugin System
 
-### Basic merge
+Merger CLI features a professional plugin architecture. Plugins are standalone Python files that can define their own dependencies via a `REQUIREMENTS` list.
 
-```bash
-merger .
-```
+### Managing Plugins
+*   **Install**: `merger --install-plugin path/to/plugin.py`
+*   **List**: `merger --list-plugins`
+*   **Update**: `merger --update-plugins` (Updates dependencies for all installed plugins)
+*   **Uninstall**: `merger --uninstall-plugin <plugin_id>` (Automatically purges unused dependencies)
 
-> **Note:** A `merger.ignore` file is **required** in the current directory for the tool to run. You can create one quickly using `merger --create-ignore`.
-
-This writes a file named `merger.txt` in the current directory.
-
----
-
-### Save output to a specific directory
-
-```bash
-merger ./project ./out
-```
-
-This writes `./out/merger.txt` (or `./out/merger.json`, depending on the exporter).
+For developers looking to build plugins, see the [Merger Plugin API Documentation](packages/merger-plugin-api/README.md).
 
 ---
 
-### Pick an output format
+## Usage Guide
 
-Use `-e` or `--exporter` to select the output format:
-
-```bash
-merger ./src --exporter JSON
-```
-
-```bash
-merger ./src --exporter DIRECTORY_TREE
-```
-
-```bash
-merger ./src --exporter PLAIN_TEXT
-```
-
-```bash
-merger ./src --exporter TREE_PLAIN_TEXT
-```
-
----
-
-### Custom ignore patterns
-
-Provide one or more ignore patterns with `--ignore` (see [Ignore Pattern Syntax](#ignore-pattern-syntax)):
-
-```bash
-merger ./project --ignore "*.log" "__pycache__/**" "*.tmp"
-```
-
----
-
-### Custom ignore file
-
-Provide a file containing ignore patterns (one per line) with `--merger-ignore` (see [Ignore Pattern Syntax](#ignore-pattern-syntax)):
-
-```bash
-merger . --merger-ignore "C:\Users\USER\Desktop\ignore.txt"
-```
-
----
-
-### Custom ignore templates
-
-Quickly create a `merger.ignore` file using built-in templates:
-
-```bash
-merger -c PYTHON
-```
-
-Supported templates: `DEFAULT`, `PYTHON`, `JAVASCRIPT`, `TYPESCRIPT`, `JAVA`, `GO`, `RUST`, `CPP`, `CSHARP`, `RUBY`, `PHP`, `KOTLIN`.
-
----
-
-### Custom Modules and `merger-plugin-api`
-
-If you want to extend `merger-cli` with custom parsers or exporters, you should use the `merger-plugin-api` package. This package provides the necessary interfaces and data models without the full overhead of the CLI tool.
-
-For detailed documentation and examples on how to create custom modules, please refer to the [Merger API Documentation](packages/merger-plugin-api/README.md).
-
----
-
-### Verbose output
-
-```bash
-merger ./src --log-level DEBUG
-```
-
----
-
-## Ignore Pattern Syntax
-
-Ignore patterns are evaluated **relative to the input directory** (the scan root). `merger-cli` uses standard **Git-style matching** (via `pathspec`), with some additional custom qualifiers.
-
-### Recursive vs. Anchored
-
-*   **Recursive**: Patterns with **no slashes** (or starting with `**/`) match anywhere in the directory tree.
-    *   Example: `*.log` matches `root/app.log` and `root/logs/app.log`.
-*   **Anchored**: Patterns with **at least one internal slash** or a **leading slash** are anchored to the scan root.
-    *   Example: `src/*.py` matches `root/src/main.py` but **not** `root/project/src/main.py`.
-    *   Example: `/config.json` matches `root/config.json` but **not** `root/subdir/config.json`.
-*   **Leading `./`**: Normalized to `/` and treated as an anchored pattern.
-
-### Pattern Components
-
-*   `*` matches any number of characters within a single path segment.
-*   `**` matches zero or more directories.
-    *   Example: `**/node_modules/` matches `node_modules` at any depth.
-*   `?` matches exactly one character.
-*   `[seq]` matches any character in *seq*.
-
-### Type qualifiers
-
-* Trailing `/` requires the matched path to be a **directory**
-  * Example: `build/` matches the `build` directory entry
-
-
-* Trailing `:` requires the matched path to be a **file**
-  * Example: `README.md:` matches the `README.md` file
-
-
-* Trailing `!`:
-  * This is a special escape suffix that disables type qualification and preserves
-    any trailing `/` or `:` as literal characters in the final path segment
-
-    * Examples:
-      * `data:!` matches any file or directory literally named `data:`
-      * `data::` matches any file literally named `data:`
-      * `data:/` matches any directory literally named `data:`
-      * `data!!` matches any file or directory literally named `data!`
-      * `data!/` matches any directory literally named `data!`
-      * `data!:` matches any file literally named `data!`
-
-
-### Examples
-
-Ignore all files or directories that end with `.log`:
-* `*.log` (Recursive)
-
-Ignore the `dist` directory at the scan root:
-* `dist/` (Anchored because it has a slash)
-
-Ignore all `node_modules` directories anywhere:
-* `**/node_modules/` (Recursive)
-
-Ignore a file named `config.json` at the scan root:
-* `/config.json:`
-
-Ignore all `.py` files directly under the **root** `src` directory:
-* `src/*.py:`
-
-Ignore all `__pycache__` directories inside the **root** `src` directory:
-* `src/**/__pycache__/`
-
-Ignore all files `data:`:
-* `data::`
-
-Ignore all directories `data:`:
-* `data:/`
-
-Ignore all files or directories `data:`:
-* `data:!`
-
----
-
-## Output Formats
-
-Merger writes **one output file** to the output directory, named `merger.<extension>` based on the selected exporter.
+### Output Formats (`-e` / `--exporter`)
 
 | Exporter Name     | File Extension | Description                                                                                    |
 |-------------------|----------------|------------------------------------------------------------------------------------------------|
 | `TREE_PLAIN_TEXT` | `.txt`         | Directory tree + plain-text merged file contents (**default**).                                |
-| `PLAIN_TEXT`      | `.txt`         | Plain-text merged file contents with `<<FILE_START>>` / `<<FILE_END>>` file delimiter.         |
+| `PLAIN_TEXT`      | `.txt`         | Plain-text merged contents with file delimiters.                                               |
 | `TREE`            | `.txt`         | Directory tree only.                                                                           |
-| `JSON`            | `.json`        | JSON mapping file paths to parsed file contents (`path: content`).                             |
-| `JSON_TREE`       | `.json`        | Structured JSON representing the directory tree and file contents with hierarchy and metadata. |
+| `JSON`            | `.json`        | JSON mapping file paths to parsed contents.                                                    |
+| `JSON_TREE`       | `.json`        | Structured JSON with hierarchy and metadata.                                                   |
 
----
+### Ignore Pattern Syntax
 
-## Custom Parsers
+Patterns are relative to the scan root. Merger uses **Git-style matching** with custom type qualifiers:
 
-Merger uses **parser strategies** to support parsing of non-text file formats (e.g., PDF, images with OCR, etc.).
+*   `*` matches any number of characters within a path segment.
+*   `**` matches zero or more directories.
+*   Trailing `/` matches only **directories**.
+*   Trailing `:` matches only **files**.
+*   Trailing `!` disables type qualification (treats trailing `/` or `:` as literal).
 
-For instructions on how to implement your own parser, see the [Merger API Documentation](packages/merger-plugin-api/README.md).
-
-### Managing Custom Modules
-
-To install a custom module (parser or exporter):
-```bash
-merger --install path/to/module.py
-```
-
-To list all installed modules:
-```bash
-merger --list
-```
-
-To uninstall a module by its ID:
-```bash
-merger --uninstall <module_id>
-```
-*(Use `*` to uninstall all custom modules)*
-
----
-
-## Custom Exporters
-
-You can also extend Merger with **custom export strategies** to output data in any format (e.g., XML, Markdown, CSV).
-
-For instructions on how to implement your own exporter, see the [Merger API Documentation](packages/merger-plugin-api/README.md).
+#### Examples
+* `*.log`: Ignore all `.log` files recursively.
+* `dist/`: Ignore the `dist` directory at the root.
+* `src/*.py:`: Ignore all `.py` files directly under the `src` directory.
 
 ---
 
@@ -371,17 +157,18 @@ For instructions on how to implement your own exporter, see the [Merger API Docu
 
 | Option                     | Description                                                                                 |
 |----------------------------|---------------------------------------------------------------------------------------------|
-| `input_dir`                | Root directory to scan for files.                                                           |
-| `output_path`              | Output directory where the tool writes `merger.<ext>` (default: current directory).         |
-| `-e, --exporter`           | Output exporter strategy (e.g., `TREE_PLAIN_TEXT`, `PLAIN_TEXT`, `JSON`, `XML`).            |
-| `-i, --install`            | Install a custom module (parser or exporter).                                               |
-| `-u, --uninstall`          | Uninstall a module by ID (`*` removes all modules including parsers and exporters).         |
-| `-l, --list`               | List all installed custom modules.                                                          |
-| `--ignore`                 | One or more ignore patterns (see [Ignore Pattern Syntax](#ignore-pattern-syntax)).          |
-| `--merger-ignore`          | File containing ignore patterns (default: `./merger.ignore`).                               |
-| `-c, --create-ignore`      | Create a `merger.ignore` file using a built-in template (e.g., `DEFAULT`, `PYTHON`).        |
-| `--version`                | Show installed version.                                                                     |
-| `--log-level`              | Set logging verbosity.                                                                      |
+| `INPUT_DIR_PATH`           | Root directory to scan.                                                                     |
+| `OUTPUT_FILE_DIR_PATH`     | Directory to save the output (default: `.`).                                                |
+| `-e, --exporter`           | Choose the exporter strategy.                                                               |
+| `-i, --install-plugin`     | Install a custom parser or exporter plugin.                                                 |
+| `-u, --uninstall-plugin`   | Uninstall a plugin by ID (use `*` for all).                                                 |
+| `-l, --list-plugins`       | List all installed custom plugins.                                                          |
+| `--update-plugins`         | Update dependencies for all installed plugins.                          |
+| `--update`                 | Check for CLI updates and provide download links.                                           |
+| `--ignore`                 | Glob-style patterns to ignore.                                                              |
+| `--merger-ignore`          | Path to ignore file (default: `./merger.ignore`).                                           |
+| `-c, --create-ignore`      | Create an ignore file from template (e.g., `PYTHON`, `RUST`).                               |
+| `-y, --yes`                | Enable non-interactive mode (auto-confirm prompts).                                         |
 
 ---
 

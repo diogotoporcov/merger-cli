@@ -94,7 +94,7 @@ All Python package requirements are listed in [`requirements.txt`](requirements.
 
 ### Global Installation
 
-For a professional, zero-dependency experience, it is recommended to use the **Standalone Installers**.
+For a zero-dependency experience, it is recommended to use the **Standalone Installers**.
 
 If you still prefer to use **pipx** from source:
 ```bash
@@ -103,7 +103,7 @@ pipx install .
 
 ### Standalone Installation (No Python Required)
 
-For a professional, zero-dependency experience, you can download standalone installers from the [GitHub Releases](https://github.com/diogotoporcov/merger-cli/releases) page. These bundles include their own Python interpreter and `pip`.
+For a zero-dependency experience, you can download standalone installers from the [GitHub Releases](https://github.com/diogotoporcov/merger-cli/releases) page. These bundles include their own Python interpreter and `pip`.
 
 #### Windows
 Download and run the `merger-cli-windows-installer.exe`. This will automatically add `merger` to your system PATH.
@@ -122,20 +122,17 @@ brew install diogotoporcov/merger-cli/merger-cli
 ```
 Alternatively, download `merger-cli-macos.tar.gz`, extract it, and move the `merger` binary to your `/usr/local/bin`.
 
-#### Managing Dependencies in Standalone Mode
-Since standalone bundles are isolated, you can't use your system's `pip` to add dependencies. Use the built-in injection commands instead:
+#### Managing Plugin Dependencies
+Since standalone bundles are isolated, you can't use your system's `pip` to add dependencies. Use the built-in management commands instead:
 ```bash
-# Inject specific packages
-merger --inject pymupdf "pydantic>=2.0"
+# Install a plugin (automatically installs dependencies listed in REQUIREMENTS)
+merger --install-plugin path/to/plugin.py
 
-# Inject from a requirements file
-merger --inject-package --install-package-file requirements.txt
+# Update dependencies for all installed plugins
+merger --update-plugins
 
-# Purge all injected packages
-merger --purge-packages
-
-# Update injected packages to the latest versions
-merger --update-injected
+# Uninstall a plugin (automatically purges unused dependencies)
+merger --uninstall-plugin <plugin_id>
 ```
 
 ### Updating merger-cli
@@ -228,11 +225,11 @@ Supported templates: `DEFAULT`, `PYTHON`, `JAVASCRIPT`, `TYPESCRIPT`, `JAVA`, `G
 
 ---
 
-### Custom Modules and `merger-plugin-api`
+### Custom Plugins and `merger-plugin-api`
 
 If you want to extend `merger-cli` with custom parsers or exporters, you should use the `merger-plugin-api` package. This package provides the necessary interfaces and data models without the full overhead of the CLI tool.
 
-For detailed documentation and examples on how to create custom modules, please refer to the [Merger API Documentation](packages/merger-plugin-api/README.md).
+For detailed documentation and examples on how to create custom plugins, please refer to the [Merger Plugin API Documentation](packages/merger-plugin-api/README.md).
 
 ---
 
@@ -339,23 +336,28 @@ Merger uses **parser strategies** to support parsing of non-text file formats (e
 
 For instructions on how to implement your own parser, see the [Merger API Documentation](packages/merger-plugin-api/README.md).
 
-### Managing Custom Modules
+### Managing Custom Plugins
 
-To install a custom module (parser or exporter):
+To install a custom plugin (parser or exporter):
 ```bash
-merger --install path/to/module.py
+merger --install-plugin path/to/plugin.py
 ```
 
-To list all installed modules:
+To list all installed plugins:
 ```bash
-merger --list
+merger --list-plugins
 ```
 
-To uninstall a module by its ID:
+To update dependencies for all installed plugins:
 ```bash
-merger --uninstall <module_id>
+merger --update-plugins
 ```
-*(Use `*` to uninstall all custom modules)*
+
+To uninstall a plugin by its ID:
+```bash
+merger --uninstall-plugin <plugin_id>
+```
+*(Use `*` to uninstall all custom plugins)*
 
 ---
 
@@ -371,17 +373,20 @@ For instructions on how to implement your own exporter, see the [Merger API Docu
 
 | Option                     | Description                                                                                 |
 |----------------------------|---------------------------------------------------------------------------------------------|
-| `input_dir`                | Root directory to scan for files.                                                           |
-| `output_path`              | Output directory where the tool writes `merger.<ext>` (default: current directory).         |
+| `INPUT_DIR_PATH`           | Root directory to scan for files.                                                           |
+| `OUTPUT_FILE_DIR_PATH`     | Output directory where the tool writes `merger.<ext>` (default: current directory).         |
 | `-e, --exporter`           | Output exporter strategy (e.g., `TREE_PLAIN_TEXT`, `PLAIN_TEXT`, `JSON`, `XML`).            |
-| `-i, --install`            | Install a custom module (parser or exporter).                                               |
-| `-u, --uninstall`          | Uninstall a module by ID (`*` removes all modules including parsers and exporters).         |
-| `-l, --list`               | List all installed custom modules.                                                          |
+| `-i, --install-plugin`     | Install a custom plugin (parser or exporter).                                               |
+| `-u, --uninstall-plugin`   | Uninstall a plugin by ID (`*` removes all plugins including parsers and exporters).         |
+| `-l, --list-plugins`       | List all installed custom plugins.                                                          |
+| `--update-plugins`         | Update dependencies for all installed plugins.                                              |
+| `--update`                 | Check for CLI updates and provide download links.                                           |
 | `--ignore`                 | One or more ignore patterns (see [Ignore Pattern Syntax](#ignore-pattern-syntax)).          |
 | `--merger-ignore`          | File containing ignore patterns (default: `./merger.ignore`).                               |
 | `-c, --create-ignore`      | Create a `merger.ignore` file using a built-in template (e.g., `DEFAULT`, `PYTHON`).        |
 | `--version`                | Show installed version.                                                                     |
 | `--log-level`              | Set logging verbosity.                                                                      |
+| `-y, --yes`                | Enable non-interactive mode (auto-confirm prompts).                                         |
 
 ---
 
