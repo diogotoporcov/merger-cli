@@ -23,7 +23,8 @@ PrivilegesRequiredOverridesAllowed=dialog
 DisableProgramGroupPage=yes
 
 VersionInfoVersion=4.0.0.1
-VersionInfoProductVersion=4.0.0-alpha.1
+VersionInfoProductVersion=4.0.0.1
+VersionInfoProductTextVersion=4.0.0-alpha.1
 VersionInfoCompany=Diogo Losacco Toporcov
 VersionInfoDescription=Installer for Merger CLI
 VersionInfoProductName=Merger CLI
