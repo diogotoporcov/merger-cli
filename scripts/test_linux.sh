@@ -26,7 +26,7 @@ pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli
 if command -v nfpm >/dev/null 2>&1; then
     echo "Building .deb package..."
     # Extract version from pyproject.toml
-    PKG_VERSION=$(grep -Po '(?<=version = ")[^"]+' pyproject.toml)
+    PKG_VERSION=$(grep -Po '(?<=version = ")[^"]+' packages/merger-cli/pyproject.toml)
     VERSION=$PKG_VERSION nfpm package --config packaging/nfpm.yaml --target dist/merger-cli.deb
     echo "Installer built successfully at dist/merger-cli.deb"
     
