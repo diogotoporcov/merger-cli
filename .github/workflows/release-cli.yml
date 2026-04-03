@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "./packages/merger-plugin-api"
-          pip install "./packages/merger-cli[dev]"
+          pip install "./packages/merger-plugin-api[test]"
+          pip install "./packages/merger-cli[test,dev]"
 
       - name: (Linux) Install libmagic
         if: matrix.os == 'ubuntu-latest'
@@ -49,14 +49,16 @@ jobs:
           dotnet tool install --global wix --version 5.0.2
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Build with PyInstaller
-        if: matrix.os != 'windows-latest'
-        run: pyinstaller packaging/merger.spec
-
-      - name: (Windows) Create Installer
-        if: matrix.os == 'windows-latest'
-        run: powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1
-        shell: powershell
+      - name: Build and Verify
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            bash scripts/test_linux.sh
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            bash scripts/test_macos.sh
+          else
+            powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1
+          fi
+        shell: bash
 
       - name: Set Package Version and Metadata
         run: |
@@ -140,10 +142,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install jinja2
-
       - name: Download SHA256 Artifact
         uses: actions/download-artifact@v4
         with:
@@ -155,7 +153,6 @@ jobs:
           TAG_NAME=${{ github.ref_name }}
           
           # Extract metadata from pyproject.toml using our new helper
-          python -m pip install tomli >/dev/null 2>&1 || true
           META=$(python scripts/metadata_helper.py)
           DESC=$(echo "$META" | grep "^description=" | cut -d'=' -f2)
           HP=$(echo "$META" | grep "^homepage=" | cut -d'=' -f2)

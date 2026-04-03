@@ -69,7 +69,5 @@ test_dir/
 
 # Generated Windows installer artifacts
 packaging/license.rtf
-dist/
-build/
 # Generated Homebrew formula
 Formula/merger-cli.rb

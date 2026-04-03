@@ -52,16 +52,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install "./packages/merger-plugin-api[test]"
-          pip install "./packages/merger-cli[test]"
+          pip install "./packages/merger-cli[test,dev]"
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
-          if [ -d "packages/merger-cli/tests" ] && [ -n "$(find packages/merger-cli/tests -name 'test_*.py' 2>/dev/null)" ]; then
-            pytest --cov=merger_cli packages/merger-cli/tests/
+          if [ -d "packages/merger-cli/tests" ] && [ -n "$(find packages/merger-cli/tests -name 'test_*.py' -not -name 'test_standalone.py' 2>/dev/null)" ]; then
+            pytest --cov=merger_cli --ignore=packages/merger-cli/tests/test_standalone.py packages/merger-cli/tests/
           else
-            echo "No tests found in packages/merger-cli/tests/, skipping"
-            exit 0
+            echo "No unit tests found in packages/merger-cli/tests/, skipping"
           fi
+
+      - name: (Linux) Install nfpm
+        run: |
+          echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt-get update && sudo apt-get install -y nfpm
+
+      - name: Build and verify standalone
+        run: bash scripts/test_linux.sh
 
   test-api:
     name: test-api (ubuntu, ${{ matrix.python-version }})
@@ -123,19 +130,32 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: brew install libmagic
 
+      - name: (Windows) Install WiX Toolset
+        if: matrix.os == 'windows-latest'
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install "./packages/merger-plugin-api[test]"
-          pip install "./packages/merger-cli[test]"
+          pip install "./packages/merger-cli[test,dev]"
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
-          if [ -d "packages/merger-cli/tests" ] && [ -n "$(find packages/merger-cli/tests -name 'test_*.py' 2>/dev/null)" ]; then
-            pytest --cov=merger_cli packages/merger-cli/tests/
+          if [ -d "packages/merger-cli/tests" ] && [ -n "$(find packages/merger-cli/tests -name 'test_*.py' -not -name 'test_standalone.py' 2>/dev/null)" ]; then
+            pytest --cov=merger_cli --ignore=packages/merger-cli/tests/test_standalone.py packages/merger-cli/tests/
           else
-            echo "No tests found in packages/merger-cli/tests/, skipping"
-            exit 0
+            echo "No unit tests found in packages/merger-cli/tests/, skipping"
+          fi
+
+      - name: Build and verify standalone
+        run: |
+          if [ "${{ matrix.os }}" == "macos-latest" ]; then
+            bash scripts/test_macos.sh
+          else
+            powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1
           fi
 
   tests-passed:
@@ -145,62 +165,8 @@ jobs:
       - test-ubuntu
       - test-api
       - test-platforms
-      - test-standalone
     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') }}
 
     steps:
       - name: All tests passed
         run: echo "All tests passed"
-
-  test-standalone:
-    name: build & test standalone (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    needs: [test-ubuntu, test-platforms]
-    if: ${{ !startsWith(github.ref, 'refs/tags/api-v') }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install "./packages/merger-plugin-api[test]"
-          pip install "./packages/merger-cli[test,dev]"
-
-      - name: (Linux) Install libmagic & nfpm
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update && sudo apt-get install -y libmagic1
-          echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" | sudo tee /etc/apt/sources.list.d/goreleaser.list
-          sudo apt-get update && sudo apt-get install -y nfpm
-
-      - name: (macOS) Install libmagic
-        if: matrix.os == 'macos-latest'
-        run: brew install libmagic
-
-      - name: (Windows) Install WiX Toolset
-        if: matrix.os == 'windows-latest'
-        run: |
-          dotnet tool install --global wix --version 5.0.2
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
-      - name: Build and verify standalone
-        run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            bash scripts/test_linux.sh
-          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-            bash scripts/test_macos.sh
-          else
-            powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1
-          fi
