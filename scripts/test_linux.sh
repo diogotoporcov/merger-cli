@@ -25,9 +25,17 @@ pytest packages/merger-cli/tests/test_standalone.py --merger-bin=dist/merger-cli
 # 5. Build and verify .deb package (if nfpm is available)
 if command -v nfpm >/dev/null 2>&1; then
     echo "Building .deb package..."
-    # Extract version from pyproject.toml
-    PKG_VERSION=$(grep -Po '(?<=version = ")[^"]+' packages/merger-cli/pyproject.toml)
-    VERSION=$PKG_VERSION nfpm package --config packaging/nfpm.yaml --target dist/merger-cli.deb
+    # Extract metadata from pyproject.toml
+    # Ensure tomli is available
+    python3 -m pip install tomli >/dev/null 2>&1 || true
+    
+    META=$(python3 scripts/metadata_helper.py)
+    VERSION=$(echo "$META" | grep "^version=" | cut -d'=' -f2)
+    DESCRIPTION=$(echo "$META" | grep "^description=" | cut -d'=' -f2)
+    HOMEPAGE=$(echo "$META" | grep "^homepage=" | cut -d'=' -f2)
+    
+    VERSION=$VERSION DESCRIPTION=$DESCRIPTION HOMEPAGE=$HOMEPAGE \
+    nfpm package --config packaging/nfpm.yaml --target dist/merger-cli.deb
     echo "Installer built successfully at dist/merger-cli.deb"
     
     # Try to install and test if sudo is available or running as root

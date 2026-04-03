@@ -71,6 +71,3 @@ test_dir/
 packaging/merger.wxs
 packaging/license.rtf
 packaging/installer.iss
-
-# Generated Homebrew formula
-Formula/merger-cli.rb

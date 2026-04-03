@@ -46,7 +46,7 @@ jobs:
       - name: (Windows) Install WiX Toolset
         if: matrix.os == 'windows-latest'
         run: |
-          dotnet tool install --global wix
+          dotnet tool install --global wix --version 5.0.2
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Build with PyInstaller
@@ -58,17 +58,24 @@ jobs:
         run: powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1
         shell: powershell
 
-      - name: Set Package Version
+      - name: Set Package Version and Metadata
         run: |
           VERSION=${{ github.ref_name }}
-          # Strip prefixes cli-v, api-v, or v
           VERSION=${VERSION#cli-v}
           VERSION=${VERSION#api-v}
           VERSION=${VERSION#v}
           echo "PKG_VERSION=${VERSION}" >> $GITHUB_ENV
+          
+          # Extract metadata from pyproject.toml using our new helper
+          python -m pip install tomli >/dev/null 2>&1 || true
+          META=$(python scripts/metadata_helper.py)
+          DESC=$(echo "$META" | grep "^description=" | cut -d'=' -f2)
+          HP=$(echo "$META" | grep "^homepage=" | cut -d'=' -f2)
+          echo "DESCRIPTION=$DESC" >> $GITHUB_ENV
+          echo "HOMEPAGE=$HP" >> $GITHUB_ENV
         shell: bash
 
-      - name: (Linux) Create .deb Package
+      - name: (Linux) Create .deb Package and Homebrew Formula
         if: matrix.os == 'ubuntu-latest'
         run: |
           NFPM_VERSION="2.41.3"
@@ -77,6 +84,8 @@ jobs:
           ./nfpm package --config packaging/nfpm.yaml --target dist/merger-cli.deb
         env:
           VERSION: ${{ env.PKG_VERSION }}
+          DESCRIPTION: ${{ env.DESCRIPTION }}
+          HOMEPAGE: ${{ env.HOMEPAGE }}
 
       - name: Prepare Binary Names
         run: |
@@ -144,7 +153,19 @@ jobs:
         run: |
           SHA256=$(cat macos_sha256.txt)
           TAG_NAME=${{ github.ref_name }}
-          python scripts/generate_installer.py --sha256 "$SHA256" --tag-name "$TAG_NAME"
+          
+          # Extract metadata from pyproject.toml using our new helper
+          python -m pip install tomli >/dev/null 2>&1 || true
+          META=$(python scripts/metadata_helper.py)
+          DESC=$(echo "$META" | grep "^description=" | cut -d'=' -f2)
+          HP=$(echo "$META" | grep "^homepage=" | cut -d'=' -f2)
+          
+          # Use sed to update the template
+          cp Formula/merger-cli.rb.template Formula/merger-cli.rb
+          sed -i "s|%%DESCRIPTION%%|$DESC|g" Formula/merger-cli.rb
+          sed -i "s|%%HOMEPAGE%%|$HP|g" Formula/merger-cli.rb
+          sed -i "s|%%TAG_NAME%%|$TAG_NAME|g" Formula/merger-cli.rb
+          sed -i "s|%%SHA256%%|$SHA256|g" Formula/merger-cli.rb
 
       - name: Commit and Push
         run: |

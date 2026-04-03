@@ -62,26 +62,53 @@ if ($wix_version -like "7.*") {
     & "$wix_exe" eula accept wix7 --acceptEula true
 }
 
-Write-Host "Generating WiX source file..." -ForegroundColor Cyan
-python scripts\generate_installer.py
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Failed to generate WiX source files!" -ForegroundColor Red
-    exit $LASTEXITCODE
+Write-Host "Preparing MSI metadata and license..." -ForegroundColor Cyan
+$metadata = @{}
+python scripts\metadata_helper.py | ForEach-Object {
+    if ($_ -match "([^=]+)=(.*)") {
+        $metadata[$Matches[1]] = $Matches[2]
+    }
 }
+
+python scripts\metadata_helper.py --rtf | Out-Null
 
 Write-Host "Building Windows MSI installer (WiX v4+)..." -ForegroundColor Cyan
 
 # 1. Add required extensions
 Write-Host "Checking/Adding WiX extensions..."
-& "$wix_exe" extension add WixToolset.UI.wixext
+$wix_major = 0
+if ($wix_version -match "^(\d+)") {
+    $wix_major = [int]$Matches[1]
+}
+
+$ext_version = ""
+if ($wix_major -eq 5) {
+    $ext_version = "5.0.2"
+} elseif ($wix_major -eq 4) {
+    $ext_version = "4.0.5"
+} elseif ($wix_major -eq 7) {
+    $ext_version = "7.0.0-rc.2"
+}
+
+$ext_pkg = "WixToolset.UI.wixext"
+if ($ext_version) {
+    $ext_pkg = "$ext_pkg/$ext_version"
+}
+
+& "$wix_exe" extension add $ext_pkg
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Failed to add WiX extensions!" -ForegroundColor Red
+    Write-Host "Failed to add WiX extension: $ext_pkg" -ForegroundColor Red
     exit $LASTEXITCODE
 }
 
 # 2. Build (compile & link)
 Write-Host "Compiling and linking MSI..."
-& "$wix_exe" build -arch x64 -ext WixToolset.UI.wixext packaging\merger.wxs -o "dist\merger-cli-installer.msi"
+& "$wix_exe" build -arch x64 -ext WixToolset.UI.wixext `
+    -d Version=$($metadata["msi_version"]) `
+    -d Description="$($metadata["description"])" `
+    -d Homepage="$($metadata["homepage"])" `
+    -d LicenseRtf="packaging\license.rtf" `
+    packaging\merger.wxs -o "dist\merger-cli-installer.msi"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "MSI Installer built successfully at dist\merger-cli-installer.msi" -ForegroundColor Green
