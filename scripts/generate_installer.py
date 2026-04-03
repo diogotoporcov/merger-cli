@@ -3,7 +3,11 @@ import re
 import sys
 from pathlib import Path
 
-import tomli
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
+
 from jinja2 import Template
 
 
@@ -49,7 +53,7 @@ def main():
         sys.exit(1)
 
     with open(pyproject_path, "rb") as f:
-        pyproject = tomli.load(f)
+        pyproject = tomllib.load(f)
         
     project = pyproject["project"]
     version = project["version"]
