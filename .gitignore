@@ -63,3 +63,9 @@ test_project_macos/
 test_project/
 test_deb/
 test_dir/
+
+# WiX Toolset v4+ extension cache and intermediate files
+.wix/
+
+# Generated Windows installer source files
+packaging/merger.wxs
