@@ -193,7 +193,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           dotnet tool install --global wix
-          echo "C:\Users\runneradmin\.dotnet\tools" >> $GITHUB_PATH
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Build and verify standalone
         run: |
