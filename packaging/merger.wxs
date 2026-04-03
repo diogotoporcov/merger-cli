@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" 
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
     <!-- Preprocessor variables to be passed via -dVariableName=Value -->
     <!-- Required: Version, Description, Homepage, LicenseRtf -->
 
@@ -26,11 +28,22 @@
         <Property Id="ApplicationFolderName" Value="MergerCLI" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
         
+        <Property Id="REMOVE_DATA" Value="0" />
+
+        <SetProperty Id="DataFolder" Value="[AppDataFolder]MergerCLI" After="AppSearch" />
+        <SetProperty Id="LocalDataFolder" Value="[LocalAppDataFolder]MergerCLI" After="AppSearch" />
+
         <StandardDirectory Id="ProgramFiles64Folder">
             <Directory Id="INSTALLFOLDER" Name="MergerCLI" />
         </StandardDirectory>
         <StandardDirectory Id="ProgramMenuFolder">
             <Directory Id="ApplicationProgramsFolder" Name="Merger CLI"/>
+        </StandardDirectory>
+        <StandardDirectory Id="AppDataFolder">
+            <Directory Id="MERGER_APPDATA" Name="MergerCLI" />
+        </StandardDirectory>
+        <StandardDirectory Id="LocalAppDataFolder">
+            <Directory Id="MERGER_LOCALAPPDATA" Name="MergerCLI" />
         </StandardDirectory>
 
         <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
@@ -54,5 +67,54 @@
                 <RegistryValue Root="HKCU" Key="Software\MergerCLI" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
         </DirectoryRef>
+
+        <DirectoryRef Id="MERGER_APPDATA">
+            <Component Id="CleanupAppData" Guid="8D4077C5-6582-4166-879E-7117565D070E">
+                <RegistryValue Root="HKMU" Key="Software\MergerCLI" Name="cleanup_appdata" Type="integer" Value="1" KeyPath="yes" />
+                <util:RemoveFolderEx Property="DataFolder" Condition="REMOVE_DATA=&quot;1&quot;" />
+            </Component>
+        </DirectoryRef>
+
+        <DirectoryRef Id="MERGER_LOCALAPPDATA">
+            <Component Id="CleanupLocalAppData" Guid="8D4077C5-6582-4166-879E-7117565D070F">
+                <RegistryValue Root="HKMU" Key="Software\MergerCLI" Name="cleanup_localappdata" Type="integer" Value="1" KeyPath="yes" />
+                <util:RemoveFolderEx Property="LocalDataFolder" Condition="REMOVE_DATA=&quot;1&quot;" />
+            </Component>
+        </DirectoryRef>
+
+        <Feature Id="CleanupFeature" Title="Cleanup" Level="1">
+            <ComponentRef Id="CleanupAppData" />
+            <ComponentRef Id="CleanupLocalAppData" />
+        </Feature>
+
+        <UI>
+            <ui:WixUI Id="WixUI_Advanced" />
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="4" />
+            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="4" />
+            
+            <Publish Dialog="VerifyReadyDlg" Control="Install" Event="NewDialog" Value="UninstallDataDlg" Condition="WixUI_InstallMode = &quot;Remove&quot;" />
+
+            <Dialog Id="UninstallDataDlg" Width="370" Height="270" Title="[ProductName] Uninstall">
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />
+                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Remove data files created by the application." />
+                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Remove Data Files" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+                
+                <Control Id="Text" Type="Text" X="25" Y="70" Width="320" Height="40" Text="Would you like to remove all configuration, stored data (database), and plugins created by Merger CLI?" />
+                
+                <Control Id="RemoveDataCheckbox" Type="CheckBox" X="25" Y="120" Width="320" Height="18" Property="REMOVE_DATA" CheckBoxValue="1" Text="Yes, remove all Merger CLI data files." />
+
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+                <Control Id="Remove" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Uninstall">
+                    <Publish Event="EndDialog" Value="Return" />
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+                    <Publish Event="EndDialog" Value="Exit" />
+                </Control>
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">
+                    <Publish Event="NewDialog" Value="VerifyReadyDlg" />
+                </Control>
+            </Dialog>
+        </UI>
     </Package>
 </Wix>

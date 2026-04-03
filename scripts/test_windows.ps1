@@ -90,18 +90,22 @@ if ($wix_major -eq 5) {
     $ext_version = "7.0.0-rc.2"
 }
 
-$ext_pkg = "WixToolset.UI.wixext"
+$ext_pkg_ui = "WixToolset.UI.wixext"
+$ext_pkg_util = "WixToolset.Util.wixext"
 if ($ext_version) {
-    $ext_pkg = "$ext_pkg/$ext_version"
+    $ext_pkg_ui = "$ext_pkg_ui/$ext_version"
+    $ext_pkg_util = "$ext_pkg_util/$ext_version"
 }
 
-$addExtArgs = if ($wix_version -ge "7.0") { "extension", "add", "$ext_pkg", "--acceptEula", "true" } else { "extension", "add", "$ext_pkg" }
-& "$wix_exe" $addExtArgs
+$addExtArgsUi = if ($wix_version -ge "7.0") { "extension", "add", "$ext_pkg_ui", "--acceptEula", "true" } else { "extension", "add", "$ext_pkg_ui" }
+& "$wix_exe" $addExtArgsUi
+$addExtArgsUtil = if ($wix_version -ge "7.0") { "extension", "add", "$ext_pkg_util", "--acceptEula", "true" } else { "extension", "add", "$ext_pkg_util" }
+& "$wix_exe" $addExtArgsUtil
 
 # 2. Build (compile & link)
 Write-Host "Compiling and linking MSI..."
 $acceptEulaFlag = if ($wix_version -ge "7.0") { "--acceptEula", "true" } else { @() }
-& "$wix_exe" build -arch x64 -ext WixToolset.UI.wixext `
+& "$wix_exe" build -arch x64 -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
     -d Version=$($metadata["msi_version"]) `
     -d Description="$($metadata["description"])" `
     -d Homepage="$($metadata["homepage"])" `
