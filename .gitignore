@@ -67,7 +67,10 @@ test_dir/
 # WiX Toolset v4+ extension cache and intermediate files
 .wix/
 
-# Generated Windows installer source files
-packaging/merger.wxs
+# Generated Windows installer artifacts
 packaging/license.rtf
-packaging/installer.iss
+dist/
+build/
+# Generated Homebrew formula
+Formula/merger-cli.rb
+packaging/merger.wxs

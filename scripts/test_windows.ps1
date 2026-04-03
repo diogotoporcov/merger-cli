@@ -86,7 +86,7 @@ if ($wix_major -eq 5) {
     $ext_version = "5.0.2"
 } elseif ($wix_major -eq 4) {
     $ext_version = "4.0.5"
-} elseif ($wix_major -eq 7) {
+} elseif ($wix_major -ge 7) {
     $ext_version = "7.0.0-rc.2"
 }
 
@@ -95,20 +95,21 @@ if ($ext_version) {
     $ext_pkg = "$ext_pkg/$ext_version"
 }
 
-& "$wix_exe" extension add $ext_pkg
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Failed to add WiX extension: $ext_pkg" -ForegroundColor Red
-    exit $LASTEXITCODE
-}
+# In WiX v7, extension add command may fail if it's already there
+# or require specific syntax. Let's try to add it.
+& "$wix_exe" extension add $ext_pkg --acceptEula true
+# We don't exit on error here because it might already be installed
+# and wix extension add doesn't always have a 'skip if exists' flag.
 
 # 2. Build (compile & link)
 Write-Host "Compiling and linking MSI..."
+$acceptEulaFlag = if ($wix_version -ge "7.0") { "--acceptEula", "true" } else { @() }
 & "$wix_exe" build -arch x64 -ext WixToolset.UI.wixext `
     -d Version=$($metadata["msi_version"]) `
     -d Description="$($metadata["description"])" `
     -d Homepage="$($metadata["homepage"])" `
     -d LicenseRtf="packaging\license.rtf" `
-    packaging\merger.wxs -o "dist\merger-cli-installer.msi"
+    packaging\merger.wxs -o "dist\merger-cli-installer.msi" $acceptEulaFlag
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "MSI Installer built successfully at dist\merger-cli-installer.msi" -ForegroundColor Green
