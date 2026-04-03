@@ -23,7 +23,8 @@
         </Feature>
 
         <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
-        <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+        <WixVariable Id="WixUISupportPerUser" Value="1" />
+        <WixVariable Id="WixUISupportPerMachine" Value="1" />
         <Property Id="ApplicationFolderName" Value="MergerCLI" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
         
@@ -95,14 +96,6 @@
             <Publish Dialog="InstallScopeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
             <Publish Dialog="InstallScopeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" />
             <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="InstallScopeDlg" Order="2" />
-            <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="2" />
-            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="2" Condition="WixUI_InstallMode = &quot;Install&quot; OR WixUI_InstallMode = &quot;Change&quot;" />
-
-            <!-- Maintenance sequence -->
-            <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2" />
-            <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="2" />
-            <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg" Order="2" />
-            <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg" Order="2" />
 
             <!-- Uninstallation logic -->
             <Publish Dialog="VerifyReadyDlg" Control="Install" Event="NewDialog" Value="UninstallDataDlg" Order="1" Condition="WixUI_InstallMode = &quot;Remove&quot;" />
