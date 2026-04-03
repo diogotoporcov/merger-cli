@@ -16,19 +16,3 @@ contents:
   - src: /usr/lib/merger-cli/merger
     dst: /usr/bin/merger
     type: symlink
-
-# nFPM can also generate Homebrew formulas
-# We use this to unify the package generation process
-brews:
-  - name: merger-cli
-    description: "${DESCRIPTION}"
-    homepage: "${HOMEPAGE}"
-    license: "GPL-3.0-or-later"
-    url_template: "https://github.com/diogotoporcov/merger-cli/releases/download/{{ .Tag }}/merger-cli-macos.tar.gz"
-    dependencies:
-      - name: libmagic
-    install: |
-      libexec.install Dir["merger-cli-macos/*"]
-      bin.install_symlink libexec/"merger"
-    test: |
-      assert_match "merger", shell_output("#{bin}/merger --version")

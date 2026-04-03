@@ -95,11 +95,8 @@ if ($ext_version) {
     $ext_pkg = "$ext_pkg/$ext_version"
 }
 
-# In WiX v7, extension add command may fail if it's already there
-# or require specific syntax. Let's try to add it.
-& "$wix_exe" extension add $ext_pkg --acceptEula true
-# We don't exit on error here because it might already be installed
-# and wix extension add doesn't always have a 'skip if exists' flag.
+$addExtArgs = if ($wix_version -ge "7.0") { "extension", "add", "$ext_pkg", "--acceptEula", "true" } else { "extension", "add", "$ext_pkg" }
+& "$wix_exe" $addExtArgs
 
 # 2. Build (compile & link)
 Write-Host "Compiling and linking MSI..."
