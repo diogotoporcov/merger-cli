@@ -73,4 +73,3 @@ dist/
 build/
 # Generated Homebrew formula
 Formula/merger-cli.rb
-packaging/merger.wxs
