@@ -69,6 +69,7 @@ test_dir/
 
 # Generated Windows installer source files
 packaging/merger.wxs
+packaging/license.rtf
 packaging/installer.iss
 
 # Generated Homebrew formula

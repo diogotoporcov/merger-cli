@@ -7,6 +7,21 @@ import tomli
 from jinja2 import Template
 
 
+def text_to_rtf(text):
+    # Basic RTF header
+    rtf = r'{\rtf1\ansi\deff0{\fonttbl{\f0 Arial;}}\f0\fs20 '
+    
+    # Escape special RTF characters
+    text = text.replace('\\', '\\\\').replace('{', '\\{').replace('}', '\\}')
+    
+    # Replace newlines with \par
+    text = text.replace('\n', '\\par\n')
+    
+    rtf += text
+    rtf += '}'
+    return rtf
+
+
 def parse_version(version_str):
     # Map X.Y.Z-type.A to W.X.Y.Z (where W=X, X=Y, Y=Z, Z=A).
     # If no suffix is present, Z defaults to 0.
@@ -51,6 +66,17 @@ def main():
     print(f"Original version: {version}")
     print(f"MSI version: {msi_version}")
     print(f"Description: {description}")
+    
+    # License conversion for Windows (RTF)
+    license_path = root / "LICENSE"
+    if license_path.exists():
+        with open(license_path, "r", encoding="utf-8") as f:
+            license_text = f.read()
+        rtf_content = text_to_rtf(license_text)
+        rtf_path = root / "packaging" / "license.rtf"
+        with open(rtf_path, "w", encoding="ascii", errors="ignore") as f:
+            f.write(rtf_content)
+        print(f"Generated {rtf_path}")
     
     # Template rendering
     templates = [

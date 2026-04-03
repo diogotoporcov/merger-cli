@@ -11,6 +11,7 @@
         </Feature>
 
         <ui:WixUI Id="WixUI_Advanced" />
+        <WixVariable Id="WixUILicenseRtf" Value="packaging\license.rtf" />
         <SetProperty Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" After="AppSearch" />
         <Property Id="ApplicationFolderName" Value="MergerCLI" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
