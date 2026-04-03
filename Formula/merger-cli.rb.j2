@@ -1,0 +1,18 @@
+class MergerCli < Formula
+  desc "{{ description }}"
+  homepage "{{ homepage }}"
+  url "https://github.com/diogotoporcov/merger-cli/releases/download/{{ tag_name }}/merger-cli-macos.tar.gz"
+  sha256 "{{ sha256 }}"
+  license "{{ license }}"
+
+  depends_on "libmagic"
+
+  def install
+    libexec.install Dir["merger-cli-macos/*"]
+    bin.install_symlink libexec/"merger"
+  end
+
+  test do
+    assert_match "merger", shell_output("#{bin}/merger --version")
+  end
+end
