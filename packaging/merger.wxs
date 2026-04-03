@@ -23,12 +23,12 @@
         </Feature>
 
         <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
-        <SetProperty Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" After="AppSearch" />
+        <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
         <Property Id="ApplicationFolderName" Value="MergerCLI" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
         
         <Property Id="REMOVE_DATA" Value="0" />
-        <Property Id="WixUI_Mode" Value="Advanced" />
+        <Property Id="WixUI_InstallMode" Value="Install" />
 
         <SetProperty Id="DataFolder" Value="[AppDataFolder]MergerCLI" After="AppSearch" />
         <SetProperty Id="LocalDataFolder" Value="[LocalAppDataFolder]MergerCLI" After="AppSearch" />
@@ -88,23 +88,25 @@
         </Feature>
 
         <UI>
-            <ui:WixUI Id="WixUI_Advanced" />
+            <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+            
+            <!-- Standard sequence: Welcome -> License (internal) -> InstallScope -> InstallDir -> VerifyReady -->
+            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallScopeDlg" Order="2" />
+            <Publish Dialog="InstallScopeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
+            <Publish Dialog="InstallScopeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" />
+            <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="InstallScopeDlg" Order="2" />
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="2" />
+            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="2" Condition="WixUI_InstallMode = &quot;Install&quot; OR WixUI_InstallMode = &quot;Change&quot;" />
+
+            <!-- Maintenance sequence -->
+            <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2" />
+            <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="2" />
+            <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg" Order="2" />
+            <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg" Order="2" />
+
+            <!-- Uninstallation logic -->
             <Publish Dialog="VerifyReadyDlg" Control="Install" Event="NewDialog" Value="UninstallDataDlg" Order="1" Condition="WixUI_InstallMode = &quot;Remove&quot;" />
             
-            <Dialog Id="MaintenanceWelcomeDlg" Width="370" Height="270" Title="[ProductName] Setup">
-                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
-                    <Publish Event="NewDialog" Value="MaintenanceTypeDlg" />
-                </Control>
-                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
-                    <Publish Event="SpawnDialog" Value="CancelDlg" />
-                </Control>
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.MaintenanceWelcomeDlgBannerBitmap)" />
-                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.WixUIBack)" />
-                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
-                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}!(loc.MaintenanceWelcomeDlgTitle)" />
-                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="20" Transparent="yes" NoPrefix="yes" Text="!(loc.MaintenanceWelcomeDlgDescription)" />
-            </Dialog>
-
             <Dialog Id="UninstallDataDlg" Width="370" Height="270" Title="[ProductName] Uninstall">
                 <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />
                 <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Remove data files created by the application." />
