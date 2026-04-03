@@ -25,37 +25,23 @@ The suite covers:
 Helper scripts are provided to handle the build process and then invoke the `pytest` suite:
 
 - **Windows**: `.\scripts\test_windows.ps1` (PowerShell)
-- **Linux**: `.\scripts\test_linux.ps1` (PowerShell) - Runs tests inside a clean Docker container.
+- **Linux**: `./scripts/test_linux.sh` (Bash)
 - **macOS**: `./scripts/test_macos.sh` (Bash)
 
 These scripts:
 1. Clean previous build artifacts.
 2. Build the standalone binary with PyInstaller.
 3. **Execute `pytest packages/merger-cli/tests/test_standalone.py --merger-bin=...`**.
-4. (Optional) Build installers (e.g., Inno Setup on Windows, `.deb` on Linux).
+4. (Optional) Build installers (e.g., MSI on Windows, `.deb` on Linux).
+5. (If running as Admin/Root) Install the package, run the test suite against the installed binary, and uninstall it.
 
-## Linux Artifacts (via Docker)
-
-You can test the Linux standalone binary and the `.deb` package in a clean Ubuntu environment using Docker.
-
-1.  **Ensure Docker is running**.
-2.  **Run the test script**:
-    ```powershell
-    # On Windows
-    .\scripts\test_linux.ps1
-    ```
-    Alternatively, manually:
-    ```bash
-    docker build -t merger-test-linux -f Dockerfile.test_linux .
-    docker run --rm merger-test-linux
-    ```
+## Linux Artifacts
+The `scripts/test_linux.sh` script automates the build and verification of the Linux standalone binary and the `.deb` package.
 
 This script will:
 *   Build the standalone binary with PyInstaller (Linux version).
 *   Build the Debian package (`.deb`) using `nFPM`.
-*   Install the `.deb` package and verify it correctly pulls `libmagic1`.
-*   Verify that `merger` can be called globally and correctly identifies/merges files.
-*   Test both the installed version and the standalone binary.
+*   (If running as root/sudo) Install the `.deb` package, verify it correctly pulls dependencies, and test the installed `merger` binary using the `pytest` suite.
 
 ## Windows Artifacts
 
@@ -75,13 +61,14 @@ To verify the standalone `.exe` works:
     ..\dist\merger-cli\merger.exe .
     ```
 
-### 2. MSI/EXE Installer (Inno Setup)
+### 2. MSI Installer (WiX)
 To test the installer:
-1.  Compile the installer using Inno Setup (requires `ISCC.exe` in PATH):
+1.  Run the automation script:
     ```powershell
-    ISCC.exe packaging/installer.iss
+    .\scripts\test_windows.ps1
     ```
-2.  Run `dist\merger-cli-windows-installer.exe` and follow the steps.
+    If running with Administrator privileges, it will automatically perform a silent install/uninstall test.
+2.  Alternatively, manually run `dist\merger-cli-installer.msi`.
 3.  Verify `merger` is added to your PATH (you may need to restart your terminal).
 4.  Run `merger --version` from any directory.
 
