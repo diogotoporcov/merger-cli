@@ -150,7 +150,7 @@ if ($isAdmin) {
         } else {
             Write-Host "Verification failed: $installed_exe NOT found after installation!" -ForegroundColor Red
             if (Test-Path $install_dir_machine) {
-                Write-Host "Contents of $install_dir_machine:"
+                Write-Host "Contents of ${install_dir_machine}:"
                 Get-ChildItem -Path $install_dir_machine -Recurse | Select-Object FullName
             } else {
                 Write-Host "Directory $install_dir_machine does not exist!"
@@ -197,6 +197,12 @@ if ($isAdmin) {
             }
         } else {
             Write-Host "Verification failed: $installed_exe NOT found after installation!" -ForegroundColor Red
+            if (Test-Path $install_dir_user) {
+                Write-Host "Contents of ${install_dir_user}:"
+                Get-ChildItem -Path $install_dir_user -Recurse | Select-Object FullName
+            } else {
+                Write-Host "Directory $install_dir_user does not exist!"
+            }
             $verified = $false
         }
         
