@@ -1,14 +1,16 @@
+import ast
 import importlib.util
 import shutil
-import ast
 from inspect import isclass
 from pathlib import Path
 from types import ModuleType
 from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic, Tuple
 
+from .config import is_bundled
 from .db import DatabaseManager, PluginRecord
-from .uv import uv_install, uv_purge, get_or_create_site_packages_dir
+from .dependencies import check_and_warn_dependencies
 from .hash import hash_from_file
+from .uv import uv_install, uv_purge, get_or_create_site_packages_dir
 from ..exceptions import InvalidPlugin, PluginAlreadyInstalled
 from ..logging import logger
 
@@ -41,30 +43,32 @@ class PluginManager(Generic[T]):
 
     @staticmethod
     def extract_requirements(path: Path) -> List[str]:
-        """Extracts the REQUIREMENTS list from a Python file using AST without executing it."""
+        """Extracts the REQUIREMENTS or DEPENDENCIES list from a Python file using AST without executing it."""
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
             for node in tree.body:
-                # Handle simple assignment: REQUIREMENTS = [...]
+                # Handle simple assignment: REQUIREMENTS = [...] or DEPENDENCIES = [...]
                 if (isinstance(node, ast.Assign) and 
                     len(node.targets) == 1 and 
                     isinstance(node.targets[0], ast.Name) and 
-                    node.targets[0].id == "REQUIREMENTS"):
+                    node.targets[0].id in ("REQUIREMENTS", "DEPENDENCIES")):
                     
                     if isinstance(node.value, ast.List):
-                        return [elt.value for elt in node.value.elts if isinstance(elt, ast.Constant)]
+                        return [elt.value for elt in node.value.elts if isinstance(elt, (ast.Constant, ast.Str))]
 
-                # Handle annotated assignment: REQUIREMENTS: List[str] = [...]
+                # Handle annotated assignment: REQUIREMENTS: List[str] = [...] or DEPENDENCIES: List[str] = [...]
                 if (isinstance(node, ast.AnnAssign) and 
                     isinstance(node.target, ast.Name) and 
-                    node.target.id == "REQUIREMENTS" and 
+                    node.target.id in ("REQUIREMENTS", "DEPENDENCIES") and 
                     node.value is not None):
                     
                     if isinstance(node.value, ast.List):
-                        return [elt.value for elt in node.value.elts if isinstance(elt, ast.Constant)]
+                        return [elt.value for elt in node.value.elts if isinstance(elt, (ast.Constant, ast.Str))]
+
             return []
+
         except Exception as e:
-            logger.warning(f"Could not parse REQUIREMENTS from {path}: {e}")
+            logger.warning(f"Could not parse REQUIREMENTS or DEPENDENCIES from {path}: {e}")
             return []
 
     @staticmethod
@@ -123,9 +127,13 @@ class PluginManager(Generic[T]):
         # Handle dependencies BEFORE loading the module
         requirements = self.extract_requirements(path)
         if requirements:
-            logger.info(f"Installing dependencies for {self.plugin_type_name} plugin: {', '.join(requirements)}")
-            site_packages = get_or_create_site_packages_dir()
-            uv_install(requirements, target=site_packages)
+            if is_bundled():
+                logger.info(f"Installing dependencies for {self.plugin_type_name} plugin: {', '.join(requirements)}")
+                site_packages = get_or_create_site_packages_dir()
+                uv_install(requirements, target=site_packages)
+            
+            else:
+                check_and_warn_dependencies(requirements, f"the {self.plugin_type_name} plugin")
 
         module = self.load_plugin_from_path(path, file_hash)
         _ = self.get_class_from_plugin(module) # Validation
@@ -170,7 +178,7 @@ class PluginManager(Generic[T]):
             path.unlink()
 
         unused_deps = self.db.remove_plugin(plugin_id)
-        if unused_deps:
+        if unused_deps and is_bundled():
             site_packages = get_or_create_site_packages_dir()
             uv_purge(unused_deps, target=site_packages)
 

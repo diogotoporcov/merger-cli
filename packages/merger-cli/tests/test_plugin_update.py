@@ -2,6 +2,7 @@ import sys
 from unittest.mock import patch
 
 import pytest
+
 from merger_cli.cli import main
 from merger_cli.utils.db import PluginRecord
 
@@ -47,10 +48,11 @@ def test_handle_plugin_update_with_plugins(tmp_path, monkeypatch, capsys, mock_c
     ))
 
     # Mock uv_install and Confirm.ask
-    with patch("rich.prompt.Confirm.ask", return_value=True) as mock_confirm:
-        with patch("merger_cli.utils.uv.uv_install") as mock_uv:
-            with patch.object(sys, 'argv', ['merger', '--update-plugins']):
-                main()
+    with patch("merger_cli.utils.config.is_bundled", return_value=True):
+        with patch("rich.prompt.Confirm.ask", return_value=True) as mock_confirm:
+            with patch("merger_cli.utils.uv.uv_install") as mock_uv:
+                with patch.object(sys, 'argv', ['merger', '--update-plugins']):
+                    main()
     
     mock_uv.assert_any_call(['pillow'], target=mock_config_dir / "site-packages")
     mock_confirm.assert_called_with("Do you wish to update core dependencies too?")
@@ -71,10 +73,11 @@ def test_handle_plugin_update_yes_flag(tmp_path, monkeypatch, capsys, mock_confi
         extensions=[".test"]
     ))
 
-    with patch("rich.prompt.Confirm.ask") as mock_confirm:
-        with patch("merger_cli.utils.uv.uv_install") as mock_uv:
-            with patch.object(sys, 'argv', ['merger', '--update-plugins', '-y']):
-                main()
+    with patch("merger_cli.utils.config.is_bundled", return_value=True):
+        with patch("rich.prompt.Confirm.ask") as mock_confirm:
+            with patch("merger_cli.utils.uv.uv_install") as mock_uv:
+                with patch.object(sys, 'argv', ['merger', '--update-plugins', '-y']):
+                    main()
     
     mock_confirm.assert_not_called()
     mock_uv.assert_any_call(["pydantic", "rich", "pathspec", "packaging", "rich-argparse"], target=mock_config_dir / "site-packages")

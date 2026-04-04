@@ -1,6 +1,12 @@
 import os
 import platform
+import sys
 from pathlib import Path
+
+def is_bundled() -> bool:
+    """Returns True if the application is running in a bundled environment (e.g. PyInstaller)."""
+    return getattr(sys, "frozen", False)
+
 
 def get_merger_dir() -> Path:
     dir_name = "MergerCLI"

@@ -189,7 +189,8 @@ def handle_plugin_update(force: bool = False) -> None:
     from ..utils.db import DatabaseManager
     from ..utils.plugin_loader import PluginManager
     from ..utils.uv import uv_install
-    from ..utils.config import get_or_create_site_packages_dir
+    from ..utils.config import get_or_create_site_packages_dir, is_bundled
+    from ..utils.dependencies import check_and_warn_dependencies
 
     db = DatabaseManager()
     plugins = db.list_plugins()
@@ -206,7 +207,8 @@ def handle_plugin_update(force: bool = False) -> None:
 
     if not all_requirements:
         logger.info("No dependencies found for any installed plugins.")
-    else:
+    
+    elif is_bundled():
         logger.info(f"Updating dependencies: {', '.join(all_requirements)}")
         site_packages = get_or_create_site_packages_dir()
         try:
@@ -214,8 +216,15 @@ def handle_plugin_update(force: bool = False) -> None:
             logger.info("Plugin dependencies updated successfully.")
         except Exception as e:
             logger.error(f"Failed to update plugin dependencies: {e}")
+    
+    else:
+        logger.info("Checking plugin dependencies...")
+        check_and_warn_dependencies(list(all_requirements), "installed plugins")
 
     # Core dependencies update confirmation
+    if not is_bundled():
+        return
+
     if not force:
         if not Confirm.ask("Do you wish to update core dependencies too?"):
             return
