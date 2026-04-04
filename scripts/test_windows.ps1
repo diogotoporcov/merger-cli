@@ -123,20 +123,21 @@ if ($LASTEXITCODE -eq 0) {
 Write-Host "--- Verifying MSI installation and functionality ---" -ForegroundColor Cyan
 if ($isAdmin) {
     $msi_path = "dist\merger-cli-installer.msi"
-    $install_dir = "C:\Program Files\MergerCLI"
-    $installed_exe = "$install_dir\merger.exe"
+    $install_dir_machine = "C:\Program Files\MergerCLI"
+    $install_dir_user = "$env:LOCALAPPDATA\Programs\MergerCLI"
     $install_log = "dist\install.log"
 
-    Write-Host "Attempting silent installation of MSI..."
-    $process = Start-Process msiexec.exe -ArgumentList "/i `"$msi_path`" /qn /norestart /L*V `"$install_log`"" -Wait -PassThru
+    Write-Host "Attempting silent installation of MSI (Per-Machine)..."
+    $process = Start-Process msiexec.exe -ArgumentList "/i `"$msi_path`" /qn /norestart ALLUSERS=1 WixAppFolder=WixPerMachineFolder /L*V `"$install_log`"" -Wait -PassThru
     
     if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
-        Write-Host "MSI installed successfully." -ForegroundColor Green
+        Write-Host "MSI installed successfully (Per-Machine)." -ForegroundColor Green
+        $installed_exe = "$install_dir_machine\merger.exe"
         
         # Run tests against the installed binary
         if (Test-Path $installed_exe) {
             Write-Host "Verified: $installed_exe exists." -ForegroundColor Green
-            Write-Host "Running standalone tests against installed binary..." -ForegroundColor Cyan
+            Write-Host "Running standalone tests against installed binary (Per-Machine)..." -ForegroundColor Cyan
             python -m pytest packages/merger-cli/tests/test_standalone.py --merger-bin=$installed_exe
             
             if ($LASTEXITCODE -ne 0) {
@@ -158,9 +159,51 @@ if ($isAdmin) {
             Write-Host "MSI verification failed!" -ForegroundColor Red
             exit 1
         }
-        Write-Host "MSI verification completed successfully." -ForegroundColor Green
     } else {
-        Write-Host "MSI installation failed with exit code $($process.ExitCode)!" -ForegroundColor Red
+        Write-Host "MSI installation failed (Per-Machine) with exit code $($process.ExitCode)!" -ForegroundColor Red
+        if (Test-Path $install_log) {
+            Write-Host "Last 20 lines of installation log:"
+            Get-Content $install_log -Tail 20
+        }
+        exit $process.ExitCode
+    }
+
+    Write-Host "Attempting silent installation of MSI (Per-User)..."
+    Remove-Item $install_log -ErrorAction SilentlyContinue
+    $process = Start-Process msiexec.exe -ArgumentList "/i `"$msi_path`" /qn /norestart ALLUSERS=2 MSIINSTALLPERUSER=1 WixAppFolder=WixPerUserFolder /L*V `"$install_log`"" -Wait -PassThru
+
+    if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
+        Write-Host "MSI installed successfully (Per-User)." -ForegroundColor Green
+        $installed_exe = "$install_dir_user\merger.exe"
+        
+        # Run tests against the installed binary
+        if (Test-Path $installed_exe) {
+            Write-Host "Verified: $installed_exe exists." -ForegroundColor Green
+            Write-Host "Running standalone tests against installed binary (Per-User)..." -ForegroundColor Cyan
+            python -m pytest packages/merger-cli/tests/test_standalone.py --merger-bin=$installed_exe
+            
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "Tests against installed binary failed!" -ForegroundColor Red
+                $verified = $false
+            } else {
+                Write-Host "Installed binary passed all tests." -ForegroundColor Green
+                $verified = $true
+            }
+        } else {
+            Write-Host "Verification failed: $installed_exe NOT found after installation!" -ForegroundColor Red
+            $verified = $false
+        }
+        
+        Write-Host "Uninstalling MSI..."
+        Start-Process msiexec.exe -ArgumentList "/x `"$msi_path`" /qn /norestart" -Wait
+        
+        if (-not $verified) {
+            Write-Host "MSI verification failed!" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "MSI verification completed successfully (Per-User)." -ForegroundColor Green
+    } else {
+        Write-Host "MSI installation failed (Per-User) with exit code $($process.ExitCode)!" -ForegroundColor Red
         if (Test-Path $install_log) {
             Write-Host "Last 20 lines of installation log:"
             Get-Content $install_log -Tail 20
