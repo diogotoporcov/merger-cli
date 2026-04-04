@@ -8,8 +8,8 @@
              Version="$(var.Version)"
              Manufacturer="Diogo Toporcov"
              UpgradeCode="00c8077c-6582-4166-879e-7117565d070b"
-             InstallerVersion="500"
-             Scope="perMachine">
+             InstallerVersion="200"
+             Scope="perUserOrMachine">
 
         <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
         <MediaTemplate EmbedCab="yes" />
@@ -59,5 +59,22 @@
         <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
         <Property Id="ApplicationFolderName" Value="Merger CLI" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+
+        <!-- Force per-machine to 64-bit and per-user to Programs instead of Apps -->
+        <SetProperty Id="WixPerMachineFolder" Value="[ProgramFiles64Folder][ApplicationFolderName]" Before="CostFinalize" Condition="NOT WixPerMachineFolder" />
+        <SetProperty Id="WixPerUserFolder" Value="[LocalAppDataFolder]Programs\[ApplicationFolderName]" Before="CostFinalize" Condition="NOT WixPerUserFolder" />
+
+        <!-- Force APPLICATIONFOLDER to be set based on the chosen scope for silent installs -->
+        <CustomAction Id="SetAPPLICATIONFOLDER_Machine" Property="APPLICATIONFOLDER" Value="[WixPerMachineFolder]" />
+        <CustomAction Id="SetAPPLICATIONFOLDER_User" Property="APPLICATIONFOLDER" Value="[WixPerUserFolder]" />
+
+        <InstallExecuteSequence>
+            <Custom Action="SetAPPLICATIONFOLDER_Machine" Before="CostFinalize" Condition="WixAppFolder = &quot;WixPerMachineFolder&quot;" />
+            <Custom Action="SetAPPLICATIONFOLDER_User" Before="CostFinalize" Condition="WixAppFolder = &quot;WixPerUserFolder&quot;" />
+        </InstallExecuteSequence>
+        <InstallUISequence>
+            <Custom Action="SetAPPLICATIONFOLDER_Machine" Before="CostFinalize" Condition="WixAppFolder = &quot;WixPerMachineFolder&quot;" />
+            <Custom Action="SetAPPLICATIONFOLDER_User" Before="CostFinalize" Condition="WixAppFolder = &quot;WixPerUserFolder&quot;" />
+        </InstallUISequence>
     </Package>
 </Wix>
