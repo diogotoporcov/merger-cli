@@ -48,7 +48,6 @@ pip-delete-this-directory.txt
 # Local/Secrets
 .pypirc
 local_settings.py
-db.sqlite3
 instance/
 .webassets-cache
 .flaskenv

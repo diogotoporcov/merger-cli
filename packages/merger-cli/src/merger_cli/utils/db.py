@@ -1,7 +1,7 @@
-import sqlite3
-from dataclasses import dataclass, field
+import json
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from . import config
 
@@ -15,131 +15,137 @@ class PluginRecord:
     original_name: str
     extensions: List[str] = field(default_factory=list)
 
+
 class DatabaseManager:
-    def __init__(self, db_path: Optional[Path] = None):
-        self.db_path = db_path or config.get_merger_dir() / "merger.db"
-        self._initialized = False
+    def __init__(self, db_path: Optional[Path] = None) -> None:
+        self.db_path = db_path or config.get_merger_dir() / "merger.json"
+        self._data: Dict[str, Any] = {
+            "plugins": {},
+            "dependencies": [],
+            "plugin_dependencies": []
+        }
+        self._loaded = False
 
-    def _ensure_initialized(self):
-        if not self._initialized:
-            self._init_db()
-            self._initialized = True
+    def _ensure_loaded(self) -> None:
+        if not self._loaded:
+            self._load()
+            self._loaded = True
 
-    def _get_connection(self):
-        self._ensure_initialized()
-        return sqlite3.connect(self.db_path)
+    def _load(self) -> None:
+        if not self.db_path.exists():
+            return
 
-    def _init_db(self):
+        try:
+            with open(self.db_path, "r", encoding="utf-8") as f:
+                self._data = json.load(f)
+
+        except (json.JSONDecodeError, OSError):
+            self._data = {
+                "plugins": {},
+                "dependencies": [],
+                "plugin_dependencies": []
+            }
+
+    def _save(self) -> None:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS plugins (
-                    id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    type TEXT NOT NULL,
-                    path TEXT NOT NULL,
-                    original_name TEXT NOT NULL,
-                    extensions TEXT NOT NULL
-                )
-            """)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS dependencies (
-                    name TEXT PRIMARY KEY
-                )
-            """)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS plugin_dependencies (
-                    plugin_id TEXT,
-                    dependency_name TEXT,
-                    PRIMARY KEY (plugin_id, dependency_name),
-                    FOREIGN KEY (plugin_id) REFERENCES plugins (id) ON DELETE CASCADE,
-                    FOREIGN KEY (dependency_name) REFERENCES dependencies (name) ON DELETE CASCADE
-                )
-            """)
-            conn.commit()
+        temp_path = self.db_path.with_suffix(".tmp")
 
-    def add_plugin(self, plugin: PluginRecord):
-        with self._get_connection() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO plugins (id, name, type, path, original_name, extensions) VALUES (?, ?, ?, ?, ?, ?)",
-                (plugin.id, plugin.name, plugin.type, plugin.path, plugin.original_name, ",".join(plugin.extensions))
-            )
-            conn.commit()
+        with open(temp_path, "w", encoding="utf-8") as f:
+            json.dump(self._data, f, indent=2)
+
+        temp_path.replace(self.db_path)
+
+    def add_plugin(self, plugin: PluginRecord) -> None:
+        self._ensure_loaded()
+        self._data["plugins"][plugin.id] = asdict(plugin)
+        self._save()
 
     def remove_plugin(self, plugin_id: str) -> List[str]:
         """Removes the plugin and returns a list of dependencies that are no longer used."""
-        with self._get_connection() as conn:
-            # 1. Get current dependencies for this plugin
-            cursor = conn.execute("SELECT dependency_name FROM plugin_dependencies WHERE plugin_id = ?", (plugin_id,))
-            plugin_deps = [row[0] for row in cursor.fetchall()]
+        self._ensure_loaded()
 
-            # 2. Delete plugin (cascade will delete from plugin_dependencies)
-            conn.execute("DELETE FROM plugins WHERE id = ?", (plugin_id,))
-            conn.execute("DELETE FROM plugin_dependencies WHERE plugin_id = ?", (plugin_id,))
+        if plugin_id not in self._data["plugins"]:
+            return []
 
-            # 3. Identify dependencies that are now unused
-            unused_deps = []
-            for dep in plugin_deps:
-                cursor = conn.execute("SELECT COUNT(*) FROM plugin_dependencies WHERE dependency_name = ?", (dep,))
-                if cursor.fetchone()[0] == 0:
-                    unused_deps.append(dep)
-                    conn.execute("DELETE FROM dependencies WHERE name = ?", (dep,))
+        # Get current dependencies for this plugin
+        plugin_deps = [
+            pd["dependency_name"]
+            for pd in self._data["plugin_dependencies"]
+            if pd["plugin_id"] == plugin_id
+        ]
 
-            conn.commit()
-            return unused_deps
+        # Delete plugin record
+        del self._data["plugins"][plugin_id]
 
-    def add_plugin_dependency(self, plugin_id: str, dependency_name: str):
-        with self._get_connection() as conn:
-            conn.execute("INSERT OR IGNORE INTO dependencies (name) VALUES (?)", (dependency_name,))
-            conn.execute("INSERT OR REPLACE INTO plugin_dependencies (plugin_id, dependency_name) VALUES (?, ?)",
-                        (plugin_id, dependency_name))
-            conn.commit()
+        # Delete plugin dependencies associations
+        self._data["plugin_dependencies"] = [
+            pd for pd in self._data["plugin_dependencies"]
+            if pd["plugin_id"] != plugin_id
+        ]
+
+        # Identify dependencies that are now unused
+        unused_deps: List[str] = []
+        for dep in plugin_deps:
+            is_used = any(
+                pd["dependency_name"] == dep
+                for pd in self._data["plugin_dependencies"]
+            )
+
+            if not is_used:
+                unused_deps.append(dep)
+                if dep in self._data["dependencies"]:
+                    self._data["dependencies"].remove(dep)
+
+        self._save()
+        return unused_deps
+
+    def add_plugin_dependency(self, plugin_id: str, dependency_name: str) -> None:
+        self._ensure_loaded()
+
+        if dependency_name not in self._data["dependencies"]:
+            self._data["dependencies"].append(dependency_name)
+
+        exists = any(
+            pd["plugin_id"] == plugin_id and pd["dependency_name"] == dependency_name
+            for pd in self._data["plugin_dependencies"]
+        )
+
+        if not exists:
+            self._data["plugin_dependencies"].append({
+                "plugin_id": plugin_id,
+                "dependency_name": dependency_name
+            })
+
+        self._save()
 
     def get_plugin(self, plugin_id: str) -> Optional[PluginRecord]:
-        with self._get_connection() as conn:
-            cursor = conn.execute("SELECT * FROM plugins WHERE id = ?", (plugin_id,))
-            row = cursor.fetchone()
-            if row:
-                return PluginRecord(
-                    id=row[0],
-                    name=row[1],
-                    type=row[2],
-                    path=row[3],
-                    original_name=row[4],
-                    extensions=row[5].split(",") if row[5] else []
-                )
+        self._ensure_loaded()
+        plugin_data = self._data["plugins"].get(plugin_id)
+
+        if not plugin_data:
             return None
 
+        return PluginRecord(**plugin_data)
+
     def list_plugins(self, plugin_type: Optional[str] = None) -> List[PluginRecord]:
-        with self._get_connection() as conn:
-            if plugin_type:
-                cursor = conn.execute("SELECT * FROM plugins WHERE type = ?", (plugin_type,))
-            else:
-                cursor = conn.execute("SELECT * FROM plugins")
-            
-            return [
-                PluginRecord(
-                    id=row[0],
-                    name=row[1],
-                    type=row[2],
-                    path=row[3],
-                    original_name=row[4],
-                    extensions=row[5].split(",") if row[5] else []
-                )
-                for row in cursor.fetchall()
-            ]
+        self._ensure_loaded()
+        plugins: List[PluginRecord] = []
+
+        for p in self._data["plugins"].values():
+            if not plugin_type or p["type"] == plugin_type:
+                plugins.append(PluginRecord(**p))
+
+        return plugins
 
     def get_unused_dependencies(self) -> List[str]:
-        with self._get_connection() as conn:
-            cursor = conn.execute("""
-                SELECT name FROM dependencies 
-                WHERE name NOT IN (SELECT DISTINCT dependency_name FROM plugin_dependencies)
-            """)
-            return [row[0] for row in cursor.fetchall()]
+        self._ensure_loaded()
+        used_deps = {pd["dependency_name"] for pd in self._data["plugin_dependencies"]}
+        return [d for d in self._data["dependencies"] if d not in used_deps]
 
-    def clear_all(self):
-        with self._get_connection() as conn:
-            conn.execute("DELETE FROM plugin_dependencies")
-            conn.execute("DELETE FROM dependencies")
-            conn.execute("DELETE FROM plugins")
-            conn.commit()
+    def clear_all(self) -> None:
+        self._data = {
+            "plugins": {},
+            "dependencies": [],
+            "plugin_dependencies": []
+        }
+        self._save()

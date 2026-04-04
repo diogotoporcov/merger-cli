@@ -42,7 +42,7 @@ The `merger-cli` is the primary tool for scanning and merging your project files
 ### CLI Features
 * **Recursive merge** of all readable files under a root directory.
 * **Custom glob-like ignore patterns** with specialized type qualifiers.
-* **Intelligent plugin system**: SQLite-backed tracking with automatic dependency management via `uv`.
+* **Intelligent plugin system**: JSON-backed tracking with automatic dependency management via `uv`.
 * **Automatic file encoding detection**.
 * **Multiple export formats**: Built-in support for Plain Text, JSON, Directory Trees, and more.
 * **Modern CLI interface**: Update notifications and non-interactive mode.
