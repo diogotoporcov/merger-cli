@@ -53,8 +53,12 @@
         </StandardDirectory>
 
         <!-- Dynamic installation folder based on WixAppFolder property -->
-        <SetProperty Id="INSTALLFOLDER" Value="[INSTALLFOLDER_Machine]" After="AppSearch" Condition="WixAppFolder = &quot;WixPerMachineFolder&quot;" />
+        <SetProperty Id="INSTALLFOLDER" Value="[INSTALLFOLDER_Machine]" After="AppSearch" Condition="NOT WixAppFolder = &quot;WixPerUserFolder&quot;" />
         <SetProperty Id="INSTALLFOLDER_UserSet" Action="INSTALLFOLDER" Value="[INSTALLFOLDER_User]" After="AppSearch" Condition="WixAppFolder = &quot;WixPerUserFolder&quot;" />
+        
+        <!-- Ensure INSTALLFOLDER is updated when WixAppFolder changes in the UI -->
+        <SetProperty Id="INSTALLFOLDER_Machine_UI" Action="INSTALLFOLDER" Value="[INSTALLFOLDER_Machine]" After="InstallScopeDlg" Condition="NOT WixAppFolder = &quot;WixPerUserFolder&quot;" />
+        <SetProperty Id="INSTALLFOLDER_User_UI" Action="INSTALLFOLDER" Value="[INSTALLFOLDER_User]" After="InstallScopeDlg" Condition="WixAppFolder = &quot;WixPerUserFolder&quot;" />
 
         <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
             <Files Include="..\dist\merger-cli\**" />
@@ -112,7 +116,6 @@
             
             <!-- When the user selects the scope, we need to update the INSTALLFOLDER property based on the selected directory -->
             <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="InstallScopeDlg" Order="2" />
-            <Publish Dialog="InstallDirDlg" Control="Next" Property="INSTALLFOLDER" Value="[INSTALLFOLDER]" Order="1" />
 
             <!-- Uninstallation logic -->
             <Publish Dialog="VerifyReadyDlg" Control="Install" Event="NewDialog" Value="UninstallDataDlg" Order="1" Condition="WixUI_InstallMode = &quot;Remove&quot;" />
