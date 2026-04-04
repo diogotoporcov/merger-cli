@@ -123,8 +123,8 @@ if ($LASTEXITCODE -eq 0) {
 Write-Host "--- Verifying MSI installation and functionality ---" -ForegroundColor Cyan
 if ($isAdmin) {
     $msi_path = "dist\merger-cli-installer.msi"
-    $install_dir_machine = "C:\Program Files\MergerCLI"
-    $install_dir_user = "$env:LOCALAPPDATA\Programs\MergerCLI"
+    $install_dir_machine = "C:\Program Files\Merger CLI"
+    $install_dir_user = "$env:LOCALAPPDATA\Programs\Merger CLI"
     $install_log = "dist\install.log"
 
     Write-Host "Attempting silent installation of MSI (Per-Machine)..."

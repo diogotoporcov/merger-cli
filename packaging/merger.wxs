@@ -23,26 +23,18 @@
         </Feature>
 
         <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
-        <WixVariable Id="WixUISupportPerUser" Value="1" />
-        <WixVariable Id="WixUISupportPerMachine" Value="1" />
-        <Property Id="ApplicationFolderName" Value="MergerCLI" />
+        <!-- WixUI_Advanced defines these as virtual symbols. We don't need to define them if we want default (both supported). -->
+        
+        <Property Id="ApplicationFolderName" Value="Merger CLI" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
         
         <Property Id="REMOVE_DATA" Value="0" />
-        <Property Id="WixUI_InstallMode" Value="Install" />
 
         <SetProperty Id="DataFolder" Value="[AppDataFolder]MergerCLI" After="AppSearch" />
         <SetProperty Id="LocalDataFolder" Value="[LocalAppDataFolder]MergerCLI" After="AppSearch" />
 
         <StandardDirectory Id="ProgramFiles64Folder">
-            <Directory Id="INSTALLFOLDER_Machine" Name="MergerCLI" />
-        </StandardDirectory>
-
-        <StandardDirectory Id="LocalAppDataFolder">
-            <Directory Id="INSTALLFOLDER_User_Programs" Name="Programs">
-                <Directory Id="INSTALLFOLDER_User" Name="MergerCLI" />
-            </Directory>
-            <Directory Id="MERGER_LOCALAPPDATA" Name="MergerCLI" />
+            <Directory Id="APPLICATIONFOLDER" Name="Merger CLI" />
         </StandardDirectory>
 
         <StandardDirectory Id="ProgramMenuFolder">
@@ -51,27 +43,22 @@
         <StandardDirectory Id="AppDataFolder">
             <Directory Id="MERGER_APPDATA" Name="MergerCLI" />
         </StandardDirectory>
+        <StandardDirectory Id="LocalAppDataFolder">
+            <Directory Id="MERGER_LOCALAPPDATA" Name="MergerCLI" />
+        </StandardDirectory>
 
-        <!-- Dynamic installation folder based on WixAppFolder property -->
-        <SetProperty Id="INSTALLFOLDER" Value="[INSTALLFOLDER_Machine]" After="AppSearch" Condition="NOT WixAppFolder = &quot;WixPerUserFolder&quot;" />
-        <SetProperty Id="INSTALLFOLDER_UserSet" Action="INSTALLFOLDER" Value="[INSTALLFOLDER_User]" After="AppSearch" Condition="WixAppFolder = &quot;WixPerUserFolder&quot;" />
-        
-        <!-- Ensure INSTALLFOLDER is updated when WixAppFolder changes in the UI -->
-        <SetProperty Id="INSTALLFOLDER_Machine_UI" Action="INSTALLFOLDER" Value="[INSTALLFOLDER_Machine]" After="InstallScopeDlg" Condition="NOT WixAppFolder = &quot;WixPerUserFolder&quot;" />
-        <SetProperty Id="INSTALLFOLDER_User_UI" Action="INSTALLFOLDER" Value="[INSTALLFOLDER_User]" After="InstallScopeDlg" Condition="WixAppFolder = &quot;WixPerUserFolder&quot;" />
-
-        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+        <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
             <Files Include="..\dist\merger-cli\**" />
         </ComponentGroup>
 
-        <DirectoryRef Id="INSTALLFOLDER">
+        <DirectoryRef Id="APPLICATIONFOLDER">
             <!-- System-wide PATH for per-machine installs -->
             <Component Id="SetPath_Machine" Guid="8D4077C5-6582-4166-879E-7117565D070C" Condition="WixAppFolder = &quot;WixPerMachineFolder&quot;">
-                <Environment Id="PATH_Machine" Name="PATH" Value="[INSTALLFOLDER]" Permanent="no" Part="last" Action="set" System="yes" />
+                <Environment Id="PATH_Machine" Name="PATH" Value="[APPLICATIONFOLDER]" Permanent="no" Part="last" Action="set" System="yes" />
             </Component>
             <!-- User-specific PATH for per-user installs -->
             <Component Id="SetPath_User" Guid="8D4077C5-6582-4166-879E-7117565D070B" Condition="WixAppFolder = &quot;WixPerUserFolder&quot;">
-                <Environment Id="PATH_User" Name="PATH" Value="[INSTALLFOLDER]" Permanent="no" Part="last" Action="set" System="no" />
+                <Environment Id="PATH_User" Name="PATH" Value="[APPLICATIONFOLDER]" Permanent="no" Part="last" Action="set" System="no" />
             </Component>
         </DirectoryRef>
 
@@ -80,8 +67,8 @@
                 <Shortcut Id="ApplicationStartMenuShortcut" 
                           Name="Merger CLI" 
                           Description="$(var.Description)"
-                          Target="[INSTALLFOLDER]merger.exe"
-                          WorkingDirectory="INSTALLFOLDER"/>
+                          Target="[APPLICATIONFOLDER]merger.exe"
+                          WorkingDirectory="APPLICATIONFOLDER"/>
                 <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
                 <RegistryValue Root="HKCU" Key="Software\MergerCLI" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
@@ -107,17 +94,11 @@
         </Feature>
 
         <UI>
-            <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+            <ui:WixUI Id="WixUI_Advanced" />
             
-            <!-- Standard sequence: Welcome -> License (internal) -> InstallScope -> InstallDir -> VerifyReady -->
-            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallScopeDlg" Order="2" />
-            <Publish Dialog="InstallScopeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
-            <Publish Dialog="InstallScopeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" />
+            <!-- Standard sequence for WixUI_Advanced with dual scope -->
+            <!-- Welcome -> License -> InstallScope -> InstallDir -> VerifyReady -->
             
-            <!-- When the user selects the scope, we need to update the INSTALLFOLDER property based on the selected directory -->
-            <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="InstallScopeDlg" Order="2" />
-
-            <!-- Uninstallation logic -->
             <Publish Dialog="VerifyReadyDlg" Control="Install" Event="NewDialog" Value="UninstallDataDlg" Order="1" Condition="WixUI_InstallMode = &quot;Remove&quot;" />
             
             <Dialog Id="UninstallDataDlg" Width="370" Height="270" Title="[ProductName] Uninstall">
