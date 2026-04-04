@@ -8,7 +8,8 @@
              Version="$(var.Version)"
              Manufacturer="Diogo Toporcov"
              UpgradeCode="00c8077c-6582-4166-879e-7117565d070b"
-             InstallerVersion="200">
+             InstallerVersion="500"
+             Scope="perMachine">
 
         <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
         <MediaTemplate EmbedCab="yes" />
