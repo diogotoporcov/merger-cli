@@ -1,8 +1,8 @@
 class MergerCli < Formula
   desc "Merger is a command-line utility for developers that scans a directory, filters files using customizable ignore patterns, and merges all readable content into a single structured output file."
   homepage "https://github.com/diogotoporcov/merger-cli"
-  url "https://github.com/diogotoporcov/merger-cli/releases/download/cli-v4.0.0-alpha.4/merger-cli-macos.tar.gz"
-  sha256 "5afd6bbfd1b332dd352ff6055823db2d8be73c3686d82d333bccdffb08d91e52"
+  url "https://github.com/diogotoporcov/merger-cli/releases/download/cli-v4.0.0-alpha.5/merger-cli-macos.tar.gz"
+  sha256 "3b38fafc78264d7a68c78133b32d21d5b5430cc3218ca1d6c1d01f1fc0de453d"
   license "GPL-3.0-or-later"
 
   depends_on "libmagic"
