@@ -1,11 +1,28 @@
 import os
 import platform
-import sys
 from pathlib import Path
 
+from typing import Literal
+
+DistributionType = Literal["pypi", "standalone"]
+
+_distribution_type: DistributionType = "pypi"
+
+
+def set_distribution_type(dist_type: DistributionType) -> None:
+    """Sets the distribution type for the application."""
+    global _distribution_type
+    _distribution_type = dist_type
+
+
+def get_distribution_type() -> DistributionType:
+    """Returns the distribution type of the application."""
+    return _distribution_type
+
+
 def is_bundled() -> bool:
-    """Returns True if the application is running in a bundled environment (e.g. PyInstaller)."""
-    return getattr(sys, "frozen", False)
+    """Returns True if the application is running as a standalone bundled installer."""
+    return get_distribution_type() == "standalone"
 
 
 def get_merger_dir() -> Path:

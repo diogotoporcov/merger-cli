@@ -1,14 +1,13 @@
 import json
 import os
 import re
-import sys
 import threading
 import time
 import urllib.error
 import urllib.request
 from typing import Optional, Tuple
 
-from .config import get_merger_dir
+from .config import get_merger_dir, is_bundled
 from .version import get_version
 from ..logging.constants import LOG_COLORS
 
@@ -215,7 +214,7 @@ def set_pending_update_message(current: str, latest: str):
     """Prepare the update message to be displayed later."""
     global _pending_message
     
-    if getattr(sys, "frozen", False):
+    if is_bundled():
         update_cmd = "Download new version: [bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]"
     else:
         # Since merger-cli is not on PyPI anymore, suggest checking the releases page
