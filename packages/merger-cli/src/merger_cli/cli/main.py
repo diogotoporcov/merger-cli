@@ -39,10 +39,11 @@ def main() -> None:
             handle_uninstall(args.uninstall_plugin, force=args.yes)
             return
 
-        if args.install_requirements is not None:
+        if getattr(args, "install_requirements", None) is not None:
             from .utils import handle_plugin_requirements
             # args.install_requirements is a list when nargs="*" is used
-            packages = args.install_requirements if isinstance(args.install_requirements, list) else None
+            ir = getattr(args, "install_requirements", None)
+            packages = ir if isinstance(ir, list) else None
             handle_plugin_requirements(packages=packages, force=args.yes)
             return
 

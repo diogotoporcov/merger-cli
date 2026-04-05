@@ -2,7 +2,6 @@ import sys
 from unittest.mock import patch
 
 import pytest
-
 from merger_cli.cli import main
 from merger_cli.utils.db import PluginRecord
 
@@ -24,9 +23,10 @@ def mock_config_dir(tmp_path, monkeypatch):
     return tmp_path
 
 def test_handle_plugin_requirements_no_plugins(capsys, mock_config_dir):
-    with patch.object(sys, 'argv', ['merger', '--install-requirements']):
-        with patch("rich.prompt.Confirm.ask", return_value=False):
-            main()
+    with patch("merger_cli.utils.config.is_bundled", return_value=True):
+        with patch.object(sys, 'argv', ['merger', '--install-requirements']):
+            with patch("rich.prompt.Confirm.ask", return_value=False):
+                main()
 
     captured = capsys.readouterr()
     all_out = captured.out + captured.err
