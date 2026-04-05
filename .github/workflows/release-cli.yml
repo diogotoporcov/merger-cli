@@ -174,10 +174,11 @@ jobs:
           sha256sum ./*.msi ./*.deb ./*.tar.gz > checksums.txt
         shell: bash
 
-      - name: Detect prerelease from tag
+      - name: Detect release metadata from tag
         id: release_meta
         run: |
           TAG_LOWER="$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]')"
+          VERSION="${GITHUB_REF_NAME#cli-}"
 
           if [[ "$TAG_LOWER" == *alpha* ]] || \
              [[ "$TAG_LOWER" == *beta* ]] || \
@@ -192,9 +193,12 @@ jobs:
             echo "make_latest=true" >> "$GITHUB_OUTPUT"
           fi
 
+          echo "release_name=Merger CLI ${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ steps.release_meta.outputs.release_name }}
           generate_release_notes: true
           prerelease: ${{ steps.release_meta.outputs.prerelease }}
           make_latest: ${{ steps.release_meta.outputs.make_latest }}
