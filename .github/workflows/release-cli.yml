@@ -1,23 +1,29 @@
-name: Build and Release Binaries
+name: Release CLI
 
 on:
   push:
     tags:
-      - 'cli-v*'
+      - "cli-v*"
+
+concurrency:
+  group: release-cli-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
   test:
+    name: Run CI
     uses: ./.github/workflows/ci.yml
 
-  build:
-    name: Build for ${{ matrix.os }}
+  build_artifacts:
+    name: Build artifacts (${{ matrix.os }})
     needs: test
-    if: startsWith(github.ref, 'refs/tags/cli-v')
     runs-on: ${{ matrix.os }}
+
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
 
@@ -27,7 +33,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -35,21 +41,21 @@ jobs:
           pip install "./packages/merger-plugin-api[test]"
           pip install "./packages/merger-cli[test,dev]"
 
-      - name: (Linux) Install libmagic
+      - name: Install libmagic (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y libmagic1
 
-      - name: (macOS) Install libmagic
+      - name: Install libmagic (macOS)
         if: matrix.os == 'macos-latest'
         run: brew install libmagic
 
-      - name: (Windows) Install WiX Toolset
+      - name: Install WiX Toolset (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           dotnet tool install --global wix --version 5.0.2
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Build and Verify
+      - name: Build and verify
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             bash scripts/test_linux.sh
@@ -60,24 +66,23 @@ jobs:
           fi
         shell: bash
 
-      - name: Set Package Version and Metadata
+      - name: Set package version and metadata
         run: |
-          VERSION=${{ github.ref_name }}
-          VERSION=${VERSION#cli-v}
-          VERSION=${VERSION#api-v}
-          VERSION=${VERSION#v}
-          echo "PKG_VERSION=${VERSION}" >> $GITHUB_ENV
-          
-          # Extract metadata from pyproject.toml using our new helper
-          python -m pip install tomli >/dev/null 2>&1 || true
-          META=$(python scripts/metadata_helper.py)
-          DESC=$(echo "$META" | grep "^description=" | cut -d'=' -f2)
-          HP=$(echo "$META" | grep "^homepage=" | cut -d'=' -f2)
-          echo "DESCRIPTION=$DESC" >> $GITHUB_ENV
-          echo "HOMEPAGE=$HP" >> $GITHUB_ENV
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#cli-v}"
+          VERSION="${VERSION#api-v}"
+          VERSION="${VERSION#v}"
+          echo "PKG_VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+          META="$(python scripts/metadata_helper.py)"
+          DESC="$(echo "$META" | grep "^description=" | cut -d'=' -f2)"
+          HP="$(echo "$META" | grep "^homepage=" | cut -d'=' -f2)"
+
+          echo "DESCRIPTION=$DESC" >> "$GITHUB_ENV"
+          echo "HOMEPAGE=$HP" >> "$GITHUB_ENV"
         shell: bash
 
-      - name: (Linux) Create .deb Package and Homebrew Formula
+      - name: Create .deb package (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           NFPM_VERSION="2.41.3"
@@ -89,104 +94,103 @@ jobs:
           DESCRIPTION: ${{ env.DESCRIPTION }}
           HOMEPAGE: ${{ env.HOMEPAGE }}
 
-      - name: Prepare Binary Names
+      - name: Normalize release artifact names
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # No single binary to move for onedir mode on Windows
-            echo "Windows: Using onedir for installer"
+            echo "Windows build produces the installer directly"
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
             mv dist/merger-cli dist/merger-cli-macos
             tar -czf dist/merger-cli-macos.tar.gz -C dist merger-cli-macos
           else
-            # Linux: Keep dist/merger-cli for nfpm
-            echo "Linux: Keeping onedir for .deb package"
+            echo "Linux build produces files needed for the .deb package"
           fi
         shell: bash
 
-      - name: Calculate and Save SHA256 (macOS)
+      - name: Calculate macOS SHA256
         if: matrix.os == 'macos-latest'
         run: |
           shasum -a 256 dist/merger-cli-macos.tar.gz | awk '{print $1}' > dist/macos_sha256.txt
         shell: bash
 
-      - name: Upload Artifacts
+      - name: Upload release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-artifacts-${{ matrix.os }}
+          name: cli-release-artifacts-${{ matrix.os }}
+          if-no-files-found: error
           path: |
             dist/*.msi
             dist/*.deb
             dist/*.tar.gz
             dist/macos_sha256.txt
 
-  publish-pypi:
-    name: Publish to PyPI
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/cli-v')
+  publish_cli_package:
+    name: Publish CLI package to PyPI
+    needs: build_artifacts
     runs-on: ubuntu-latest
+    environment: pypi
     permissions:
       id-token: write
       contents: read
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
           pip install build
+
       - name: Build distribution
         run: |
           cd packages/merger-cli
           python -m build
           mv dist ../../dist
+
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
-  publish:
-    name: Publish Release
-    needs: [build, publish-pypi]
+  publish_github_release:
+    name: Publish GitHub Release
+    needs:
+      - build_artifacts
+      - publish_cli_package
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/cli-v')
+
     steps:
-      - name: Download All Artifacts
+      - name: Download release artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
-          pattern: release-artifacts-*
+          pattern: cli-release-artifacts-*
           merge-multiple: true
 
-      - name: Create GitHub Release
-        id: create_release
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum ./*.msi ./*.deb ./*.tar.gz > checksums.txt
+        shell: bash
+
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           files: |
             ./artifacts/*.msi
             ./artifacts/*.deb
             ./artifacts/*.tar.gz
+            ./artifacts/checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Checksums
-        run: |
-          cd artifacts
-          sha256sum *.msi *.deb *.tar.gz > checksums.txt
-        shell: bash
-
-      - name: Upload Checksums to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ./artifacts/checksums.txt
-          append_body: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  update-homebrew:
-    name: Update Homebrew Formula
-    needs: publish
+  update_homebrew_formula:
+    name: Update Homebrew formula
+    needs: publish_github_release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -195,37 +199,36 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Download Artifacts
+      - name: Download release artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
-          pattern: release-artifacts-*
+          pattern: cli-release-artifacts-*
           merge-multiple: true
 
-      - name: Update Formula
+      - name: Update formula
         run: |
-          SHA256=$(cat ./artifacts/macos_sha256.txt)
-          TAG_NAME=${{ github.ref_name }}
-          
-          # Extract metadata from pyproject.toml using our new helper
-          META=$(python scripts/metadata_helper.py)
-          DESC=$(echo "$META" | grep "^description=" | cut -d'=' -f2)
-          HP=$(echo "$META" | grep "^homepage=" | cut -d'=' -f2)
-          
-          # Use sed to update the template
+          SHA256="$(cat ./artifacts/macos_sha256.txt)"
+          TAG_NAME="${{ github.ref_name }}"
+
+          META="$(python scripts/metadata_helper.py)"
+          DESC="$(echo "$META" | grep "^description=" | cut -d'=' -f2)"
+          HP="$(echo "$META" | grep "^homepage=" | cut -d'=' -f2)"
+
           cp Formula/merger-cli.rb.template Formula/merger-cli.rb
           sed -i "s|%%DESCRIPTION%%|$DESC|g" Formula/merger-cli.rb
           sed -i "s|%%HOMEPAGE%%|$HP|g" Formula/merger-cli.rb
           sed -i "s|%%TAG_NAME%%|$TAG_NAME|g" Formula/merger-cli.rb
           sed -i "s|%%SHA256%%|$SHA256|g" Formula/merger-cli.rb
 
-      - name: Commit and Push
+      - name: Commit and push formula update
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add -f Formula/merger-cli.rb
+
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
