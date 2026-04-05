@@ -30,7 +30,7 @@
             <Directory Id="INSTALLFOLDER" Name="MergerCLI" />
         </StandardDirectory>
         <StandardDirectory Id="ProgramMenuFolder">
-            <Directory Id="ApplicationProgramsFolder" Name="Merger CLI"/>
+            <Directory Id="ApplicationProgramsFolder" Name="MergerCLI"/>
         </StandardDirectory>
 
         <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
