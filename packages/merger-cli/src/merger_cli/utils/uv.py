@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
+from .config import get_or_create_site_packages_dir
 from ..logging import logger
 
 
@@ -28,7 +29,7 @@ def run_uv(args: List[str], capture_output: bool = False) -> subprocess.Complete
     cmd = [uv_exe] + args
     
     # In bundled environments, ensure the correct environment is targeted
-    # site_packages = get_or_create_site_packages_dir()
+    site_packages = get_or_create_site_packages_dir()
     
     try:
         return subprocess.run(cmd, capture_output=capture_output, check=True, text=True)
@@ -52,11 +53,7 @@ def uv_install(packages: List[str], target: Optional[Path] = None):
 def uv_uninstall(packages: List[str], target: Optional[Path] = None):
     if not packages:
         return
-    
-    # uv pip uninstall does not strictly support --target in the same way.
-    # Manual file removal from the target directory may be required if uv 
-    # does not handle it correctly.
-    
+
     args = ["pip", "uninstall"]
     args.extend(packages)
     run_uv(args)

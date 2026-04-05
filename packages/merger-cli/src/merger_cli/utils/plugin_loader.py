@@ -6,11 +6,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic, Tuple
 
-from .config import is_bundled
+from .config import is_bundled, get_or_create_site_packages_dir
 from .db import DatabaseManager, PluginRecord
 from .dependencies import check_and_warn_dependencies
 from .hash import hash_from_file
-from .uv import uv_install, uv_purge, get_or_create_site_packages_dir
+from .uv import uv_install, uv_purge
 from ..exceptions import InvalidPlugin, PluginAlreadyInstalled
 from ..logging import logger
 
