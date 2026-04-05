@@ -39,14 +39,14 @@ def main() -> None:
             handle_uninstall(args.uninstall_plugin, force=args.yes)
             return
 
-        if args.update:
-            from .utils import handle_update
-            handle_update()
+        if args.install_requirements:
+            from .utils import handle_plugin_requirements
+            handle_plugin_requirements(force=args.yes)
             return
 
-        if args.update_plugins:
-            from .utils import handle_plugin_update
-            handle_plugin_update(force=args.yes)
+        if args.purge_requirements:
+            from .utils import handle_plugin_requirements
+            handle_plugin_requirements(force=args.yes, purge=True)
             return
 
         if args.list_plugins:

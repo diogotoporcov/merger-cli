@@ -183,42 +183,76 @@ def handle_update() -> None:
     logger.info("[bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]")
 
 
-def handle_plugin_update(force: bool = False) -> None:
-    """Updates the dependencies for all installed custom plugins."""
+def handle_plugin_requirements(force: bool = False, purge: bool = False) -> None:
+    """Installs, updates and purges dependencies for all installed custom plugins."""
+    import subprocess
     from rich.prompt import Confirm
     from ..utils.db import DatabaseManager
     from ..utils.plugin_loader import PluginManager
-    from ..utils.uv import uv_install
+    from ..utils.uv import uv_install, uv_purge
     from ..utils.config import get_or_create_site_packages_dir, is_bundled
     from ..utils.dependencies import check_and_warn_dependencies
 
     db = DatabaseManager()
     plugins = db.list_plugins()
-    if not plugins:
-        logger.info("No custom plugins installed to check for dependency updates.")
+    if not plugins and not purge:
+        logger.info("No custom plugins installed to check for requirements.")
         return
+
+    # Check for necessary tools in bundled version
+    if is_bundled():
+        try:
+            from ..utils.uv import run_uv
+            run_uv(["--version"], capture_output=True)
+        except (ImportError, FileNotFoundError, subprocess.CalledProcessError):
+            logger.error("Could not find 'uv' executable. Please make sure it is installed and available.")
+            return
 
     all_requirements = set()
     for plugin in plugins:
-        reqs = PluginManager.extract_requirements(Path(plugin.path))
+        plugin_path = Path(plugin.path)
+        if not plugin_path.exists():
+            continue
+            
+        reqs = PluginManager.extract_requirements(plugin_path)
         for req in reqs:
             all_requirements.add(req)
             db.add_plugin_dependency(plugin.id, req)
 
+    if purge:
+        unused_deps = db.get_unused_dependencies()
+        if not unused_deps:
+            logger.info("No unused requirements found to purge.")
+            
+        elif is_bundled():
+            if not force and not Confirm.ask(f"Do you wish to purge {len(unused_deps)} unused requirements?"):
+                return
+            
+            site_packages = get_or_create_site_packages_dir()
+            try:
+                uv_purge(unused_deps, target=site_packages)
+                logger.info("Unused requirements purged successfully.")
+            except Exception as e:
+                logger.error(f"Failed to purge requirements: {e}")
+        else:
+            logger.info(f"Unused requirements identified: {', '.join(unused_deps)}")
+        
+        return
+
     if not all_requirements:
-        logger.info("No dependencies found for any installed plugins.")
+        logger.info("No requirements found for any installed plugins.")
     
     elif is_bundled():
-        logger.info(f"Updating dependencies: {', '.join(all_requirements)}")
+        logger.info(f"Installing requirements: {', '.join(all_requirements)}")
         site_packages = get_or_create_site_packages_dir()
         try:
             uv_install(list(all_requirements), target=site_packages)
-            logger.info("Plugin dependencies updated successfully.")
+            logger.info("Plugin requirements installed successfully.")
         except Exception as e:
-            logger.error(f"Failed to update plugin dependencies: {e}")
+            logger.error(f"Failed to install plugin requirements: {e}")
     
     else:
-        logger.info("Checking plugin dependencies...")
+        logger.info("Checking plugin requirements...")
         check_and_warn_dependencies(list(all_requirements), "installed plugins")
 
     # Core dependencies update confirmation
@@ -294,15 +328,15 @@ def setup_argparse() -> RichArgumentParser:
     )
 
     plugin_group.add_argument(
-        "--update",
+        "--install-requirements",
         action="store_true",
-        help="Update merger-cli and its dependencies to the latest version",
+        help="Install requirements for all installed custom plugins",
     )
 
     plugin_group.add_argument(
-        "--update-plugins",
+        "--purge-requirements",
         action="store_true",
-        help="Update all custom plugin dependencies",
+        help="Uninstall all unused requirements from the plugin environment",
     )
 
     parser.add_argument(

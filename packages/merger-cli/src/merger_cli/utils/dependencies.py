@@ -1,13 +1,17 @@
 import importlib.metadata
 from typing import List
 
-from packaging.requirements import Requirement
-
 from ..logging import logger
 
 
 def check_and_warn_dependencies(requirements: List[str], plugin_name: str) -> None:
     """Checks if dependencies are installed and warns the user if they are missing."""
+    try:
+        from packaging.requirements import Requirement
+    except ImportError:
+        logger.debug(f"Could not verify dependencies for {plugin_name}: 'packaging' is not installed.")
+        return
+
     missing = []
     for req_str in requirements:
         try:

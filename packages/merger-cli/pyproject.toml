@@ -16,8 +16,6 @@ dependencies = [
     "rich>=13.0.0",
     "pathspec>=0.11.0",
     "rich-argparse>=1.1.0",
-    "packaging>=23.0",
-    "uv>=0.1.0",
     "python-magic-bin>=0.4.14; platform_system == 'Windows'",
     "python-magic>=0.4.15; platform_system != 'Windows'"
 ]
@@ -29,14 +27,20 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+bundled = [
+    "uv>=0.1.0",
+    "packaging>=23.0"
+]
 test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "tomli; python_version < '3.11'",
+    "merger-cli[bundled]"
 ]
 dev = [
     "pyinstaller>=6.0.0",
     "tomli; python_version < '3.11'",
+    "merger-cli[bundled]"
 ]
 
 

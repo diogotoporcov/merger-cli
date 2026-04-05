@@ -1,13 +1,18 @@
 import subprocess
-import sys
-import os
 from pathlib import Path
 from typing import List, Optional
+
 from ..logging import logger
-from .config import get_or_create_site_packages_dir
+
 
 def get_uv_executable() -> str:
     """Finds the uv executable. Fallbacks to using 'uv' if not found in common places."""
+    try:
+        import uv
+        return uv.find_uv_bin()
+    except (ImportError, AttributeError):
+        pass
+
     try:
         subprocess.run(["uv", "--version"], capture_output=True, check=True)
         return "uv"

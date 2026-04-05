@@ -101,19 +101,19 @@ Patterns are relative to the scan root. Merger uses **Git-style matching** with 
 
 Merger uses a specialized syntax to distinguish between files and directories, and to handle edge cases where literal characters are needed.
 
-| Pattern | Type | Effect |
-| :--- | :--- | :--- |
-| `node_modules/` | **Directory** | Ignores the `node_modules` directory and all its contents. |
-| `temp/` | **Directory** | Ignores any directory named `temp` anywhere in the tree. |
-| `config.json:` | **File** | Ignores only files named `config.json`. A directory named `config.json` would **not** be ignored. |
-| `tags:` | **File** | Ignores a file named `tags`. Useful for ignoring files that don't have extensions. |
-| `build!/` | **Literal** | Ignores a file or directory named `build/` literally (disables the special directory meaning of `/`). |
-| `archive!:` | **Literal** | Ignores a file or directory named `archive:` literally. |
-| `config!/` | **Literal** | Ignores a file or directory named `config/` literally. |
-| `docs/**/tmp/` | **Directory** | Ignores any `tmp` directory located anywhere inside the `docs` directory. |
-| `src/*.c:` | **File** | Ignores all `.c` files directly inside the `src` directory. |
-| `!important.log:` | **Negation** | The `!` at the beginning (before any path) negates the pattern (do **not** ignore). |
-| `README.md!:` | **Literal** | Ignores a file named `README.md:`. |
+| Pattern           | Type          | Effect                                                                                                |
+|:------------------|:--------------|:------------------------------------------------------------------------------------------------------|
+| `node_modules/`   | **Directory** | Ignores the `node_modules` directory and all its contents.                                            |
+| `temp/`           | **Directory** | Ignores any directory named `temp` anywhere in the tree.                                              |
+| `config.json:`    | **File**      | Ignores only files named `config.json`. A directory named `config.json` would **not** be ignored.     |
+| `tags:`           | **File**      | Ignores a file named `tags`. Useful for ignoring files that don't have extensions.                    |
+| `build!/`         | **Literal**   | Ignores a file or directory named `build/` literally (disables the special directory meaning of `/`). |
+| `archive!:`       | **Literal**   | Ignores a file or directory named `archive:` literally.                                               |
+| `config!/`        | **Literal**   | Ignores a file or directory named `config/` literally.                                                |
+| `docs/**/tmp/`    | **Directory** | Ignores any `tmp` directory located anywhere inside the `docs` directory.                             |
+| `src/*.c:`        | **File**      | Ignores all `.c` files directly inside the `src` directory.                                           |
+| `!important.log:` | **Negation**  | The `!` at the beginning (before any path) negates the pattern (do **not** ignore).                   |
+| `README.md!:`     | **Literal**   | Ignores a file named `README.md:`.                                                                    |
 
 ---
 
@@ -121,32 +121,40 @@ Merger uses a specialized syntax to distinguish between files and directories, a
 
 Merger CLI features a plugin architecture. Plugins are standalone Python files that can define their own dependencies via a `REQUIREMENTS` list.
 
-### Managing Plugins
-*   **Install**: `merger --install-plugin path/to/plugin.py`
-*   **List**: `merger --list-plugins`
-*   **Update**: `merger --update-plugins` (Updates dependencies for all installed plugins)
-*   **Uninstall**: `merger --uninstall-plugin <plugin_id>` (Automatically purges unused dependencies)
+### Managing Requirements (Bundled Version Only)
+If you are using the bundled version of Merger CLI, you can manage plugin requirements manually:
+*   **Install**: `merger --install-requirements` (Installs all `REQUIREMENTS` defined in your installed plugins)
+*   **Purge**: `merger --purge-requirements` (Uninstalls any unused requirements from the plugin environment)
 
-For developers looking to build plugins, see the [Merger Plugin API Documentation](../merger-plugin-api/README.md).
+### Building Plugins
+Plugins are standalone Python files. They can define a `REQUIREMENTS` list at the top level to specify any external dependencies they need:
+
+```python
+REQUIREMENTS = ["pillow", "requests"]
+
+class MyParser:
+    ...
+```
 
 ---
 
 ## CLI Options
 
-| Option                   | Description                                                   |
-|--------------------------|---------------------------------------------------------------|
-| `INPUT_DIR_PATH`         | Root directory to scan.                                       |
-| `OUTPUT_FILE_DIR_PATH`   | Directory to save the output (default: `.`).                  |
-| `-e, --exporter`         | Choose the exporter strategy.                                 |
-| `-i, --install-plugin`   | Install a custom parser or exporter plugin.                   |
-| `-u, --uninstall-plugin` | Uninstall a plugin by ID (use `*` for all).                   |
-| `-l, --list-plugins`     | List all installed custom plugins.                            |
-| `--update-plugins`       | Update dependencies for all installed plugins.                |
-| `--update`               | Check for CLI updates and provide download links.             |
-| `--ignore`               | Glob-style patterns to ignore.                                |
-| `--merger-ignore`        | Path to ignore file (default: `./merger.ignore`).             |
-| `-c, --create-ignore`    | Create an ignore file from template (e.g., `PYTHON`, `RUST`). |
-| `-y, --yes`              | Enable non-interactive mode (auto-confirm prompts).           |
+| Option                   | Description                                                    |
+|--------------------------|----------------------------------------------------------------|
+| `INPUT_DIR_PATH`         | Root directory to scan.                                        |
+| `OUTPUT_FILE_DIR_PATH`   | Directory to save the output (default: `.`).                   |
+| `-e, --exporter`         | Choose the exporter strategy.                                  |
+| `-i, --install-plugin`   | Install a custom parser or exporter plugin.                    |
+| `-u, --uninstall-plugin` | Uninstall a plugin by ID (use `*` for all).                    |
+| `-l, --list-plugins`     | List all installed custom plugins.                             |
+| `--install-requirements` | Install requirements for all installed custom plugins.         |
+| `--purge-requirements`   | Uninstall all unused requirements from the plugin environment. |
+| `--update`               | Check for CLI updates and provide download links.              |
+| `--ignore`               | Glob-style patterns to ignore.                                 |
+| `--merger-ignore`        | Path to ignore file (default: `./merger.ignore`).              |
+| `-c, --create-ignore`    | Create an ignore file from template (e.g., `PYTHON`, `RUST`).  |
+| `-y, --yes`              | Enable non-interactive mode (auto-confirm prompts).            |
 
 ---
 

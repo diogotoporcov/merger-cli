@@ -37,9 +37,9 @@ def test_handle_update_behavior(capsys):
     
     set_distribution_type("pypi")
 
-def test_handle_plugin_update_bundled_vs_pypi(monkeypatch, capsys):
-    """Verify that handle_plugin_update behaves differently based on distribution type."""
-    from merger_cli.cli.utils import handle_plugin_update
+def test_handle_plugin_requirements_bundled_vs_pypi(monkeypatch, capsys):
+    """Verify that handle_plugin_requirements behaves differently based on distribution type."""
+    from merger_cli.cli.utils import handle_plugin_requirements
     
     # Mock DatabaseManager to return no plugins
     class MockDB:
@@ -51,17 +51,17 @@ def test_handle_plugin_update_bundled_vs_pypi(monkeypatch, capsys):
 
     # Test PyPI mode
     set_distribution_type("pypi")
-    handle_plugin_update()
+    handle_plugin_requirements()
     captured = capsys.readouterr()
     import re
     err_text = re.sub(r"\s+", " ", captured.err)
-    assert "No custom plugins installed to check for dependency updates." in err_text
+    assert "No custom plugins installed to check for requirements." in err_text
     
     # Test Standalone mode
     set_distribution_type("standalone")
-    handle_plugin_update()
+    handle_plugin_requirements()
     captured = capsys.readouterr()
     err_text = re.sub(r"\s+", " ", captured.err)
-    assert "No custom plugins installed to check for dependency updates." in err_text
+    assert "No custom plugins installed to check for requirements." in err_text
     
     set_distribution_type("pypi")

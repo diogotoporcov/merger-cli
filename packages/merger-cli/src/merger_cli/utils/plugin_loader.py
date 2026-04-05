@@ -43,32 +43,45 @@ class PluginManager(Generic[T]):
 
     @staticmethod
     def extract_requirements(path: Path) -> List[str]:
-        """Extracts the REQUIREMENTS or DEPENDENCIES list from a Python file using AST without executing it."""
+        """Extracts the REQUIREMENTS list from a Python file using AST without executing it."""
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
             for node in tree.body:
-                # Handle simple assignment: REQUIREMENTS = [...] or DEPENDENCIES = [...]
-                if (isinstance(node, ast.Assign) and 
-                    len(node.targets) == 1 and 
-                    isinstance(node.targets[0], ast.Name) and 
-                    node.targets[0].id in ("REQUIREMENTS", "DEPENDENCIES")):
-                    
-                    if isinstance(node.value, ast.List):
-                        return [elt.value for elt in node.value.elts if isinstance(elt, (ast.Constant, ast.Str))]
+                # Handle simple assignment: REQUIREMENTS = [...]
+                is_req_assign = (
+                    isinstance(node, ast.Assign) and
+                    len(node.targets) == 1 and
+                    isinstance(node.targets[0], ast.Name) and
+                    node.targets[0].id == "REQUIREMENTS"
+                )
 
-                # Handle annotated assignment: REQUIREMENTS: List[str] = [...] or DEPENDENCIES: List[str] = [...]
-                if (isinstance(node, ast.AnnAssign) and 
-                    isinstance(node.target, ast.Name) and 
-                    node.target.id in ("REQUIREMENTS", "DEPENDENCIES") and 
-                    node.value is not None):
-                    
-                    if isinstance(node.value, ast.List):
-                        return [elt.value for elt in node.value.elts if isinstance(elt, (ast.Constant, ast.Str))]
+                # Handle annotated assignment: REQUIREMENTS: List[str] = [...]
+                is_req_ann_assign = (
+                    isinstance(node, ast.AnnAssign) and
+                    isinstance(node.target, ast.Name) and
+                    node.target.id == "REQUIREMENTS" and
+                    node.value is not None
+                )
+
+                if is_req_assign or is_req_ann_assign:
+                    value_node = node.value if is_req_ann_assign else node.value
+                    if isinstance(value_node, ast.List):
+                        res = []
+                        for elt in value_node.elts:
+                            # In Python 3.14+, ast.Str and ast.Bytes are removed.
+                            # ast.Constant is used since 3.8.
+                            if hasattr(ast, "Constant") and isinstance(elt, ast.Constant):
+                                res.append(elt.value)
+
+                            elif hasattr(ast, "Str") and isinstance(elt, ast.Str):
+                                res.append(elt.s)
+
+                        return res
 
             return []
 
         except Exception as e:
-            logger.warning(f"Could not parse REQUIREMENTS or DEPENDENCIES from {path}: {e}")
+            logger.warning(f"Could not parse REQUIREMENTS from {path}: {e}")
             return []
 
     @staticmethod

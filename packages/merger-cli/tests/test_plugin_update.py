@@ -23,16 +23,16 @@ def mock_config_dir(tmp_path, monkeypatch):
         pass
     return tmp_path
 
-def test_handle_plugin_update_no_plugins(capsys, mock_config_dir):
-    with patch.object(sys, 'argv', ['merger', '--update-plugins']):
+def test_handle_plugin_requirements_no_plugins(capsys, mock_config_dir):
+    with patch.object(sys, 'argv', ['merger', '--install-requirements']):
         with patch("rich.prompt.Confirm.ask", return_value=False):
             main()
 
     captured = capsys.readouterr()
     all_out = captured.out + captured.err
-    assert "No custom plugins installed to check for dependency updates." in all_out
+    assert "No custom plugins installed to check for requirements." in all_out
 
-def test_handle_plugin_update_with_plugins(tmp_path, monkeypatch, capsys, mock_config_dir):
+def test_handle_plugin_requirements_with_plugins(tmp_path, monkeypatch, capsys, mock_config_dir):
     plugin_path = tmp_path / "my_plugin.py"
     plugin_path.write_text("REQUIREMENTS = ['pillow']\nclass MyParser: pass\nparser_cls = MyParser")
     
@@ -51,14 +51,14 @@ def test_handle_plugin_update_with_plugins(tmp_path, monkeypatch, capsys, mock_c
     with patch("merger_cli.utils.config.is_bundled", return_value=True):
         with patch("rich.prompt.Confirm.ask", return_value=True) as mock_confirm:
             with patch("merger_cli.utils.uv.uv_install") as mock_uv:
-                with patch.object(sys, 'argv', ['merger', '--update-plugins']):
+                with patch.object(sys, 'argv', ['merger', '--install-requirements']):
                     main()
     
     mock_uv.assert_any_call(['pillow'], target=mock_config_dir / "site-packages")
     mock_confirm.assert_called_with("Do you wish to update core dependencies too?")
     mock_uv.assert_any_call(["pydantic", "rich", "pathspec", "packaging", "rich-argparse"], target=mock_config_dir / "site-packages")
 
-def test_handle_plugin_update_yes_flag(tmp_path, monkeypatch, capsys, mock_config_dir):
+def test_handle_plugin_requirements_yes_flag(tmp_path, monkeypatch, capsys, mock_config_dir):
     plugin_path = tmp_path / "my_plugin.py"
     plugin_path.write_text("REQUIREMENTS = ['pillow']\nclass MyParser: pass\nparser_cls = MyParser")
     
@@ -76,7 +76,7 @@ def test_handle_plugin_update_yes_flag(tmp_path, monkeypatch, capsys, mock_confi
     with patch("merger_cli.utils.config.is_bundled", return_value=True):
         with patch("rich.prompt.Confirm.ask") as mock_confirm:
             with patch("merger_cli.utils.uv.uv_install") as mock_uv:
-                with patch.object(sys, 'argv', ['merger', '--update-plugins', '-y']):
+                with patch.object(sys, 'argv', ['merger', '--install-requirements', '-y']):
                     main()
     
     mock_confirm.assert_not_called()
