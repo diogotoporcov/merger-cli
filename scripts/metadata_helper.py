@@ -19,12 +19,24 @@ def get_metadata():
     description = project.get("description", "")
     homepage = project.get("urls", {}).get("Homepage", "")
     
-    # MSI Version mapping: X.Y.Z-type.A -> X.Y.Z.A
+    # MSI Version mapping: X.Y.Z-type.A -> X.Y.Z.A or X.Y.ZaA -> X.Y.Z.A
     msi_version = version
-    match = re.match(r'^(\d+)\.(\d+)\.(\d+)(?:-[a-zA-Z]+\.(\d+))?$', version)
+    
+    # Try PyPI format: 4.0.0a7 -> 4.0.0.7
+    match = re.match(r'^(\d+)\.(\d+)\.(\d+)([a-z]+)(\d+)$', version)
     if match:
-        major, minor, patch, build = match.groups()
-        msi_version = f"{major}.{minor}.{patch}.{build or 0}"
+        major, minor, patch, label, build = match.groups()
+        msi_version = f"{major}.{minor}.{patch}.{build}"
+        labels = {"a": "alpha", "b": "beta", "rc": "rc"}
+        full_label = labels.get(label, label)
+        version = f"{major}.{minor}.{patch}-{full_label}.{build}"
+    
+    else:
+        # Try old format or fallback: 4.0.0-alpha.7 -> 4.0.0.7
+        match = re.match(r'^(\d+)\.(\d+)\.(\d+)(?:-[a-zA-Z]+\.(\d+))?$', version)
+        if match:
+            major, minor, patch, build = match.groups()
+            msi_version = f"{major}.{minor}.{patch}.{build or 0}"
         
     return {
         "version": version,
