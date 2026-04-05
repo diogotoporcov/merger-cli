@@ -1,4 +1,4 @@
-from merger_cli.utils.config import is_bundled, set_distribution_type, get_distribution_type
+from merger_cli.cli.utils import handle_update
 from merger_cli.logging import setup_logger
 from merger_cli.utils.config import is_bundled, set_distribution_type, get_distribution_type
 
