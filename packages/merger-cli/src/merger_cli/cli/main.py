@@ -39,12 +39,19 @@ def main() -> None:
             handle_uninstall(args.uninstall_plugin, force=args.yes)
             return
 
-        if args.install_requirements:
+        if args.install_requirements is not None:
             from .utils import handle_plugin_requirements
-            handle_plugin_requirements(force=args.yes)
+            # args.install_requirements is a list when nargs="*" is used
+            packages = args.install_requirements if isinstance(args.install_requirements, list) else None
+            handle_plugin_requirements(packages=packages, force=args.yes)
             return
 
-        if args.purge_requirements:
+        if getattr(args, "remove_requirements", None):
+            from .utils import handle_plugin_requirements
+            handle_plugin_requirements(remove_packages=args.remove_requirements, force=args.yes)
+            return
+
+        if getattr(args, "purge_requirements", False):
             from .utils import handle_plugin_requirements
             handle_plugin_requirements(force=args.yes, purge=True)
             return

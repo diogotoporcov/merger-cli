@@ -183,15 +183,51 @@ def handle_update() -> None:
     logger.info("[bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]")
 
 
-def handle_plugin_requirements(force: bool = False, purge: bool = False) -> None:
-    """Installs, updates and purges dependencies for all installed custom plugins."""
+from typing import List, Optional
+
+def handle_plugin_requirements(
+    packages: Optional[List[str]] = None,
+    remove_packages: Optional[List[str]] = None,
+    force: bool = False,
+    purge: bool = False,
+) -> None:
+    """Installs, updates, removes and purges dependencies."""
     import subprocess
     from rich.prompt import Confirm
     from ..utils.db import DatabaseManager
     from ..utils.plugin_loader import PluginManager
-    from ..utils.uv import uv_install, uv_purge
+    from ..utils.uv import uv_install, uv_purge, uv_uninstall
     from ..utils.config import get_or_create_site_packages_dir, is_bundled
     from ..utils.dependencies import check_and_warn_dependencies
+
+    # Remove specific packages if requested
+    if remove_packages:
+        if is_bundled():
+            logger.info(f"Removing requirements: {', '.join(remove_packages)}")
+            site_packages = get_or_create_site_packages_dir()
+            try:
+                uv_uninstall(remove_packages, target=site_packages)
+                logger.info("Requirements removed successfully.")
+            except Exception as e:
+                logger.error(f"Failed to remove requirements: {e}")
+        else:
+            logger.warning("Package removal is only supported in the bundled version.")
+        return
+
+    # Install specific packages if requested
+    if packages:
+        if is_bundled():
+            logger.info(f"Installing requirements: {', '.join(packages)}")
+            site_packages = get_or_create_site_packages_dir()
+            try:
+                uv_install(packages, target=site_packages)
+                logger.info("Requirements installed successfully.")
+            except Exception as e:
+                logger.error(f"Failed to install requirements: {e}")
+        else:
+            logger.info("Checking requirements...")
+            check_and_warn_dependencies(packages, "user-specified packages")
+        return
 
     db = DatabaseManager()
     plugins = db.list_plugins()
@@ -327,17 +363,28 @@ def setup_argparse() -> RichArgumentParser:
         help="List all installed plugins",
     )
 
-    plugin_group.add_argument(
-        "--install-requirements",
-        action="store_true",
-        help="Install requirements for all installed custom plugins",
-    )
+    from ..utils.config import is_bundled
 
-    plugin_group.add_argument(
-        "--purge-requirements",
-        action="store_true",
-        help="Uninstall all unused requirements from the plugin environment",
-    )
+    if is_bundled():
+        plugin_group.add_argument(
+            "--install-requirements",
+            nargs="*",
+            metavar="PACKAGE",
+            help="Install requirements for plugins or specific packages",
+        )
+
+        plugin_group.add_argument(
+            "--remove-requirements",
+            nargs="+",
+            metavar="PACKAGE",
+            help="Remove specific packages from the plugin environment",
+        )
+
+        plugin_group.add_argument(
+            "--purge-requirements",
+            action="store_true",
+            help="Uninstall all unused requirements from the plugin environment",
+        )
 
     parser.add_argument(
         "--version",
