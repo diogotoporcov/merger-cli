@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from ..api import DirectoryEntry, FileTreeEntry, FileEntry, FileTree
 from ..logging import logger
+from ..models import DirectoryEntry, FileTreeEntry, FileEntry, FileTree
 from ..parsing.registry import get_parser
 from ..utils.patterns import compile_patterns, matches_any_pattern, PatternSpec
 
@@ -66,12 +66,13 @@ class FileTreeScanner:
             )
 
         parser = get_parser(path.name)
+        max_bytes = getattr(parser, "MAX_BYTES_FOR_VALIDATION", 1024)
         try:
-            validation_bytes = read_file_bytes(path, parser.MAX_BYTES_FOR_VALIDATION)
+            validation_bytes = read_file_bytes(path, max_bytes)
             if not parser.validate(validation_bytes, path):
                 return None
 
-            if parser.MAX_BYTES_FOR_VALIDATION is not None:
+            if max_bytes is not None:
                 file_bytes = read_file_bytes(path)
             else:
                 file_bytes = validation_bytes

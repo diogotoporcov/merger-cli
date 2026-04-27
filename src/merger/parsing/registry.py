@@ -3,7 +3,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Type, Dict
 
-from ..api import Parser
+from .base import Parser
 from ..exceptions import InvalidPlugin
 from ..utils.config import get_or_create_parsers_dir
 from ..utils.plugin_loader import PluginManager

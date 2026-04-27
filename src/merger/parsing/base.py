@@ -1,20 +1,17 @@
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Union, Protocol, runtime_checkable
+from typing import Union
 
 
-@runtime_checkable
-class Parser(Protocol):
+class Parser(ABC):
     """
     Strategy interface for file parsing.
-
-    Attributes:
-        MAX_BYTES_FOR_VALIDATION: Max number of bytes required to validate a file.
-            If None, all bytes will be used for validation.
     """
 
-    MAX_BYTES_FOR_VALIDATION: Optional[int] = 1024
+    MAX_BYTES_FOR_VALIDATION: int = 1024
 
     @classmethod
+    @abstractmethod
     def validate(
             cls,
             file_chunk_bytes: Union[bytes, bytearray],
@@ -30,9 +27,9 @@ class Parser(Protocol):
         Returns:
             bool: True if the file is valid for this parser, False otherwise.
         """
-        ...
 
     @classmethod
+    @abstractmethod
     def parse(
             cls,
             file_bytes: Union[bytes, bytearray],
@@ -48,4 +45,3 @@ class Parser(Protocol):
         Returns:
             str: Parsed text content.
         """
-        ...

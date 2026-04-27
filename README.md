@@ -121,13 +121,21 @@ Merger uses a specialized syntax to distinguish between files and directories, a
 Merger CLI features a plugin architecture. Plugins are standalone Python files.
 
 ### Building Plugins
-Plugins are standalone Python files.
+Plugins are standalone Python files. They follow a structural protocol and don't require explicit inheritance.
 
 ```python
-from merger.api import Parser
+class MyParser:
+    EXTENSIONS = [".custom"]
 
-class MyParser(Parser):
-    ...
+    @classmethod
+    def validate(cls, file_chunk_bytes, file_path):
+        return True
+
+    @classmethod
+    def parse(cls, file_bytes, file_path):
+        return "parsed content"
+
+parser_cls = MyParser
 ```
 
 ---

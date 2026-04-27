@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Union, Optional, Set, Type
+from typing import Union, Optional, Set
 
 import pymupdf
-from merger.api import Parser
 
 # File extensions this parser supports
 EXTENSIONS: Set[str] = {".pdf"}
+
+
+from merger.parsing.base import Parser
 
 
 class PdfParser(Parser):
@@ -50,4 +52,4 @@ class PdfParser(Parser):
 
 
 # Export the parser class
-parser_cls: Type[Parser] = PdfParser
+parser_cls = PdfParser

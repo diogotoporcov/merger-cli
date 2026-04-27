@@ -1,7 +1,6 @@
 from .directory_tree_exporter import DirectoryTreeExporter
 from .plain_text_exporter import PlainTextExporter
-from ...api import TreeExporter
-
+from ..base import TreeExporter
 
 NAME = "TREE_PLAIN_TEXT"
 FILE_EXTENSION = ".txt"

@@ -1,6 +1,7 @@
 import json
 
-from ...api import TreeExporter, FileTree, DirectoryEntry, FileEntry, FileTreeEntry
+from ..base import TreeExporter
+from ...models import FileTree, DirectoryEntry, FileEntry, FileTreeEntry
 
 NAME = "JSON_TREE"
 FILE_EXTENSION = ".json"

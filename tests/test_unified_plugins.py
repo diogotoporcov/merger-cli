@@ -18,7 +18,7 @@ def mock_config_dir(tmp_path, monkeypatch):
 def test_unified_Plugin_system(tmp_path, mock_config_dir, capsys):
     # 1. Create a mock Parser plugin
     parser_content = """
-from merger.api import Parser
+from merger.parsing.base import Parser
 EXTENSIONS = [".mock"]
 class MockParser(Parser):
     @classmethod
@@ -32,7 +32,7 @@ parser_cls = MockParser
 
     # 2. Create a mock Exporter plugin
     exporter_content = """
-from merger.api import TreeExporter
+from merger.exporters.base import TreeExporter
 NAME = "MOCK"
 FILE_EXTENSION = ".mock"
 class MockExporter(TreeExporter):

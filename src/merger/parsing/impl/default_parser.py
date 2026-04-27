@@ -5,7 +5,7 @@ from typing import Union, Tuple, Optional
 import charset_normalizer
 import magic
 
-from ...api import Parser
+from ..base import Parser
 
 
 class DefaultParser(Parser):

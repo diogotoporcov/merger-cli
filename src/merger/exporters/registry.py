@@ -1,7 +1,7 @@
 from pathlib import Path
 from types import ModuleType
 
-from ..api import TreeExporter
+from .base import TreeExporter
 from ..exceptions import InvalidPlugin
 from ..utils.config import get_or_create_exporters_dir
 from ..utils.plugin_loader import PluginManager

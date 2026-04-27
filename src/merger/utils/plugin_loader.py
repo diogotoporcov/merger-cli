@@ -68,10 +68,10 @@ class PluginManager(Generic[T]):
                 f"{self.class_attr} attribute not provided",
             ) from e
 
-        if not isclass(cls) or not isinstance(cls, self.base_class):
+        if not isclass(cls) or not issubclass(cls, self.base_class):
             raise InvalidPlugin(
                 getattr(module, "__file__", "unknown"),
-                f"{self.class_attr} does not follow {self.base_class.__name__} protocol",
+                f"{self.class_attr} does not inherit from {self.base_class.__name__}",
             )
 
         if self.validate_func:
@@ -139,7 +139,7 @@ class PluginManager(Generic[T]):
         try:
             module = self.load_plugin_from_path(path, "temp_type_check")
             cls = getattr(module, self.class_attr)
-            if isclass(cls) and isinstance(cls, self.base_class):
+            if isclass(cls) and issubclass(cls, self.base_class):
                 return self.plugin_type_name
             
         except AttributeError:

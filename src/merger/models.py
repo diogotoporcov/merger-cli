@@ -1,26 +1,21 @@
+from abc import ABC
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Optional, TypeVar, Protocol, runtime_checkable
+from typing import Dict, Optional, TypeVar
 
 from .enums import FileTreeEntryType
 
 T = TypeVar("T", bound="FileTree")
 
 
-@runtime_checkable
-class FileTreeEntry(Protocol):
-    @property
-    def type(self) -> FileTreeEntryType: ...
-
-    @property
-    def name(self) -> str: ...
-
-    @property
-    def path(self) -> Path: ...
+class FileTreeEntry(ABC):
+    """
+    Abstract base class for all file tree entries.
+    """
 
 
 @dataclass(frozen=True)
-class FileEntry:
+class FileEntry(FileTreeEntry):
     name: str
     path: Path
     content: Optional[str] = None
@@ -28,10 +23,10 @@ class FileEntry:
 
 
 @dataclass(frozen=True)
-class DirectoryEntry:
+class DirectoryEntry(FileTreeEntry):
     name: str
     path: Path
-    children: Dict[Path, "FileTreeEntry"] = field(default_factory=dict)
+    children: Dict[Path, FileTreeEntry] = field(default_factory=dict)
     type: FileTreeEntryType = FileTreeEntryType.DIRECTORY
 
 

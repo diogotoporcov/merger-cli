@@ -1,5 +1,5 @@
 import pytest
-from merger.api import Parser
+from merger.parsing.base import Parser
 from merger.utils.db import PluginRecord
 from merger.utils.plugin_loader import PluginManager
 
@@ -44,7 +44,7 @@ def test_plugin_loader_install(Plugin_dir, mock_config_dir, tmp_path, monkeypatc
     )
     
     Plugin_content = """
-from merger.api import Parser
+from merger.parsing.base import Parser
 EXTENSIONS = [".mock"]
 class MockParser(Parser):
     @classmethod

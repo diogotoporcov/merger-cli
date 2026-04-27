@@ -1,12 +1,12 @@
 from typing import Dict, List
 
+from .base import ExporterInfo
 from .impl.directory_tree_exporter import DirectoryTreeExporter, NAME as DIR_TREE_NAME
 from .impl.json_exporter import JsonExporter, NAME as JSON_NAME
 from .impl.json_tree_exporter import JsonTreeExporter, NAME as JSON_TREE_NAME
 from .impl.plain_text_exporter import PlainTextExporter, NAME as PLAIN_TEXT_NAME
 from .impl.tree_with_plain_text_exporter import TreeWithPlainTextExporter, NAME as TREE_PLAIN_TEXT_NAME
 from .registry import list_exporters, load_exporter_and_plugin
-from ..api import ExporterInfo
 
 _STATIC_EXPORTERS: Dict[str, ExporterInfo] = {
     TREE_PLAIN_TEXT_NAME.upper(): ExporterInfo(TreeWithPlainTextExporter, TREE_PLAIN_TEXT_NAME, ".txt"),

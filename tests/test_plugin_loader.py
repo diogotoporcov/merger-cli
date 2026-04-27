@@ -2,8 +2,8 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from merger.api import Parser as Base
 from merger.exceptions import InvalidPlugin, PluginAlreadyInstalled
+from merger.parsing.base import Parser as Base
 from merger.utils.db import PluginRecord
 from merger.utils.plugin_loader import PluginManager
 
@@ -24,7 +24,12 @@ def test_plugin_loader_get_class_from_plugin():
     mm = PluginManager("test", Base, lambda: Path("."), "test_cls", lambda _m: [])
     
     # Valid Plugin
-    class ValidSub(Base): pass
+    class ValidSub(Base):
+        @classmethod
+        def validate(cls, b, p): return True
+        @classmethod
+        def parse(cls, b, p): return ""
+
     plugin = MagicMock()
     plugin.test_cls = ValidSub
     plugin.__file__ = "valid.py"
@@ -43,7 +48,7 @@ def test_plugin_loader_get_class_from_plugin():
     plugin_not_sub.test_cls = NotSub
     with pytest.raises(InvalidPlugin) as exc:
         mm.get_class_from_plugin(plugin_not_sub)
-    assert f"does not follow {Base.__name__} protocol" in str(exc.value)
+    assert f"does not inherit from {Base.__name__}" in str(exc.value)
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
@@ -61,10 +66,14 @@ def test_plugin_loader_install_uninstall(tmp_path, mock_config_dir, monkeypatch)
         lambda _m: ["key"]
     )
     
-    Plugin_content = """
-from merger.api import Parser
-class MyPlugin(Parser):
+    Plugin_content = f"""
+from {Base.__module__} import {Base.__name__}
+class MyPlugin({Base.__name__}):
     EXTENSIONS = [".test"]
+    @classmethod
+    def validate(cls, b, p): return True
+    @classmethod
+    def parse(cls, b, p): return ""
 test_cls = MyPlugin
 """
     plugin_path = tmp_path / "my_mod.py"
@@ -115,9 +124,13 @@ def test_plugin_loader_uninstall_all(tmp_path, mock_config_dir, monkeypatch):
 def test_plugin_loader_get_plugin_type(tmp_path):
     mm = PluginManager("test_type", Base, lambda: Path("."), "test_cls", lambda _m: [])
     
-    Plugin_content = """
-from merger.api import Parser
-class MyPlugin(Parser): pass
+    Plugin_content = f"""
+from {Base.__module__} import {Base.__name__}
+class MyPlugin({Base.__name__}):
+    @classmethod
+    def validate(cls, b, p): return True
+    @classmethod
+    def parse(cls, b, p): return ""
 test_cls = MyPlugin
 """
     plugin_path = tmp_path / "type_mod.py"

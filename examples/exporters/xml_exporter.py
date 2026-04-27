@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 
-from merger.api import FileEntry, DirectoryEntry, FileTreeEntry, TreeExporter, FileTree
+from merger.exporters.base import TreeExporter
+from merger.models import FileEntry, DirectoryEntry, FileTreeEntry, FileTree
 
 # The name of the exporter (used in --exporter argument)
 NAME = "XML"

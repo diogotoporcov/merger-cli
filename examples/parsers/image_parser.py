@@ -1,15 +1,17 @@
 import io
 from pathlib import Path
-from typing import Union, Optional, Set, Type
+from typing import Union, Optional, Set
 
 from PIL import Image
 from easyocr import Reader
-from merger.api import Parser
 
 # File extensions this parser supports
 EXTENSIONS: Set[str] = {
     ".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp", ".gif"
 }
+
+
+from merger.parsing.base import Parser
 
 
 class ImageParser(Parser):
@@ -68,4 +70,4 @@ class ImageParser(Parser):
 
 
 # Export the parser class
-parser_cls: Type[Parser] = ImageParser
+parser_cls = ImageParser
