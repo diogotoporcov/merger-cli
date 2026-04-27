@@ -38,7 +38,9 @@ Documentation = "https://github.com/diogotoporcov/merger-cli"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["merger"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.package-data]
 merger = ["resources/ignore_files/*.ignore"]
