@@ -1,13 +1,10 @@
+import io
 from pathlib import Path
 from typing import Union, Optional, Set, Type
-import io
 
 from PIL import Image
 from easyocr import Reader
-from merger_plugin_api import Parser
-
-# Optional: List of Python packages required for this plugin
-REQUIREMENTS = ["Pillow", "easyocr"]
+from merger_cli.api import Parser
 
 # File extensions this parser supports
 EXTENSIONS: Set[str] = {

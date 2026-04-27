@@ -1,4 +1,4 @@
-# Merger CLI & Plugin API
+# Merger CLI
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
@@ -8,17 +8,9 @@ Merger is a **command-line utility** for developers that **scans a directory**, 
 
 It supports **multiple output formats** (e.g., JSON, directory tree, plain text with file delimiters), and can be extended with **custom file parsers** (e.g., `.pdf`) and **custom exporters** (e.g., `.xml`, `.md`).
 
-This repository is a monorepo containing:
-- **`merger-cli`**: The main command-line tool.
-- **`merger-plugin-api`**: A lightweight library for building custom plugins.
-
 ---
 
-## Merger CLI
-
-The `merger-cli` is the primary tool for scanning and merging your project files. It is distributed as standalone binaries, meaning you don't even need Python installed to use it.
-
-### Quick Start (CLI)
+## Quick Start
 
 1.  **Install the CLI**: Download the standalone installer for your OS from [Releases](https://github.com/diogotoporcov/merger-cli/releases).
 2.  **Verify the installation**:
@@ -39,7 +31,10 @@ The `merger-cli` is the primary tool for scanning and merging your project files
     ```
     This creates `merger.txt` in the current directory.
 
-### CLI Features
+---
+
+## Features
+
 * **Recursive merge** of all readable files under a root directory.
 * **Custom glob-like ignore patterns** with specialized type qualifiers.
 * **Intelligent plugin system**: JSON-backed tracking with automatic dependency management via `uv`.
@@ -47,56 +42,122 @@ The `merger-cli` is the primary tool for scanning and merging your project files
 * **Multiple export formats**: Built-in support for Plain Text, JSON, Directory Trees, and more.
 * **Modern CLI interface**: Update notifications and non-interactive mode.
 
-For detailed CLI documentation, installation methods, and usage guides, see the [Merger CLI README](packages/merger-cli/README.md).
+---
+
+## Installation
+
+### Standalone Installation (Recommended)
+
+Merger CLI is distributed as standalone binaries.
+
+*   **Windows**: Download and run `merger-cli-windows-installer.exe`.
+*   **Linux (.deb)**:
+    ```bash
+    sudo apt install ./merger-cli.deb
+    ```
+*   **macOS (Homebrew)**:
+    ```bash
+    brew tap diogotoporcov/merger-cli
+    brew install merger-cli
+    ```
+
+### From Source
+
+For developers:
+1. Clone the repository.
+2. Install the API: `pip install -e "./packages/merger-plugin-api[test]"`
+3. Install the CLI: `pip install -e "./packages/merger-cli[test,dev]"`
 
 ---
 
-## Merger Plugin API
+## Usage Guide
 
-The `merger-plugin-api` is a lightweight library that provides interfaces and data models for extending `merger-cli`. It allows developers to build custom parsers (to read non-text files) and custom exporters (to output data in any format).
+### Output Formats (`-e` / `--exporter`)
 
-- **Supported Python Versions**: 3.8, 3.9, 3.10, and 3.11.
+| Exporter Name     | File Extension | Description                                                                                    |
+|-------------------|----------------|------------------------------------------------------------------------------------------------|
+| `TREE_PLAIN_TEXT` | `.txt`         | Directory tree + plain-text merged file contents (**default**).                                |
+| `PLAIN_TEXT`      | `.txt`         | Plain-text merged contents with file delimiters.                                               |
+| `TREE`            | `.txt`         | Directory tree only.                                                                           |
+| `JSON`            | `.json`        | JSON mapping file paths to parsed contents.                                                    |
+| `JSON_TREE`       | `.json`        | Structured JSON with hierarchy and metadata.                                                   |
 
-### Quick Start (API)
+### Ignore Pattern Syntax
 
-1. **Install the API**:
-   ```bash
-   pip install merger-plugin-api
-   ```
+Patterns are relative to the scan root. Merger uses **Git-style matching** with custom type qualifiers:
 
-2. **Create a Parser**:
-   ```python
-   from pathlib import Path
-   from typing import Union, Type
-   from merger_plugin_api import Parser
+*   `*` matches any number of characters within a path segment.
+*   `**` matches zero or more directories.
+*   Trailing `/` matches only **directories**.
+*   Trailing `:` matches only **files**.
+*   Trailing `!` disables type qualification (treats trailing `/` or `:` as literal).
 
-   class MyParser(Parser):
-       @classmethod
-       def validate(cls, file_chunk_bytes: Union[bytes, bytearray], file_path: Path) -> bool:
-           # The name of the parser (used in --install-plugin argument)
-           return file_path.suffix == ".custom"
+#### Examples
+* `*.log`: Ignore all `.log` files recursively.
+* `dist/`: Ignore the `dist` directory at the root.
+* `src/*.py:`: Ignore all `.py` files directly under the `src` directory.
 
-       @classmethod
-       def parse(cls, file_bytes: Union[bytes, bytearray], file_path: Path) -> str:
-           return file_bytes.decode("utf-8").upper()
+### Detailed Ignore Examples
 
-   parser_cls: Type[Parser] = MyParser
-   ```
+Merger uses a specialized syntax to distinguish between files and directories, and to handle edge cases where literal characters are needed.
 
-3. **Install your plugin**:
-   ```bash
-   merger --install-plugin my_parser.py
-   ```
+| Pattern           | Type          | Effect                                                                                                |
+|:------------------|:--------------|:------------------------------------------------------------------------------------------------------|
+| `node_modules/`   | **Directory** | Ignores the `node_modules` directory and all its contents.                                            |
+| `temp/`           | **Directory** | Ignores any directory named `temp` anywhere in the tree.                                              |
+| `config.json:`    | **File**      | Ignores only files named `config.json`. A directory named `config.json` would **not** be ignored.     |
+| `tags:`           | **File**      | Ignores a file named `tags`. Useful for ignoring files that don't have extensions.                    |
+| `build!/`         | **Literal**   | Ignores a file or directory named `build/` literally (disables the special directory meaning of `/`). |
+| `archive!:`       | **Literal**   | Ignores a file or directory named `archive:` literally.                                               |
+| `config!/`        | **Literal**   | Ignores a file or directory named `config/` literally.                                                |
+| `docs/**/tmp/`    | **Directory** | Ignores any `tmp` directory located anywhere inside the `docs` directory.                             |
+| `src/*.c:`        | **File**      | Ignores all `.c` files directly inside the `src` directory.                                           |
+| `!important.log:` | **Negation**  | The `!` at the beginning (before any path) negates the pattern (do **not** ignore).                   |
+| `README.md!:`     | **Literal**   | Ignores a file named `README.md:`.                                                                    |
 
-### API Features
-- **Abstract base classes** for custom Parsers and Exporters.
-- **Data models** for the File Tree structure (`FileTree`, `FileEntry`, `DirectoryEntry`).
-- **Dependency tracking**: Define a `REQUIREMENTS` list in your plugin, and the CLI will handle the installation.
+---
 
-For detailed documentation, implementation examples (like PDF parsers or Markdown exporters), and data model definitions, see the [Merger Plugin API README](packages/merger-plugin-api/README.md).
+## Plugins
+
+Merger CLI features a plugin architecture. Plugins are standalone Python files that can define their own dependencies via a `REQUIREMENTS` list.
+
+### Managing Requirements (Bundled Version Only)
+If you are using the bundled version of Merger CLI, you can manage plugin requirements manually:
+*   **Install**: `merger --install-requirements` (Installs all `REQUIREMENTS` defined in your installed plugins)
+*   **Purge**: `merger --purge-requirements` (Uninstalls any unused requirements from the plugin environment)
+
+### Building Plugins
+Plugins are standalone Python files. They can define a `REQUIREMENTS` list at the top level to specify any external dependencies they need:
+
+```python
+REQUIREMENTS = ["pillow", "requests"]
+
+class MyParser:
+    ...
+```
+
+---
+
+## CLI Options
+
+| Option                   | Description                                                    |
+|--------------------------|----------------------------------------------------------------|
+| `INPUT_DIR_PATH`         | Root directory to scan.                                        |
+| `OUTPUT_FILE_DIR_PATH`   | Directory to save the output (default: `.`).                   |
+| `-e, --exporter`         | Choose the exporter strategy.                                  |
+| `-i, --install-plugin`   | Install a custom parser or exporter plugin.                    |
+| `-u, --uninstall-plugin` | Uninstall a plugin by ID (use `*` for all).                    |
+| `-l, --list-plugins`     | List all installed custom plugins.                             |
+| `--install-requirements` | Install requirements for all installed custom plugins.         |
+| `--purge-requirements`   | Uninstall all unused requirements from the plugin environment. |
+| `--update`               | Check for CLI updates and provide download links.              |
+| `--ignore`               | Glob-style patterns to ignore.                                 |
+| `--merger-ignore`        | Path to ignore file (default: `./merger.ignore`).              |
+| `-c, --create-ignore`    | Create an ignore file from template (e.g., `PYTHON`, `RUST`).  |
+| `-y, --yes`              | Enable non-interactive mode (auto-confirm prompts).            |
 
 ---
 
 ## License
 
-This project is licensed under the GPLv3 License — see [LICENSE](LICENSE) for details.
+This project is licensed under the GPLv3 License — see [LICENSE](../../LICENSE) for details.
