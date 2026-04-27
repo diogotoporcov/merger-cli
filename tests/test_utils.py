@@ -1,7 +1,7 @@
 import pytest
-from pathlib import Path
-from merger.utils.ignore_templates import list_ignore_templates, read_ignore_template
 from merger.exceptions import UnknownIgnoreTemplate
+from merger.utils.ignore_templates import list_ignore_templates, read_ignore_template
+
 
 def test_list_ignore_templates():
     templates = list_ignore_templates()
@@ -34,11 +34,6 @@ def test_read_merger_ignore_file(tmp_path):
     ignore_file.write_text("*.py\n\n  # comment\nsrc/\n  ", encoding="utf-8")
     
     patterns = read_merger_ignore_file(ignore_file)
-    # The current implementation DOES NOT filter comments starting with #
-    # and it might not filter leading/trailing whitespace properly if they are not just spaces
-    # Let's check what it currently does.
-    # line = line.strip()
-    # if line: patterns.add(line)
     
     assert "*.py" in patterns
     assert "src/" in patterns
@@ -56,7 +51,6 @@ def test_hash_from_file(tmp_path):
     assert len(h2) == 12
     assert h2.startswith(h1)
     
-    # Check different content
     file_path.write_text("hello world!", encoding="utf-8")
     h3 = hash_from_file(file_path, length=8)
     assert h1 != h3

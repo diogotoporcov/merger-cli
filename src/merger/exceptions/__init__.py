@@ -1,4 +1,4 @@
-class InvalidModule(Exception):
+class InvalidPlugin(Exception):
     def __init__(self, path: str, message: str):
         if not isinstance(path, str):
             raise TypeError("path must be a string")
@@ -9,17 +9,17 @@ class InvalidModule(Exception):
         self.path = path
         self.message = message
 
-        super().__init__(f"Module at '{path}' is invalid: {message}")
+        super().__init__(f"Plugin at '{path}' is invalid: {message}")
 
 
-class ModuleAlreadyInstalled(Exception):
+class PluginAlreadyInstalled(Exception):
     def __init__(self, path: str):
         if not isinstance(path, str):
             raise TypeError("path must be a string")
 
         self.path = path
 
-        super().__init__(f"Module at '{path}' is already installed")
+        super().__init__(f"Plugin at '{path}' is already installed")
 
 
 class UnknownIgnoreTemplate(ValueError):

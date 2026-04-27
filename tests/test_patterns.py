@@ -1,6 +1,8 @@
-import pytest
 import platform
+
+import pytest
 from merger.utils.patterns import matches_pattern
+
 
 @pytest.fixture
 def root(tmp_path):
@@ -83,7 +85,7 @@ def test_dots_in_path(root):
     file_path = root / "src" / "main.py"
     file_path.touch()
     
-    # Normalized by our compile_patterns
+    # Normalized by compile_patterns
     assert matches_pattern(file_path, root, "./src/main.py")
 
 def test_multiple_wildcards_in_segment(root):
@@ -94,9 +96,8 @@ def test_multiple_wildcards_in_segment(root):
 
 def test_empty_pattern(root):
     (root / "file.txt").touch()
-    # If pattern is empty, it shouldn't match anything unless we are checking the root itself?
+    # Empty pattern only matches root.
     assert not matches_pattern(root / "file.txt", root, "")
-    # Does it match the root itself?
     assert matches_pattern(root, root, "")
 
 def test_type_qualifiers(root):
@@ -124,7 +125,7 @@ def test_type_qualifiers(root):
         file_colon = root / "data_file_colon"
         assert matches_pattern(file_colon, root, "data_file_colon!")
     
-    # Let's test standard behavior (matches both)
+    # Verify standard behavior matches both files and directories.
     assert matches_pattern(root / "readme_file", root, "readme_file")
     assert matches_pattern(root / "README_DIR", root, "README_DIR")
 

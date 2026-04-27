@@ -1,11 +1,72 @@
+# Virtual Environment
 /.venv/
-/.idea/
-.pypirc
-build/
-*.egg-info/
-__pycache__/
-.pytest_cache/
+/env/
+/venv/
+/venv.bak/
+/env.bak/
+.env
 
-merger.ignore
+# IDEs
+/.idea/
+/.vscode/
+*.swp
+*.swo
+
+# Build & Distribution
+build/
+dist/
+/sdist/
+*.egg-info/
+/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+/develop-eggs/
+/downloads/
+/eggs/
+/lib/
+/lib64/
+/parts/
+/var/
+*.egg
+.installed.cfg
+
+# Test & Coverage
+/.pytest_cache/
+/.coverage
+/.cache
+/nosetests.xml
+/coverage.xml
+*,cover
+/.hypothesis/
+
+# Logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Local/Secrets
+.pypirc
+local_settings.py
+instance/
+.webassets-cache
+.flaskenv
+.DS_Store
+
+# Tool-specific output (when running tests)
 merger.txt
 merger.json
+merger.ignore
+test_project_windows/
+test_project_macos/
+test_project/
+test_deb/
+test_dir/
+
+# WiX Toolset v4+ extension cache and intermediate files
+.wix/
+
+# Generated Windows installer artifacts
+packaging/license.rtf
+# Generated Homebrew formula
+# Formula/merger-cli.rb

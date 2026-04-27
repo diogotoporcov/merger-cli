@@ -1,24 +1,23 @@
 from pathlib import Path
-from typing import Dict, List, Optional, TypeVar, Type
+from typing import Dict, List, Optional
 
-from .entries import DirectoryEntry, FileTreeEntry, FileEntry
 from ..logging import logger
+from ..models import DirectoryEntry, FileTreeEntry, FileEntry, FileTree
 from ..parsing.registry import get_parser
 from ..utils.patterns import compile_patterns, matches_any_pattern, PatternSpec
 
-T = TypeVar("T", bound="FileTree")
 
-
-class FileTree:
-    def __init__(self, root: DirectoryEntry) -> None:
-        self.root = root
+class FileTreeScanner:
+    """
+    Logic for scanning the file system and building a FileTree.
+    """
 
     @classmethod
-    def from_path(
-            cls: Type[T],
+    def scan(
+            cls,
             path: Path,
             ignore_patterns: Optional[List[str]] = None
-    ) -> T:
+    ) -> FileTree:
         if not path.is_dir():
             raise NotADirectoryError(f"{path} is not a directory")
 
@@ -30,7 +29,7 @@ class FileTree:
         if not isinstance(root_entry, DirectoryEntry):
             raise RuntimeError(f"Failed to parse the root directory: {root_path}")
 
-        return cls(root_entry)
+        return FileTree(root_entry)
 
     @classmethod
     def _scan_and_parse(
@@ -67,12 +66,13 @@ class FileTree:
             )
 
         parser = get_parser(path.name)
+        max_bytes = getattr(parser, "MAX_BYTES_FOR_VALIDATION", 1024)
         try:
-            validation_bytes = read_file_bytes(path, parser.MAX_BYTES_FOR_VALIDATION)
+            validation_bytes = read_file_bytes(path, max_bytes)
             if not parser.validate(validation_bytes, path):
                 return None
 
-            if parser.MAX_BYTES_FOR_VALIDATION is not None:
+            if max_bytes is not None:
                 file_bytes = read_file_bytes(path)
             else:
                 file_bytes = validation_bytes

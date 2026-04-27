@@ -8,32 +8,35 @@ from merger.cli import main
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
     monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
+    # Clear the lazy DB cache in the managers
+    from merger.parsing.registry import _manager as pm
+    from merger.exporters.registry import _manager as em
+    pm._db = None
+    em._db = None
     return tmp_path
 
-def test_unified_module_system(tmp_path, mock_config_dir, capsys):
-    # 1. Create a mock parser module
+def test_unified_Plugin_system(tmp_path, mock_config_dir, capsys):
+    # 1. Create a mock Parser plugin
     parser_content = """
-from merger.parsing.parser import Parser
-EXTENSIONS = [".mock"]
+from merger.parsing.base import Parser
 class MockParser(Parser):
+    EXTENSIONS = [".mock"]
     @classmethod
     def validate(cls, file_bytes, file_path): return True
     @classmethod
     def parse(cls, file_bytes, file_path): return "mocked"
-parser_cls = MockParser
 """
     parser_path = tmp_path / "mock_parser.py"
     parser_path.write_text(parser_content)
 
-    # 2. Create a mock exporter module
+    # 2. Create a mock Exporter plugin
     exporter_content = """
-from merger.exporters.tree_exporter import TreeExporter
-NAME = "MOCK"
-FILE_EXTENSION = ".mock"
+from merger.exporters.base import TreeExporter
 class MockExporter(TreeExporter):
+    NAME = "MOCK"
+    FILE_EXTENSION = ".mock"
     @classmethod
     def export(cls, tree): return b"mocked export"
-exporter_cls = MockExporter
 """
     exporter_path = tmp_path / "mock_exporter.py"
     exporter_path.write_text(exporter_content)
@@ -43,59 +46,58 @@ exporter_cls = MockExporter
         main()
     captured = capsys.readouterr()
     combined = captured.out + captured.err
-    assert "Parser module" in combined and "installed successfully" in combined
+    assert "Parser plugin" in combined and "installed successfully" in combined
 
     # 4. Install exporter using unified -i
     with patch.object(sys, 'argv', ['merger', '-i', str(exporter_path)]):
         main()
     captured = capsys.readouterr()
     combined = captured.out + captured.err
-    assert "Exporter module" in combined and "installed successfully" in combined
+    assert "Exporter plugin" in combined and "installed successfully" in combined
 
-    # 5. List modules using unified -l
+    # 5. List Plugins using unified -l
     with patch.object(sys, 'argv', ['merger', '-l']):
         main()
     captured = capsys.readouterr()
-    assert "Installed Parser Modules" in captured.out
-    assert "Installed Exporter Modules" in captured.out
+    assert "Installed Parser plugins" in captured.out
+    assert "Installed Exporter plugins" in captured.out
     assert "mock_parser.py" in captured.out
     assert "mock_exporter.py" in captured.out
 
     # 6. Uninstall parser using unified -u
-    # We need to find the ID. ModuleManager uses hash of file.
-    # But since we only have one, we can just check if "mock_parser.py" disappeared from list.
+    # The ID must be found using list_parsers().
     from merger.parsing.registry import list_parsers
     parsers = list_parsers()
-    parser_id = list(parsers.keys())[0]
+    parser_id = parsers[0].id
 
     with patch.object(sys, 'argv', ['merger', '-u', parser_id]):
         main()
     captured = capsys.readouterr()
-    assert f"Parser module '{parser_id}' uninstalled" in captured.err or f"Parser module '{parser_id}' uninstalled" in captured.out
+    assert f"Parser plugin '{parser_id}' uninstalled" in captured.err or f"Parser plugin '{parser_id}' uninstalled" in captured.out
 
     # 7. List again to verify
     with patch.object(sys, 'argv', ['merger', '-l']):
         main()
     captured = capsys.readouterr()
-    assert "Installed Parser Modules" not in captured.out or "mock_parser.py" not in captured.out
-    assert "Installed Exporter Modules" in captured.out
+    assert "Installed Parser plugins" not in captured.out or "mock_parser.py" not in captured.out
+    assert "Installed Exporter plugins" in captured.out
     assert "mock_exporter.py" in captured.out
 
     # 8. Uninstall all (cancelled)
-    with patch("merger.cli.utils.Confirm.ask", return_value=False), \
+    with patch("rich.prompt.Confirm.ask", return_value=False), \
          patch.object(sys, 'argv', ['merger', '-u', '*']):
         main()
     captured = capsys.readouterr()
     assert "Uninstallation cancelled" in captured.out or "Uninstallation cancelled" in captured.err
 
     # 9. Uninstall all (confirmed)
-    with patch("merger.cli.utils.Confirm.ask", return_value=True), \
+    with patch("rich.prompt.Confirm.ask", return_value=True), \
          patch.object(sys, 'argv', ['merger', '-u', '*']):
         main()
     captured = capsys.readouterr()
-    assert "All modules uninstalled" in captured.err or "All modules uninstalled" in captured.out
+    assert "All plugins uninstalled" in captured.err or "All plugins uninstalled" in captured.out
 
     with patch.object(sys, 'argv', ['merger', '-l']):
         main()
     captured = capsys.readouterr()
-    assert "No custom modules installed" in captured.err or "No custom modules installed" in captured.out
+    assert "No custom plugins installed" in captured.err or "No custom plugins installed" in captured.out

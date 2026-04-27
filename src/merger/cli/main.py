@@ -1,66 +1,54 @@
-import logging
 from pathlib import Path
-
-from ..exporters.factory import get_exporter_strategy
-from ..exporters.registry import validate_exporters
-from ..parsing.registry import validate_parsers
-from ..file_tree.tree import FileTree
-from ..logging import setup_logger, logger
-from ..utils.files import read_merger_ignore_file
-from ..utils.update import check_for_updates, finalize_update_check
-from .utils import (
-    handle_ignore_creation,
-    handle_module_list,
-    handle_install,
-    handle_uninstall,
-    setup_argparse
-)
-from ..utils.ignore_templates import list_ignore_templates
 
 
 def main() -> None:
+    import logging
+    from .utils import setup_argparse
+    from ..logging import setup_logger
+
+    # Defer heavy imports
+    from ..utils.update import check_for_updates, finalize_update_check
+
     parser = setup_argparse()
     args = parser.parse_args()
     setup_logger(level=getattr(logging, args.log_level.upper()))
+    from ..logging import logger
 
     check_for_updates()
 
     try:
         if args.create_ignore:
+            from .utils import handle_ignore_creation
             handle_ignore_creation(args.create_ignore)
             return
 
-        if args.install:
-            handle_install(args.install)
+        if args.install_plugin:
+            from .utils import handle_install
+            handle_install(args.install_plugin)
             return
 
-        if args.uninstall:
-            handle_uninstall(args.uninstall)
+        if args.uninstall_plugin:
+            from .utils import handle_uninstall
+            handle_uninstall(args.uninstall_plugin, force=args.yes)
             return
 
-        if args.list:
-            handle_module_list()
+        if args.list_plugins:
+            from .utils import handle_plugin_list
+            handle_plugin_list()
             return
 
         if not args.input_dir:
             parser.error("input_dir is required for merging.")
 
-        # Validate all custom modules before execution
-        try:
-            validate_parsers()
-            validate_exporters()
-
-        except Exception as e:
-            logger.error(f"Module validation failed: {e}")
-            logger.error("Please fix or uninstall the invalid module(s) before proceeding.")
-            return
-
         ignore_patterns = args.ignore.copy()
 
+        from ..utils.files import read_merger_ignore_file
         if args.merger_ignore.exists():
             logger.info(f"Using ignore file: {args.merger_ignore}")
             ignore_patterns.extend(read_merger_ignore_file(args.merger_ignore))
+
         else:
+            from ..utils.ignore_templates import list_ignore_templates
             templates = ", ".join(list_ignore_templates())
             parser.error(
                 f"Ignore file '{args.merger_ignore}' is required.\n"
@@ -74,7 +62,9 @@ def main() -> None:
         from ..utils.magic import check_libmagic_availability
         check_libmagic_availability()
 
-        tree = FileTree.from_path(args.input_dir, ignore_patterns)
+        from ..file_tree.scanner import FileTreeScanner
+        from ..exporters.factory import get_exporter_strategy
+        tree = FileTreeScanner.scan(args.input_dir, ignore_patterns)
         exporter_info = get_exporter_strategy(args.exporter)
         logger.info(f"Using {exporter_info.name} exporter.")
 
@@ -92,6 +82,7 @@ def main() -> None:
         
     except Exception as e:
         logger.error(f"An error occurred: {e}", exc_info=args.log_level == "DEBUG")
+
     finally:
         finalize_update_check()
 

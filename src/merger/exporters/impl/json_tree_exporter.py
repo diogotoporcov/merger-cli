@@ -1,14 +1,11 @@
 import json
 
-from ..tree_exporter import TreeExporter
-from ...file_tree.entries import DirectoryEntry, FileEntry, FileTreeEntry
-from ...file_tree.tree import FileTree
+from ..base import TreeExporter
+from ..registry import exporter_registry
+from ...models import FileTree, DirectoryEntry, FileEntry, FileTreeEntry
 
 
-NAME = "JSON_TREE"
-FILE_EXTENSION = ".json"
-
-
+@exporter_registry.register(name="JSON_TREE", extension=".json")
 class JsonTreeExporter(TreeExporter):
     @classmethod
     def export(cls, tree: FileTree) -> bytes:

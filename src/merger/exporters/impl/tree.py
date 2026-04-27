@@ -1,13 +1,10 @@
-from ..tree_exporter import TreeExporter
-from ...file_tree.entries import DirectoryEntry, FileTreeEntry
-from ...file_tree.tree import FileTree
+from ..base import TreeExporter
+from ..registry import exporter_registry
+from ...models import FileTree, DirectoryEntry, FileTreeEntry
 
 
-NAME = "TREE"
-FILE_EXTENSION = ".txt"
-
-
-class DirectoryTreeExporter(TreeExporter):
+@exporter_registry.register(name="TREE", extension=".txt")
+class TreeStructureExporter(TreeExporter):
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
         def format_name(entry: FileTreeEntry) -> str:

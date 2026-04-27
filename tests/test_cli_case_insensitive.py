@@ -1,8 +1,9 @@
 import sys
 from unittest.mock import patch
+
 import pytest
 from merger.cli import main
-from pathlib import Path
+
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
@@ -18,8 +19,8 @@ def test_cli_exporter_case_insensitive(tmp_path, monkeypatch, capsys, mock_confi
     output_dir.mkdir()
     monkeypatch.chdir(tmp_path)
     
-    # Use lowercase 'plain_text' which should be converted to 'PLAIN_TEXT'
-    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'plain_text']):
+    # Use lowercase 'text' which should be converted to 'TEXT'
+    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'text']):
         main()
     
     expected_output = output_dir / "merger.txt"
@@ -48,5 +49,4 @@ def test_cli_log_level_case_insensitive(tmp_path, monkeypatch, capsys, mock_conf
         main()
     
     captured = capsys.readouterr()
-    # If debug was set correctly, we might see debug messages in stderr if setup_logger worked
-    # However, testing if it DIDN'T crash is already good enough as it would crash if 'debug' was invalid choice
+    # Verify no crash when 'debug' is passed as lowercase.

@@ -1,7 +1,9 @@
-import pytest
 from pathlib import Path
-from merger.file_tree.tree import FileTree
-from merger.file_tree.entries import FileEntry, DirectoryEntry
+
+import pytest
+from merger.file_tree.scanner import FileTreeScanner
+from merger.models import FileEntry, DirectoryEntry
+
 
 @pytest.fixture
 def sample_project(tmp_path):
@@ -13,7 +15,7 @@ def sample_project(tmp_path):
     return tmp_path
 
 def test_tree_building(sample_project):
-    tree = FileTree.from_path(sample_project)
+    tree = FileTreeScanner.scan(sample_project)
     
     assert isinstance(tree.root, DirectoryEntry)
     assert Path("src") in tree.root.children
@@ -24,13 +26,13 @@ def test_tree_building(sample_project):
     assert Path("src/main.py") in src_dir.children
 
 def test_tree_with_ignore(sample_project):
-    tree = FileTree.from_path(sample_project, ignore_patterns=["*.log"])
+    tree = FileTreeScanner.scan(sample_project, ignore_patterns=["*.log"])
     
     assert Path("ignore_me.log") not in tree.root.children
     assert Path("README.md") in tree.root.children
 
 def test_tree_merge(sample_project):
-    tree = FileTree.from_path(sample_project)
+    tree = FileTreeScanner.scan(sample_project)
     
     def check_entry(entry):
         if isinstance(entry, FileEntry):
@@ -53,7 +55,7 @@ def test_tree_sorting(tmp_path):
     (tmp_path / "B_file.txt").touch()
     (tmp_path / "a_file.txt").touch()
     
-    tree = FileTree.from_path(tmp_path)
+    tree = FileTreeScanner.scan(tmp_path)
     children_names = [p.name for p in tree.root.children.values()]
     
     # Expected: directories first, then alphabetical (case-insensitive)
@@ -68,12 +70,12 @@ def test_tree_nested_ignore(tmp_path):
     (tmp_path / "tests" / "test_main.py").touch()
     
     # Ignore everything in tests directory
-    tree = FileTree.from_path(tmp_path, ignore_patterns=["tests/"])
+    tree = FileTreeScanner.scan(tmp_path, ignore_patterns=["tests/"])
     assert Path("src") in tree.root.children
     assert Path("tests") not in tree.root.children
     
     # Ignore specific nested file
-    tree2 = FileTree.from_path(tmp_path, ignore_patterns=["src/utils.py"])
+    tree2 = FileTreeScanner.scan(tmp_path, ignore_patterns=["src/utils.py"])
     src_dir = tree2.root.children[Path("src")]
     assert Path("src/main.py") in src_dir.children
     assert Path("src/utils.py") not in src_dir.children
@@ -83,12 +85,12 @@ def test_tree_double_wildcard_ignore(tmp_path):
     (tmp_path / "a" / "b" / "c" / "test.txt").touch()
     (tmp_path / "a" / "x.txt").touch()
     
-    tree = FileTree.from_path(tmp_path, ignore_patterns=["**/c/"])
+    tree = FileTreeScanner.scan(tmp_path, ignore_patterns=["**/c/"])
     a_dir = tree.root.children[Path("a")]
     b_dir = a_dir.children[Path("a/b")]
     assert Path("a/b/c") not in b_dir.children
     assert Path("a/x.txt") in a_dir.children
 
 def test_tree_empty(tmp_path):
-    tree = FileTree.from_path(tmp_path)
+    tree = FileTreeScanner.scan(tmp_path)
     assert len(tree.root.children) == 0

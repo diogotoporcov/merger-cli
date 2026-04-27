@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import Union, Optional, Set, Type
+from typing import Union, Optional
 
 import pymupdf
-from merger.parsing.parser import Parser
+from merger.parsing.base import Parser
+from merger.parsing.registry import parser_registry
 
 
-EXTENSIONS: Set[str] = {".pdf"}
-
-
+@parser_registry.register(extensions={".pdf"})
 class PdfParser(Parser):
     MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
@@ -18,14 +17,7 @@ class PdfParser(Parser):
         file_path: Path
     ) -> bool:
         """
-        Validate that the given file represents a readable PDF document.
-
-        Args:
-            file_chunk_bytes: Binary contents of the file being validated, sufficient to perform validation.
-            file_path: Path of the file being validated.
-
-        Returns:
-            bool: True if the file is a readable PDF, False otherwise.
+        Validate that the given file bytes represent a readable PDF document.
         """
         try:
             with pymupdf.open(stream=file_chunk_bytes) as doc:
@@ -43,13 +35,6 @@ class PdfParser(Parser):
     ) -> str:
         """
         Extracts and concatenates text from all pages of a PDF file.
-
-        Args:
-            file_bytes: Binary contents of the file being parsed.
-            file_path: Path of the file being parsed.
-
-        Returns:
-            str: Full text content of the PDF.
         """
         texts = []
         with pymupdf.open(stream=file_bytes) as doc:
@@ -61,6 +46,3 @@ class PdfParser(Parser):
 
         full_text = " ".join(texts)
         return full_text
-
-
-parser_cls: Type[Parser] = PdfParser

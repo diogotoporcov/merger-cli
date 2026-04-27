@@ -5,10 +5,10 @@ from typing import Union, Tuple, Optional
 import charset_normalizer
 import magic
 
-from ..parser import Parser
+from ..base import Parser
 
 
-class DefaultParser(Parser):
+class TextParser(Parser):
     MAX_BYTES_FOR_VALIDATION: Optional[int] = 1024
 
     TEXT_CONFIDENCE_THRESHOLD = 0.8
@@ -39,7 +39,7 @@ class DefaultParser(Parser):
         # Forms / encoded text files
         "application/x-www-form-urlencoded",
 
-        # JavaScript files (yes, real files)
+        # JavaScript files
         "application/javascript",
 
         # Script / source files
@@ -51,7 +51,7 @@ class DefaultParser(Parser):
         # Text-based document format
         "application/rtf",
 
-        # Patch / diff files (VERY common in repos)
+        # Patch / diff files
         "application/vnd.github.v3.diff",
         "application/vnd.github.v3.patch",
 
@@ -101,7 +101,7 @@ class DefaultParser(Parser):
             for byte in file_chunk
         )
 
-        return (non_printable / max(len(file_chunk), 1)) > DefaultParser.MAX_BINARY_RATIO
+        return (non_printable / max(len(file_chunk), 1)) > TextParser.MAX_BINARY_RATIO
 
     @classmethod
     def validate(

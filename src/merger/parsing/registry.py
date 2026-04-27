@@ -1,76 +1,75 @@
 import re
 from pathlib import Path
+from types import ModuleType
 from typing import Type, Dict
 
-from types import ModuleType
-from .impl.default_parser import DefaultParser
-from .parser import Parser
-from ..exceptions import InvalidModule
+from .base import Parser
+from ..exceptions import InvalidPlugin
 from ..utils.config import get_or_create_parsers_dir
-from ..utils.module_manager import ModuleManager
+from ..utils.plugin_loader import PluginManager
 
 _EXTENSION_REGEX_STR = r"\.[a-z0-9.]+$"
 _EXTENSION_REGEX = re.compile(_EXTENSION_REGEX_STR, re.IGNORECASE)
 
 
-def _validate_parser_module(path: Path, module: ModuleType) -> None:
-    extensions = getattr(module, "EXTENSIONS", None)
+def _validate_parser_plugin(path: Path, module: ModuleType, cls: Type[Parser]) -> None:
+    extensions = getattr(cls, "EXTENSIONS", None)
     if extensions is None:
-        raise InvalidModule(path.as_posix(), "parser module does not contain EXTENSIONS attribute")
+        raise InvalidPlugin(path.as_posix(), "Parser plugin class does not contain EXTENSIONS attribute")
 
     if not isinstance(extensions, (set, list, tuple)):
-        raise InvalidModule(path.as_posix(), "parser EXTENSIONS attribute is not a collection")
+        raise InvalidPlugin(path.as_posix(), "parser EXTENSIONS attribute is not a collection")
 
     if not extensions:
-        raise InvalidModule(path.as_posix(), "parser EXTENSIONS attribute must contain at least one file extension")
+        raise InvalidPlugin(path.as_posix(), "parser EXTENSIONS attribute must contain at least one file extension")
 
     for extension in extensions:
         if not isinstance(extension, str):
-            raise InvalidModule(path.as_posix(), f"extension {extension!r} is not a string")
+            raise InvalidPlugin(path.as_posix(), f"extension {extension!r} is not a string")
         if not _EXTENSION_REGEX.fullmatch(extension):
-            raise InvalidModule(path.as_posix(), f"extension {extension!r} does not match regex ({_EXTENSION_REGEX_STR})")
+            raise InvalidPlugin(path.as_posix(), f"extension {extension!r} does not match regex ({_EXTENSION_REGEX_STR})")
 
 
-_manager = ModuleManager[Parser](
-    module_type_name="parser",
+_manager = PluginManager[Parser](
+    plugin_type_name="parser",
     base_class=Parser,
-    config_key="modules",
     get_target_dir=get_or_create_parsers_dir,
-    class_attr="parser_cls",
-    key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")],
-    validate_func=_validate_parser_module,
+    key_getter=lambda module, cls: [ext.lower() for ext in cls.EXTENSIONS],
+    validate_func=_validate_parser_plugin,
 )
 
+parser_registry = _manager
 install_parser = _manager.install
 uninstall_parser = _manager.uninstall
 list_parsers = _manager.list
 load_parsers = _manager.load_all
 validate_parsers = _manager.validate_all
-get_parser_module_type = _manager.get_module_type
+get_parser_plugin_type = _manager.get_plugin_type
 
 _PARSER_CACHE: Dict[str, Type[Parser]] = {}
 
 
 def get_parser(filename: str) -> Type[Parser]:
+    from .impl.text import TextParser
     filename_lower = filename.lower()
     parsers_meta = list_parsers()
 
-    # Map extension to module_id
+    # Map extension to plugin_id
     ext_to_id: Dict[str, str] = {}
-    for module_id, meta in parsers_meta.items():
+    for meta in parsers_meta:
         for ext in meta.extensions:
-            ext_to_id[ext.lower()] = module_id
+            ext_to_id[ext.lower()] = meta.id
 
     # Try longest extensions first (e.g., .tar.gz before .gz)
     sorted_extensions = sorted(ext_to_id.keys(), key=len, reverse=True)
     for extension in sorted_extensions:
         if filename_lower.endswith(extension):
-            module_id = ext_to_id[extension]
-            if module_id in _PARSER_CACHE:
-                return _PARSER_CACHE[module_id]
+            plugin_id = ext_to_id[extension]
+            if plugin_id in _PARSER_CACHE:
+                return _PARSER_CACHE[plugin_id]
 
-            cls = _manager.load_module(module_id)
-            _PARSER_CACHE[module_id] = cls
+            cls = _manager.load_plugin(plugin_id)
+            _PARSER_CACHE[plugin_id] = cls
             return cls
 
-    return DefaultParser
+    return TextParser

@@ -1,14 +1,11 @@
 import xml.etree.ElementTree as ET
 
-from merger.file_tree.entries import FileEntry, DirectoryEntry, FileTreeEntry
-from merger.exporters.tree_exporter import TreeExporter
-from merger.file_tree.tree import FileTree
+from merger.exporters.base import TreeExporter
+from merger.exporters.registry import exporter_registry
+from merger.models import FileEntry, DirectoryEntry, FileTreeEntry, FileTree
 
 
-NAME = "XML"
-FILE_EXTENSION = ".xml"
-
-
+@exporter_registry.register(name="XML", extension=".xml")
 class XmlExporter(TreeExporter):
     """
     A custom exporter that generates an XML representation of the file tree.
@@ -16,6 +13,9 @@ class XmlExporter(TreeExporter):
 
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
+        """
+        Export the file tree into an XML representation.
+        """
         root = ET.Element("filetree")
         cls._to_xml(tree.root, root)
 
@@ -65,5 +65,3 @@ class XmlExporter(TreeExporter):
         else:
             if level and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i
-
-exporter_cls = XmlExporter

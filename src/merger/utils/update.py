@@ -1,22 +1,15 @@
 import json
 import os
 import re
-import sys
-import time
-import urllib.request
-import urllib.error
 import threading
-from pathlib import Path
+import time
+import urllib.error
+import urllib.request
 from typing import Optional, Tuple
 
+from .config import get_merger_dir
 from .version import get_version
 from ..logging.constants import LOG_COLORS
-from rich.console import Console
-from rich.panel import Panel
-
-# Use a separate console to ensure update messages are always displayed 
-# even if logging is disabled or set to a higher level.
-_update_console = Console(stderr=True)
 
 # Minimum interval between network requests to PyPI (in seconds)
 MIN_CHECK_INTERVAL = 3600
@@ -40,7 +33,7 @@ def get_latest_version(package_name: str = "merger-cli", etag: Optional[str] = N
         if etag:
             req.add_header("If-None-Match", etag)
 
-        with urllib.request.urlopen(req, timeout=5) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:
             if response.getcode() == 200:
                 data = json.loads(response.read().decode())
                 latest = data.get("info", {}).get("version")
@@ -55,6 +48,28 @@ def get_latest_version(package_name: str = "merger-cli", etag: Optional[str] = N
         pass
 
     return None, None, False
+
+def get_latest_github_version(repo_url: str = "https://github.com/diogotoporcov/merger-cli") -> Optional[str]:
+    """Fetch the latest release version from GitHub."""
+    parts = repo_url.rstrip("/").split("/")
+    if len(parts) < 2:
+        return None
+    owner, repo = parts[-2], parts[-1]
+    url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
+    try:
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", f"merger-cli/{get_version()} (update-check)")
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.getcode() == 200:
+                data = json.loads(response.read().decode())
+                tag = data.get("tag_name", "")
+                # Remove 'v' prefix if present
+                if tag.startswith("v"):
+                    tag = tag[1:]
+                return tag
+    except Exception:
+        pass
+    return None
 
 def is_newer_version(latest: str, current: str) -> bool:
     """Compare two version strings with support for pre-releases and post-releases."""
@@ -127,7 +142,7 @@ def check_for_updates():
     if current_version == "unknown":
         return
 
-    cache_dir = Path.home() / ".merger"
+    cache_dir = get_merger_dir()
     cache_file = cache_dir / "update_check.json"
     
     now = time.time()
@@ -162,9 +177,17 @@ def check_for_updates():
     _update_thread.start()
 
 def _update_worker(current_version, cache_file, cache_dir, cached_version, cached_etag):
-    """Background worker to check PyPI for updates."""
+    """Background worker to check for updates."""
+    # Check PyPI (if it was installed via pip previously)
     latest_version, new_etag, changed = get_latest_version(etag=cached_etag)
     
+    # Always check GitHub Releases for the CLI tool, as it is the primary distribution method
+    github_latest = get_latest_github_version()
+    if github_latest and (not latest_version or is_newer_version(github_latest, latest_version)):
+        latest_version = github_latest
+        changed = True
+        new_etag = None # ETag doesn't apply to GitHub check this way
+
     if not changed:
         latest_version = cached_version
         new_etag = cached_etag
@@ -190,15 +213,27 @@ def _update_worker(current_version, cache_file, cache_dir, cached_version, cache
 def set_pending_update_message(current: str, latest: str):
     """Prepare the update message to be displayed later."""
     global _pending_message
+    
+    update_cmd = "Check for updates at: [bold magenta]https://github.com/diogotoporcov/merger-cli/releases[/bold magenta]"
+
     _pending_message = (
-        f"New merger version available: [bold white]{current}[/bold white] -> [bold green]{latest}[/bold green]\n"
-        f"Update with: [bold magenta]pip install --upgrade merger-cli[/bold magenta] or [bold magenta]pipx upgrade merger-cli[/bold magenta]"
+        f"New Merger CLI version available: [bold white]{current}[/bold white] -> [bold green]{latest}[/bold green]\n"
+        f"{update_cmd}"
     )
+
+_update_console = None
+
 
 def finalize_update_check():
     """Display the update message if one is pending. Call this at the end of the program."""
-    global _pending_message
+    global _pending_message, _update_console
     if _pending_message:
+        from rich.console import Console
+        from rich.panel import Panel
+
+        if _update_console is None:
+            _update_console = Console(stderr=True)
+
         # Only show update notifications in interactive terminals
         if _update_console.is_terminal:
             color = LOG_COLORS.get("UPDATE", "yellow")

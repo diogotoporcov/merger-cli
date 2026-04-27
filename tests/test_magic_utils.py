@@ -1,15 +1,16 @@
 import unittest
-from unittest.mock import patch
 from pathlib import Path
-from merger.parsing.impl.default_parser import DefaultParser
+from unittest.mock import patch
+
+from merger.parsing.impl.text import TextParser
 from merger.utils.magic import check_libmagic_availability
+
 
 class TestMagicUtils(unittest.TestCase):
     def test_magic_missing_error(self):
-        # Mock magic.from_buffer to raise OSError indicating missing library
         with patch("magic.from_buffer", side_effect=OSError("failed to find libmagic")):
             with self.assertRaises(RuntimeError) as cm:
-                DefaultParser.guess_mime_type(b"test content", Path("test.txt"))
+                TextParser.guess_mime_type(b"test content", Path("test.txt"))
             
             error_msg = str(cm.exception)
             self.assertIn("libmagic is required but not found", error_msg)
@@ -18,7 +19,6 @@ class TestMagicUtils(unittest.TestCase):
 
     def test_check_libmagic_availability_success(self):
         with patch("magic.from_buffer", return_value="text/plain"):
-            # Should not raise
             check_libmagic_availability()
 
     def test_check_libmagic_availability_failure(self):
@@ -28,19 +28,18 @@ class TestMagicUtils(unittest.TestCase):
             self.assertIn("libmagic is required", str(cm.exception))
 
     def test_unexpected_magic_error(self):
-        # Mock magic.from_buffer to raise an unexpected error
         with patch("magic.from_buffer", side_effect=Exception("something went wrong")):
             with self.assertRaises(RuntimeError) as cm:
-                DefaultParser.guess_mime_type(b"test content", Path("test.txt"))
+                TextParser.guess_mime_type(b"test content", Path("test.txt"))
             
             error_msg = str(cm.exception)
             self.assertIn("Error while identifying file type with libmagic: something went wrong", error_msg)
 
     def test_octet_stream_fallback(self):
-        # If magic returns application/octet-stream, we should fallback to mimetypes guess
+        # If magic returns application/octet-stream, a fallback to mimetypes guess is used
         with patch("magic.from_buffer", return_value="application/octet-stream"):
             with patch("mimetypes.guess_type", return_value=("text/plain", None)):
-                mime = DefaultParser.guess_mime_type(b"test content", Path("test.txt"))
+                mime = TextParser.guess_mime_type(b"test content", Path("test.txt"))
                 self.assertEqual(mime, "text/plain")
 
 if __name__ == "__main__":

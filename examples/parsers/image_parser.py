@@ -1,20 +1,17 @@
-from pathlib import Path
-from typing import Union, Optional, Set, Type
 import io
+from pathlib import Path
+from typing import Union, Optional
 
 from PIL import Image
 from easyocr import Reader
-from merger.parsing.parser import Parser
+from merger.parsing.base import Parser
+from merger.parsing.registry import parser_registry
 
 
-EXTENSIONS: Set[str] = {
-    ".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp", ".gif"
-}
-
-
+@parser_registry.register(extensions={".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp", ".gif"})
 class ImageParser(Parser):
     """
-    Parser for image files that extracts text using OCR (Optical Character Recognition).
+    Parser for image files that extracts text using OCR (Optical Recognition).
     """
     MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
@@ -38,14 +35,7 @@ class ImageParser(Parser):
         file_path: Path
     ) -> bool:
         """
-        Validate that the given file represents a readable image supported by Pillow.
-
-        Args:
-            file_chunk_bytes: Binary contents of the file being validated.
-            file_path: Path of the file being validated.
-
-        Returns:
-            bool: True if the file is a readable image, False otherwise.
+        Validate that the given file bytes represent a readable image supported by Pillow.
         """
         try:
             with Image.open(io.BytesIO(file_chunk_bytes)) as img:
@@ -64,13 +54,6 @@ class ImageParser(Parser):
     ) -> str:
         """
         Extracts text from an image using EasyOCR.
-
-        Args:
-            file_bytes: Binary contents of the file being parsed.
-            file_path: Path of the file being parsed.
-
-        Returns:
-            str: Full text content extracted from the image.
         """
         try:
             reader = cls._get_reader()
@@ -79,6 +62,3 @@ class ImageParser(Parser):
 
         except Exception as e:
             return f"[OCR Error in {file_path.name}]: {str(e)}"
-
-
-parser_cls: Type[Parser] = ImageParser

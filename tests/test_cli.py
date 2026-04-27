@@ -16,7 +16,7 @@ def test_cli_help(capsys, mock_config_dir):
             main()
         assert e.value.code == 0
         captured = capsys.readouterr()
-        assert "Merge files from a directory into a structured output" in captured.out
+        assert "Merger is a command-line utility for developers" in captured.out
 
 def test_cli_create_ignore(tmp_path, monkeypatch, capsys, mock_config_dir):
     monkeypatch.chdir(tmp_path)
@@ -33,7 +33,7 @@ def test_cli_version(capsys, mock_config_dir):
             main()
         assert e.value.code == 0
         captured = capsys.readouterr()
-        # RichHelpFormatter might use stdout or stderr for version
+        # RichHelpFormatter might use stdout or stderr for version info.
         all_out = captured.out + captured.err
         assert "merger" in all_out
 
@@ -42,7 +42,6 @@ def test_cli_merge_basic(tmp_path, monkeypatch, capsys, mock_config_dir):
     project_dir.mkdir()
     (project_dir / "file1.txt").write_text("hello", encoding="utf-8")
     
-    # Create required ignore file (optional now, but testing basic merge)
     (tmp_path / "merger.ignore").touch()
     
     output_dir = tmp_path / "out"
@@ -50,7 +49,7 @@ def test_cli_merge_basic(tmp_path, monkeypatch, capsys, mock_config_dir):
     
     monkeypatch.chdir(tmp_path)
     
-    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'PLAIN_TEXT']):
+    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'TEXT']):
         main()
     
     expected_output = output_dir / "merger.txt"
@@ -71,7 +70,6 @@ def test_cli_merge_cli_ignore(tmp_path, monkeypatch, capsys, mock_config_dir):
     
     monkeypatch.chdir(tmp_path)
     
-    # Ignore .log files via CLI
     with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '--ignore', '*.log']):
         main()
     
@@ -98,7 +96,6 @@ def test_cli_merge_no_ignore_file(tmp_path, monkeypatch, capsys, mock_config_dir
     
     monkeypatch.chdir(tmp_path)
     
-    # Run without creating merger.ignore
     with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir)]):
         with pytest.raises(SystemExit) as e:
             main()
@@ -120,10 +117,9 @@ def test_cli_merge_qualifier_file_only(tmp_path, monkeypatch, capsys, mock_confi
     output_dir.mkdir()
     monkeypatch.chdir(tmp_path)
     
-    # Create required ignore file
     (tmp_path / "merger.ignore").touch()
     
-    # Ignore "data" but only if it's a file. Since "data" is a directory, it should NOT be ignored.
+    # Verify directory "data" is not ignored when pattern is "data:".
     with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '--ignore', 'data:']):
         main()
     
@@ -131,7 +127,6 @@ def test_cli_merge_qualifier_file_only(tmp_path, monkeypatch, capsys, mock_confi
     assert "data/" in content
     assert "data.txt" in content
 
-    # Ignore "data.txt" but only if it's a file.
     with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '--ignore', 'data.txt:']):
         main()
     
