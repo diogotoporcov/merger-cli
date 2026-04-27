@@ -1,13 +1,13 @@
 import json
 
 import pytest
-from merger_cli.api import FileTree
-from merger_cli.exporters.impl.directory_tree_exporter import DirectoryTreeExporter
-from merger_cli.exporters.impl.json_exporter import JsonExporter
-from merger_cli.exporters.impl.json_tree_exporter import JsonTreeExporter
-from merger_cli.exporters.impl.plain_text_exporter import PlainTextExporter
-from merger_cli.exporters.impl.tree_with_plain_text_exporter import TreeWithPlainTextExporter
-from merger_cli.file_tree.scanner import FileTreeScanner
+from merger.api import FileTree
+from merger.exporters.impl.directory_tree_exporter import DirectoryTreeExporter
+from merger.exporters.impl.json_exporter import JsonExporter
+from merger.exporters.impl.json_tree_exporter import JsonTreeExporter
+from merger.exporters.impl.plain_text_exporter import PlainTextExporter
+from merger.exporters.impl.tree_with_plain_text_exporter import TreeWithPlainTextExporter
+from merger.file_tree.scanner import FileTreeScanner
 
 
 @pytest.fixture

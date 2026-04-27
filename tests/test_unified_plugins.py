@@ -2,15 +2,15 @@ import sys
 from unittest.mock import patch
 
 import pytest
-from merger_cli.cli import main
+from merger.cli import main
 
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
     # Clear the lazy DB cache in the managers
-    from merger_cli.parsing.registry import _manager as pm
-    from merger_cli.exporters.registry import _manager as em
+    from merger.parsing.registry import _manager as pm
+    from merger.exporters.registry import _manager as em
     pm._db = None
     em._db = None
     return tmp_path
@@ -18,7 +18,7 @@ def mock_config_dir(tmp_path, monkeypatch):
 def test_unified_Plugin_system(tmp_path, mock_config_dir, capsys):
     # 1. Create a mock Parser plugin
     parser_content = """
-from merger_cli.api import Parser
+from merger.api import Parser
 EXTENSIONS = [".mock"]
 class MockParser(Parser):
     @classmethod
@@ -32,7 +32,7 @@ parser_cls = MockParser
 
     # 2. Create a mock Exporter plugin
     exporter_content = """
-from merger_cli.api import TreeExporter
+from merger.api import TreeExporter
 NAME = "MOCK"
 FILE_EXTENSION = ".mock"
 class MockExporter(TreeExporter):
@@ -68,7 +68,7 @@ exporter_cls = MockExporter
 
     # 6. Uninstall parser using unified -u
     # The ID must be found using list_parsers().
-    from merger_cli.parsing.registry import list_parsers
+    from merger.parsing.registry import list_parsers
     parsers = list_parsers()
     parser_id = parsers[0].id
 

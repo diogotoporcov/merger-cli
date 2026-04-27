@@ -1,7 +1,7 @@
 
 import unittest
 
-from merger_cli.utils.update import is_newer_version
+from merger.utils.update import is_newer_version
 
 
 class TestUpdate(unittest.TestCase):

@@ -20,17 +20,17 @@ permissions:
   contents: read
 
 jobs:
-  test-ubuntu:
-    name: test (ubuntu, ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+  test:
+    name: test (${{ matrix.os }}, ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
-    if: always() && !startsWith(github.ref, 'refs/tags/api-v')
 
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
@@ -41,135 +41,28 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: |
-            packages/merger-cli/pyproject.toml
-            packages/merger-plugin-api/pyproject.toml
+          cache-dependency-path: pyproject.toml
 
-      - name: Install system dependencies
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libmagic1
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install "./packages/merger-plugin-api[test]"
-          pip install "./packages/merger-cli[test,dev]"
-
-      - name: Run unit tests
-        run: |
-          if [ -d "packages/merger-cli/tests" ] && [ -n "$(find packages/merger-cli/tests -name 'test_*.py' -not -name 'test_standalone.py' 2>/dev/null)" ]; then
-            pytest --cov=merger_cli --ignore=packages/merger-cli/tests/test_standalone.py packages/merger-cli/tests/
-          else
-            echo "No unit tests found in packages/merger-cli/tests/, skipping"
-          fi
-
-      - name: Install nfpm
-        run: |
-          echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" | sudo tee /etc/apt/sources.list.d/goreleaser.list
-          sudo apt-get update && sudo apt-get install -y nfpm
-
-      - name: Build and verify standalone
-        run: bash scripts/test_linux.sh
-
-  test-api:
-    name: test-api (ubuntu, ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    if: always() && !startsWith(github.ref, 'refs/tags/cli-v')
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install "./packages/merger-plugin-api[test]"
-
-      - name: Run tests
-        run: |
-          if [ -d "packages/merger-plugin-api/tests" ] && [ -n "$(find packages/merger-plugin-api/tests -name 'test_*.py' 2>/dev/null)" ]; then
-            pytest packages/merger-plugin-api/tests/
-          else
-            echo "No tests found in packages/merger-plugin-api/tests/, skipping"
-            exit 0
-          fi
-
-  test-platforms:
-    name: test (${{ matrix.os }}, ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    if: always() && !startsWith(github.ref, 'refs/tags/api-v')
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.14"]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: |
-            packages/merger-cli/pyproject.toml
-            packages/merger-plugin-api/pyproject.toml
-
       - name: Install system dependencies (macOS)
-        if: matrix.os == 'macos-latest'
+        if: runner.os == 'macOS'
         run: brew install libmagic
 
-      - name: Install WiX Toolset
-        if: matrix.os == 'windows-latest'
-        run: |
-          dotnet tool install --global wix --version 5.0.2
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "./packages/merger-plugin-api[test]"
-          pip install "./packages/merger-cli[test,dev]"
+          pip install ".[test,dev]"
 
       - name: Run unit tests
-        run: |
-          if [ -d "packages/merger-cli/tests" ] && [ -n "$(find packages/merger-cli/tests -name 'test_*.py' -not -name 'test_standalone.py' 2>/dev/null)" ]; then
-            pytest --cov=merger_cli --ignore=packages/merger-cli/tests/test_standalone.py packages/merger-cli/tests/
-          else
-            echo "No unit tests found in packages/merger-cli/tests/, skipping"
-          fi
-
-      - name: Build and verify standalone
-        run: |
-          if [ "${{ matrix.os }}" == "macos-latest" ]; then
-            bash scripts/test_macos.sh
-          else
-            powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1
-          fi
+        run: pytest --cov=merger tests/
 
   tests-passed:
     name: tests-passed
     runs-on: ubuntu-latest
-    needs:
-      - test-ubuntu
-      - test-api
-      - test-platforms
+    needs: test
     if: always()
 
     steps:

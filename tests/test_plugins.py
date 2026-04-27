@@ -1,7 +1,7 @@
 import pytest
-from merger_cli.api import Parser
-from merger_cli.utils.db import PluginRecord
-from merger_cli.utils.plugin_loader import PluginManager
+from merger.api import Parser
+from merger.utils.db import PluginRecord
+from merger.utils.plugin_loader import PluginManager
 
 
 class MockParser(Parser):
@@ -19,15 +19,15 @@ def Plugin_dir(tmp_path):
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
     # Clear the lazy DB cache in the managers if they were loaded
     try:
-        from merger_cli.parsing.registry import _manager as pm
+        from merger.parsing.registry import _manager as pm
         pm._db = None
     except ImportError:
         pass
     try:
-        from merger_cli.exporters.registry import _manager as em
+        from merger.exporters.registry import _manager as em
         em._db = None
     except ImportError:
         pass
@@ -44,7 +44,7 @@ def test_plugin_loader_install(Plugin_dir, mock_config_dir, tmp_path, monkeypatc
     )
     
     Plugin_content = """
-from merger_cli.api import Parser
+from merger.api import Parser
 EXTENSIONS = [".mock"]
 class MockParser(Parser):
     @classmethod

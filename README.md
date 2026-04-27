@@ -37,7 +37,7 @@ It supports **multiple output formats** (e.g., JSON, directory tree, plain text 
 
 * **Recursive merge** of all readable files under a root directory.
 * **Custom glob-like ignore patterns** with specialized type qualifiers.
-* **Intelligent plugin system**: JSON-backed tracking with automatic dependency management via `uv`.
+* **Intelligent plugin system**: JSON-backed tracking.
 * **Automatic file encoding detection**.
 * **Multiple export formats**: Built-in support for Plain Text, JSON, Directory Trees, and more.
 * **Modern CLI interface**: Update notifications and non-interactive mode.
@@ -65,8 +65,7 @@ Merger CLI is distributed as standalone binaries.
 
 For developers:
 1. Clone the repository.
-2. Install the API: `pip install -e "./packages/merger-plugin-api[test]"`
-3. Install the CLI: `pip install -e "./packages/merger-cli[test,dev]"`
+2. Install the package: `pip install -e ".[test,dev]"`
 
 ---
 
@@ -119,20 +118,15 @@ Merger uses a specialized syntax to distinguish between files and directories, a
 
 ## Plugins
 
-Merger CLI features a plugin architecture. Plugins are standalone Python files that can define their own dependencies via a `REQUIREMENTS` list.
-
-### Managing Requirements (Bundled Version Only)
-If you are using the bundled version of Merger CLI, you can manage plugin requirements manually:
-*   **Install**: `merger --install-requirements` (Installs all `REQUIREMENTS` defined in your installed plugins)
-*   **Purge**: `merger --purge-requirements` (Uninstalls any unused requirements from the plugin environment)
+Merger CLI features a plugin architecture. Plugins are standalone Python files.
 
 ### Building Plugins
-Plugins are standalone Python files. They can define a `REQUIREMENTS` list at the top level to specify any external dependencies they need:
+Plugins are standalone Python files.
 
 ```python
-REQUIREMENTS = ["pillow", "requests"]
+from merger.api import Parser
 
-class MyParser:
+class MyParser(Parser):
     ...
 ```
 
@@ -148,8 +142,6 @@ class MyParser:
 | `-i, --install-plugin`   | Install a custom parser or exporter plugin.                    |
 | `-u, --uninstall-plugin` | Uninstall a plugin by ID (use `*` for all).                    |
 | `-l, --list-plugins`     | List all installed custom plugins.                             |
-| `--install-requirements` | Install requirements for all installed custom plugins.         |
-| `--purge-requirements`   | Uninstall all unused requirements from the plugin environment. |
 | `--update`               | Check for CLI updates and provide download links.              |
 | `--ignore`               | Glob-style patterns to ignore.                                 |
 | `--merger-ignore`        | Path to ignore file (default: `./merger.ignore`).              |

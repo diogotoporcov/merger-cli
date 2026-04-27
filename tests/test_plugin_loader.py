@@ -2,10 +2,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from merger_cli.api import Parser as Base
-from merger_cli.exceptions import InvalidPlugin, PluginAlreadyInstalled
-from merger_cli.utils.db import PluginRecord
-from merger_cli.utils.plugin_loader import PluginManager
+from merger.api import Parser as Base
+from merger.exceptions import InvalidPlugin, PluginAlreadyInstalled
+from merger.utils.db import PluginRecord
+from merger.utils.plugin_loader import PluginManager
 
 
 def test_plugin_loader_load_invalid_path():
@@ -47,7 +47,7 @@ def test_plugin_loader_get_class_from_plugin():
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
 def test_plugin_loader_install_uninstall(tmp_path, mock_config_dir, monkeypatch):
@@ -62,7 +62,7 @@ def test_plugin_loader_install_uninstall(tmp_path, mock_config_dir, monkeypatch)
     )
     
     Plugin_content = """
-from merger_cli.api import Parser
+from merger.api import Parser
 class MyPlugin(Parser):
     EXTENSIONS = [".test"]
 test_cls = MyPlugin
@@ -116,7 +116,7 @@ def test_plugin_loader_get_plugin_type(tmp_path):
     mm = PluginManager("test_type", Base, lambda: Path("."), "test_cls", lambda _m: [])
     
     Plugin_content = """
-from merger_cli.api import Parser
+from merger.api import Parser
 class MyPlugin(Parser): pass
 test_cls = MyPlugin
 """

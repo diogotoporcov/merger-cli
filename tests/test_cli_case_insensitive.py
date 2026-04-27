@@ -2,12 +2,12 @@ import sys
 from unittest.mock import patch
 
 import pytest
-from merger_cli.cli import main
+from merger.cli import main
 
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("merger_cli.utils.config.get_merger_dir", lambda: tmp_path)
+    monkeypatch.setattr("merger.utils.config.get_merger_dir", lambda: tmp_path)
     return tmp_path
 
 def test_cli_exporter_case_insensitive(tmp_path, monkeypatch, capsys, mock_config_dir):

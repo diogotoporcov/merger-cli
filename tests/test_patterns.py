@@ -1,7 +1,7 @@
 import platform
 
 import pytest
-from merger_cli.utils.patterns import matches_pattern
+from merger.utils.patterns import matches_pattern
 
 
 @pytest.fixture

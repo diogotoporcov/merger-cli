@@ -44,10 +44,10 @@ Documentation = "https://github.com/diogotoporcov/merger-cli"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["merger_cli"]
+packages = ["merger"]
 
 [tool.setuptools.package-data]
-merger_cli = ["resources/ignore_files/*.ignore"]
+merger = ["resources/ignore_files/*.ignore"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -58,4 +58,4 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
-merger = "merger_cli.cli.main:main"
+merger = "merger.cli.main:main"

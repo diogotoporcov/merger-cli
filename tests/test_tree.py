@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import pytest
-from merger_cli.api import FileEntry, DirectoryEntry
-from merger_cli.file_tree.scanner import FileTreeScanner
+from merger.api import FileEntry, DirectoryEntry
+from merger.file_tree.scanner import FileTreeScanner
 
 
 @pytest.fixture

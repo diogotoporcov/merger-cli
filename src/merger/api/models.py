@@ -9,13 +9,18 @@ T = TypeVar("T", bound="FileTree")
 
 @runtime_checkable
 class FileTreeEntry(Protocol):
-    type: FileTreeEntryType
-    name: str
-    path: Path
+    @property
+    def type(self) -> FileTreeEntryType: ...
+
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def path(self) -> Path: ...
 
 
 @dataclass(frozen=True)
-class FileEntry(FileTreeEntry):
+class FileEntry:
     name: str
     path: Path
     content: Optional[str] = None
@@ -23,7 +28,7 @@ class FileEntry(FileTreeEntry):
 
 
 @dataclass(frozen=True)
-class DirectoryEntry(FileTreeEntry):
+class DirectoryEntry:
     name: str
     path: Path
     children: Dict[Path, "FileTreeEntry"] = field(default_factory=dict)

@@ -1,6 +1,6 @@
 import pytest
-from merger_cli.exceptions import UnknownIgnoreTemplate
-from merger_cli.utils.ignore_templates import list_ignore_templates, read_ignore_template
+from merger.exceptions import UnknownIgnoreTemplate
+from merger.utils.ignore_templates import list_ignore_templates, read_ignore_template
 
 
 def test_list_ignore_templates():
@@ -18,8 +18,8 @@ def test_read_ignore_template():
     
     with pytest.raises(UnknownIgnoreTemplate):
         read_ignore_template("NON_EXISTENT")
-from merger_cli.utils.files import read_file_bytes, read_merger_ignore_file
-from merger_cli.utils.hash import hash_from_file
+from merger.utils.files import read_file_bytes, read_merger_ignore_file
+from merger.utils.hash import hash_from_file
 
 def test_read_file_bytes(tmp_path):
     file_path = tmp_path / "test.bin"

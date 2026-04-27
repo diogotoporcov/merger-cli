@@ -4,7 +4,7 @@ from typing import Union, Optional, Set, Type
 
 from PIL import Image
 from easyocr import Reader
-from merger_cli.api import Parser
+from merger.api import Parser
 
 # File extensions this parser supports
 EXTENSIONS: Set[str] = {
