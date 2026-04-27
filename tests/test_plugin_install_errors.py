@@ -18,13 +18,13 @@ def mock_config_dir(tmp_path, monkeypatch):
 def test_install_failure_with_details(tmp_path, mock_config_dir, capsys):
     parser_content = """
 import non_existent_Plugin_foo_bar
-EXTENSIONS = [".broken"]
-class BrokenParser:
+from merger.parsing.base import Parser
+class BrokenParser(Parser):
+    EXTENSIONS = [".broken"]
     @classmethod
     def validate(cls, file_bytes, file_path): return True
     @classmethod
     def parse(cls, file_bytes, file_path): return "broken"
-parser_cls = BrokenParser
 """
     parser_path = tmp_path / "broken_parser.py"
     parser_path.write_text(parser_content)

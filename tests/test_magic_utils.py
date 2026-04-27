@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from merger.parsing.impl.default_parser import DefaultParser
+from merger.parsing.impl.text import TextParser
 from merger.utils.magic import check_libmagic_availability
 
 
@@ -10,7 +10,7 @@ class TestMagicUtils(unittest.TestCase):
     def test_magic_missing_error(self):
         with patch("magic.from_buffer", side_effect=OSError("failed to find libmagic")):
             with self.assertRaises(RuntimeError) as cm:
-                DefaultParser.guess_mime_type(b"test content", Path("test.txt"))
+                TextParser.guess_mime_type(b"test content", Path("test.txt"))
             
             error_msg = str(cm.exception)
             self.assertIn("libmagic is required but not found", error_msg)
@@ -30,7 +30,7 @@ class TestMagicUtils(unittest.TestCase):
     def test_unexpected_magic_error(self):
         with patch("magic.from_buffer", side_effect=Exception("something went wrong")):
             with self.assertRaises(RuntimeError) as cm:
-                DefaultParser.guess_mime_type(b"test content", Path("test.txt"))
+                TextParser.guess_mime_type(b"test content", Path("test.txt"))
             
             error_msg = str(cm.exception)
             self.assertIn("Error while identifying file type with libmagic: something went wrong", error_msg)
@@ -39,7 +39,7 @@ class TestMagicUtils(unittest.TestCase):
         # If magic returns application/octet-stream, a fallback to mimetypes guess is used
         with patch("magic.from_buffer", return_value="application/octet-stream"):
             with patch("mimetypes.guess_type", return_value=("text/plain", None)):
-                mime = DefaultParser.guess_mime_type(b"test content", Path("test.txt"))
+                mime = TextParser.guess_mime_type(b"test content", Path("test.txt"))
                 self.assertEqual(mime, "text/plain")
 
 if __name__ == "__main__":

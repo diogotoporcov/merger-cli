@@ -9,19 +9,19 @@ from merger.utils.plugin_loader import PluginManager
 
 
 def test_plugin_loader_load_invalid_path():
-    mm = PluginManager("test", Base, lambda: Path("."), "cls", lambda _m: [])
+    mm = PluginManager("test", Base, lambda: Path("."), lambda _m, _c: [])
     with pytest.raises(FileNotFoundError):
         mm.load_plugin_from_path(Path("non_existent.py"), "test")
 
 def test_plugin_loader_load_directory(tmp_path):
-    mm = PluginManager("test", Base, lambda: Path("."), "cls", lambda _m: [])
+    mm = PluginManager("test", Base, lambda: Path("."), lambda _m, _c: [])
     dir_path = tmp_path / "somedir"
     dir_path.mkdir()
     with pytest.raises(IsADirectoryError):
         mm.load_plugin_from_path(dir_path, "test")
 
 def test_plugin_loader_get_class_from_plugin():
-    mm = PluginManager("test", Base, lambda: Path("."), "test_cls", lambda _m: [])
+    mm = PluginManager("test", Base, lambda: Path("."), lambda _m, _c: [])
     
     # Valid Plugin
     class ValidSub(Base):
@@ -31,24 +31,17 @@ def test_plugin_loader_get_class_from_plugin():
         def parse(cls, b, p): return ""
 
     plugin = MagicMock()
-    plugin.test_cls = ValidSub
+    plugin.ValidSub = ValidSub
     plugin.__file__ = "valid.py"
     assert mm.get_class_from_plugin(plugin) == ValidSub
     
-    # Missing attribute
-    plugin_missing = MagicMock()
-    del plugin_missing.test_cls
-    with pytest.raises(InvalidPlugin) as exc:
-        mm.get_class_from_plugin(plugin_missing)
-    assert "test_cls attribute not provided" in str(exc.value)
-    
-    # Not a subclass
+    # No subclass
     class NotSub: pass
     plugin_not_sub = MagicMock()
-    plugin_not_sub.test_cls = NotSub
+    plugin_not_sub.NotSub = NotSub
     with pytest.raises(InvalidPlugin) as exc:
         mm.get_class_from_plugin(plugin_not_sub)
-    assert f"does not inherit from {Base.__name__}" in str(exc.value)
+    assert f"No subclass of {Base.__name__} found" in str(exc.value)
 
 @pytest.fixture
 def mock_config_dir(tmp_path, monkeypatch):
@@ -62,8 +55,7 @@ def test_plugin_loader_install_uninstall(tmp_path, mock_config_dir, monkeypatch)
         "test", 
         Base, 
         lambda: target_dir, 
-        "test_cls", 
-        lambda _m: ["key"]
+        lambda _m, _c: ["key"]
     )
     
     Plugin_content = f"""
@@ -74,7 +66,6 @@ class MyPlugin({Base.__name__}):
     def validate(cls, b, p): return True
     @classmethod
     def parse(cls, b, p): return ""
-test_cls = MyPlugin
 """
     plugin_path = tmp_path / "my_mod.py"
     plugin_path.write_text(Plugin_content)
@@ -103,7 +94,7 @@ test_cls = MyPlugin
 def test_plugin_loader_uninstall_all(tmp_path, mock_config_dir, monkeypatch):
 
     target_dir = mock_config_dir / "test_Plugins"
-    mm = PluginManager("test", Base, lambda: target_dir, "test_cls", lambda _m: [])
+    mm = PluginManager("test", Base, lambda: target_dir, lambda _m, _c: [])
     
     target_dir.mkdir()
     p1_path = target_dir / "m1.py"
@@ -122,7 +113,7 @@ def test_plugin_loader_uninstall_all(tmp_path, mock_config_dir, monkeypatch):
     assert not p2_path.exists()
 
 def test_plugin_loader_get_plugin_type(tmp_path):
-    mm = PluginManager("test_type", Base, lambda: Path("."), "test_cls", lambda _m: [])
+    mm = PluginManager("test_type", Base, lambda: Path("."), lambda _m, _c: [])
     
     Plugin_content = f"""
 from {Base.__module__} import {Base.__name__}
@@ -131,7 +122,6 @@ class MyPlugin({Base.__name__}):
     def validate(cls, b, p): return True
     @classmethod
     def parse(cls, b, p): return ""
-test_cls = MyPlugin
 """
     plugin_path = tmp_path / "type_mod.py"
     plugin_path.write_text(Plugin_content)

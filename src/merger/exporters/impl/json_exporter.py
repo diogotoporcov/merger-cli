@@ -2,12 +2,11 @@ import json
 from typing import Dict
 
 from ..base import TreeExporter
+from ..registry import exporter_registry
 from ...models import FileTree, DirectoryEntry, FileEntry, FileTreeEntry
 
-NAME = "JSON"
-FILE_EXTENSION = ".json"
 
-
+@exporter_registry.register(name="JSON", extension=".json")
 class JsonExporter(TreeExporter):
     @classmethod
     def export(cls, tree: FileTree) -> bytes:

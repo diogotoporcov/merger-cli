@@ -9,6 +9,8 @@ class TreeExporter(ABC):
     """
     Strategy interface for exporting a FileTree to a custom format.
     """
+    NAME: str
+    FILE_EXTENSION: str
 
     @classmethod
     @abstractmethod

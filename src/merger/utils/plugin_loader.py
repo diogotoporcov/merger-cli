@@ -1,6 +1,5 @@
 import importlib.util
 import shutil
-from inspect import isclass
 from pathlib import Path
 from types import ModuleType
 from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic, Tuple
@@ -19,14 +18,12 @@ class PluginManager(Generic[T]):
         plugin_type_name: str,
         base_class: Type[T],
         get_target_dir: Callable[[], Path],
-        class_attr: str,
-        key_getter: Callable[[ModuleType], List[str]],
-        validate_func: Optional[Callable[[Path, ModuleType], None]] = None,
+        key_getter: Callable[[ModuleType, Type[T]], List[str]],
+        validate_func: Optional[Callable[[Path, ModuleType, Type[T]], None]] = None,
     ):
         self.plugin_type_name = plugin_type_name
         self.base_class = base_class
         self.get_target_dir = get_target_dir
-        self.class_attr = class_attr
         self.key_getter = key_getter
         self.validate_func = validate_func
         self._db: Optional[DatabaseManager] = None
@@ -59,25 +56,17 @@ class PluginManager(Generic[T]):
         return module
 
     def get_class_from_plugin(self, module: ModuleType) -> Type[T]:
-        try:
-            cls = getattr(module, self.class_attr)
-            
-        except AttributeError as e:
-            raise InvalidPlugin(
-                getattr(module, "__file__", "unknown"),
-                f"{self.class_attr} attribute not provided",
-            ) from e
+        import inspect
+        for _, obj in inspect.getmembers(module, inspect.isclass):
+            if issubclass(obj, self.base_class) and obj is not self.base_class:
+                if self.validate_func:
+                    self.validate_func(Path(getattr(module, "__file__", "")), module, obj)
+                return obj
 
-        if not isclass(cls) or not issubclass(cls, self.base_class):
-            raise InvalidPlugin(
-                getattr(module, "__file__", "unknown"),
-                f"{self.class_attr} does not inherit from {self.base_class.__name__}",
-            )
-
-        if self.validate_func:
-            self.validate_func(Path(getattr(module, "__file__", "")), module)
-
-        return cls
+        raise InvalidPlugin(
+            getattr(module, "__file__", "unknown"),
+            f"No subclass of {self.base_class.__name__} found",
+        )
 
     def install(self, path: Path) -> None:
         path = Path(path)
@@ -91,14 +80,14 @@ class PluginManager(Generic[T]):
             raise PluginAlreadyInstalled(path.resolve().as_posix())
 
         module = self.load_plugin_from_path(path, file_hash)
-        _ = self.get_class_from_plugin(module) # Validation
+        cls = self.get_class_from_plugin(module) # Validation
 
         target_dir = self.get_target_dir()
         target_dir.mkdir(parents=True, exist_ok=True)
         plugin_path = target_dir / filename
         shutil.copy(path, plugin_path)
 
-        extensions = self.key_getter(module)
+        extensions = self.key_getter(module, cls)
 
         self.db.add_plugin(
             PluginRecord(
@@ -138,12 +127,14 @@ class PluginManager(Generic[T]):
         """Detect the plugin type by checking its class inheritance."""
         try:
             module = self.load_plugin_from_path(path, "temp_type_check")
-            cls = getattr(module, self.class_attr)
-            if isclass(cls) and issubclass(cls, self.base_class):
+            try:
+                self.get_class_from_plugin(module)
                 return self.plugin_type_name
-            
-        except AttributeError:
-            pass
+            except InvalidPlugin:
+                pass
+
+        except ImportError:
+            raise
             
         except Exception:
             raise
@@ -182,7 +173,7 @@ class PluginManager(Generic[T]):
                 module = self.load_plugin_from_path(path, plugin_id)
                 cls = self.get_class_from_plugin(module)
 
-                for key in self.key_getter(module):
+                for key in self.key_getter(module, cls):
                     loaded[key] = cls
                     
             except (ImportError, InvalidPlugin) as e:
@@ -213,3 +204,14 @@ class PluginManager(Generic[T]):
 
             except Exception as e:
                 raise RuntimeError(f"Unexpected error validating {self.plugin_type_name} plugin '{plugin_id}': {e}") from e
+
+    def register(self, **metadata):
+        """Decorator to register a plugin class with metadata."""
+        def wrapper(cls):
+            for key, value in metadata.items():
+                attr_name = key.upper()
+                if attr_name == "EXTENSION":
+                    attr_name = "FILE_EXTENSION"
+                setattr(cls, attr_name, value)
+            return cls
+        return wrapper

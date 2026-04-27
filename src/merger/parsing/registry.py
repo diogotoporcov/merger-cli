@@ -12,10 +12,10 @@ _EXTENSION_REGEX_STR = r"\.[a-z0-9.]+$"
 _EXTENSION_REGEX = re.compile(_EXTENSION_REGEX_STR, re.IGNORECASE)
 
 
-def _validate_parser_plugin(path: Path, module: ModuleType) -> None:
-    extensions = getattr(module, "EXTENSIONS", None)
+def _validate_parser_plugin(path: Path, module: ModuleType, cls: Type[Parser]) -> None:
+    extensions = getattr(cls, "EXTENSIONS", None)
     if extensions is None:
-        raise InvalidPlugin(path.as_posix(), "Parser plugin does not contain EXTENSIONS attribute")
+        raise InvalidPlugin(path.as_posix(), "Parser plugin class does not contain EXTENSIONS attribute")
 
     if not isinstance(extensions, (set, list, tuple)):
         raise InvalidPlugin(path.as_posix(), "parser EXTENSIONS attribute is not a collection")
@@ -34,11 +34,11 @@ _manager = PluginManager[Parser](
     plugin_type_name="parser",
     base_class=Parser,
     get_target_dir=get_or_create_parsers_dir,
-    class_attr="parser_cls",
-    key_getter=lambda module: [ext.lower() for ext in getattr(module, "EXTENSIONS")],
+    key_getter=lambda module, cls: [ext.lower() for ext in cls.EXTENSIONS],
     validate_func=_validate_parser_plugin,
 )
 
+parser_registry = _manager
 install_parser = _manager.install
 uninstall_parser = _manager.uninstall
 list_parsers = _manager.list
@@ -50,7 +50,7 @@ _PARSER_CACHE: Dict[str, Type[Parser]] = {}
 
 
 def get_parser(filename: str) -> Type[Parser]:
-    from .impl.default_parser import DefaultParser
+    from .impl.text import TextParser
     filename_lower = filename.lower()
     parsers_meta = list_parsers()
 
@@ -72,4 +72,4 @@ def get_parser(filename: str) -> Type[Parser]:
             _PARSER_CACHE[plugin_id] = cls
             return cls
 
-    return DefaultParser
+    return TextParser

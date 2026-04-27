@@ -1,14 +1,11 @@
 import xml.etree.ElementTree as ET
 
 from merger.exporters.base import TreeExporter
+from merger.exporters.registry import exporter_registry
 from merger.models import FileEntry, DirectoryEntry, FileTreeEntry, FileTree
 
-# The name of the exporter (used in --exporter argument)
-NAME = "XML"
-# The extension of the output file
-FILE_EXTENSION = ".xml"
 
-
+@exporter_registry.register(name="XML", extension=".xml")
 class XmlExporter(TreeExporter):
     """
     A custom exporter that generates an XML representation of the file tree.
@@ -68,6 +65,3 @@ class XmlExporter(TreeExporter):
         else:
             if level and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i
-
-# Export the exporter class
-exporter_cls = XmlExporter

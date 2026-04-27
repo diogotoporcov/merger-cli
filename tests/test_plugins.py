@@ -39,19 +39,17 @@ def test_plugin_loader_install(Plugin_dir, mock_config_dir, tmp_path, monkeypatc
         plugin_type_name="test",
         base_class=Parser,
         get_target_dir=lambda: Plugin_dir,
-        class_attr="parser_cls",
-        key_getter=lambda Plugin: [ext.lower() for ext in getattr(Plugin, "EXTENSIONS")]
+        key_getter=lambda Plugin, cls: [ext.lower() for ext in cls.EXTENSIONS]
     )
     
     Plugin_content = """
 from merger.parsing.base import Parser
-EXTENSIONS = [".mock"]
 class MockParser(Parser):
+    EXTENSIONS = [".mock"]
     @classmethod
     def validate(cls, file_bytes, file_path): return True
     @classmethod
     def parse(cls, file_bytes, file_path): return "mocked"
-parser_cls = MockParser
 """
     Plugin_source = tmp_path / "my_Plugin.py"
     Plugin_source.write_text(Plugin_content)
@@ -72,12 +70,11 @@ def test_plugin_loader_uninstall(Plugin_dir, mock_config_dir, tmp_path, monkeypa
         plugin_type_name="test",
         base_class=Parser,
         get_target_dir=lambda: Plugin_dir,
-        class_attr="parser_cls",
-        key_getter=lambda Plugin: [ext.lower() for ext in getattr(Plugin, "EXTENSIONS")]
+        key_getter=lambda Plugin, cls: [ext.lower() for ext in cls.EXTENSIONS]
     )
     
     Plugin_source = tmp_path / "my_Plugin.py"
-    Plugin_source.write_text("parser_cls = None")
+    Plugin_source.write_text("pass")
     
     target_path = Plugin_dir / "abc.py"
     target_path.touch()
@@ -94,8 +91,7 @@ def test_plugin_loader_load_all_with_broken_Plugin(Plugin_dir, mock_config_dir, 
         plugin_type_name="test",
         base_class=Parser,
         get_target_dir=lambda: Plugin_dir,
-        class_attr="parser_cls",
-        key_getter=lambda Plugin: [ext.lower() for ext in getattr(Plugin, "EXTENSIONS")]
+        key_getter=lambda Plugin, cls: [ext.lower() for ext in cls.EXTENSIONS]
     )
     
     broken_path = Plugin_dir / "broken.py"

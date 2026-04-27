@@ -1,22 +1,17 @@
 import io
 from pathlib import Path
-from typing import Union, Optional, Set
+from typing import Union, Optional
 
 from PIL import Image
 from easyocr import Reader
-
-# File extensions this parser supports
-EXTENSIONS: Set[str] = {
-    ".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp", ".gif"
-}
-
-
 from merger.parsing.base import Parser
+from merger.parsing.registry import parser_registry
 
 
+@parser_registry.register(extensions={".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp", ".gif"})
 class ImageParser(Parser):
     """
-    Parser for image files that extracts text using OCR (Optical Character Recognition).
+    Parser for image files that extracts text using OCR (Optical Recognition).
     """
     MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
@@ -67,7 +62,3 @@ class ImageParser(Parser):
 
         except Exception as e:
             return f"[OCR Error in {file_path.name}]: {str(e)}"
-
-
-# Export the parser class
-parser_cls = ImageParser

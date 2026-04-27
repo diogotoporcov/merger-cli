@@ -19,13 +19,12 @@ def test_unified_Plugin_system(tmp_path, mock_config_dir, capsys):
     # 1. Create a mock Parser plugin
     parser_content = """
 from merger.parsing.base import Parser
-EXTENSIONS = [".mock"]
 class MockParser(Parser):
+    EXTENSIONS = [".mock"]
     @classmethod
     def validate(cls, file_bytes, file_path): return True
     @classmethod
     def parse(cls, file_bytes, file_path): return "mocked"
-parser_cls = MockParser
 """
     parser_path = tmp_path / "mock_parser.py"
     parser_path.write_text(parser_content)
@@ -33,12 +32,11 @@ parser_cls = MockParser
     # 2. Create a mock Exporter plugin
     exporter_content = """
 from merger.exporters.base import TreeExporter
-NAME = "MOCK"
-FILE_EXTENSION = ".mock"
 class MockExporter(TreeExporter):
+    NAME = "MOCK"
+    FILE_EXTENSION = ".mock"
     @classmethod
     def export(cls, tree): return b"mocked export"
-exporter_cls = MockExporter
 """
     exporter_path = tmp_path / "mock_exporter.py"
     exporter_path.write_text(exporter_content)

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 
 class Parser(ABC):
@@ -8,6 +8,7 @@ class Parser(ABC):
     Strategy interface for file parsing.
     """
 
+    EXTENSIONS: List[str]
     MAX_BYTES_FOR_VALIDATION: int = 1024
 
     @classmethod

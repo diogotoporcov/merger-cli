@@ -1,14 +1,11 @@
 from typing import List
 
 from merger.exporters.base import TreeExporter
+from merger.exporters.registry import exporter_registry
 from merger.models import FileEntry, DirectoryEntry, FileTreeEntry, FileTree
 
-# The name of the exporter (used in --exporter argument)
-NAME = "MARKDOWN"
-# The extension of the output file
-FILE_EXTENSION = ".md"
 
-
+@exporter_registry.register(name="MARKDOWN", extension=".md")
 class MarkdownExporter(TreeExporter):
     """
     A custom exporter that generates a Markdown representation of the file tree.
@@ -40,6 +37,3 @@ class MarkdownExporter(TreeExporter):
             lines.append("")
             for child in sorted(entry.children.values(), key=lambda e: e.name.lower()):
                 cls._to_markdown(child, lines, level + 1)
-
-# Export the exporter class
-exporter_cls = MarkdownExporter

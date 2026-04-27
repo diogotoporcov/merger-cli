@@ -1,15 +1,12 @@
 from pathlib import Path
-from typing import Union, Optional, Set
+from typing import Union, Optional
 
 import pymupdf
-
-# File extensions this parser supports
-EXTENSIONS: Set[str] = {".pdf"}
-
-
 from merger.parsing.base import Parser
+from merger.parsing.registry import parser_registry
 
 
+@parser_registry.register(extensions={".pdf"})
 class PdfParser(Parser):
     MAX_BYTES_FOR_VALIDATION: Optional[int] = None
 
@@ -49,7 +46,3 @@ class PdfParser(Parser):
 
         full_text = " ".join(texts)
         return full_text
-
-
-# Export the parser class
-parser_cls = PdfParser

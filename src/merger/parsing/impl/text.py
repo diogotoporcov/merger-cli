@@ -8,7 +8,7 @@ import magic
 from ..base import Parser
 
 
-class DefaultParser(Parser):
+class TextParser(Parser):
     MAX_BYTES_FOR_VALIDATION: Optional[int] = 1024
 
     TEXT_CONFIDENCE_THRESHOLD = 0.8
@@ -101,7 +101,7 @@ class DefaultParser(Parser):
             for byte in file_chunk
         )
 
-        return (non_printable / max(len(file_chunk), 1)) > DefaultParser.MAX_BINARY_RATIO
+        return (non_printable / max(len(file_chunk), 1)) > TextParser.MAX_BINARY_RATIO
 
     @classmethod
     def validate(

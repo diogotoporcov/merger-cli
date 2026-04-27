@@ -4,7 +4,9 @@ from pathlib import Path
 
 from ..exceptions import UnknownIgnoreTemplate
 from ..exporters.factory import get_exporter_strategy_names
-from ..exporters.impl.tree_with_plain_text_exporter import NAME as TREE_PLAIN_TEXT_NAME
+from ..exporters.impl.tree_text import TreeTextExporter
+
+DEFAULT_EXPORTER_NAME = TreeTextExporter.NAME
 from ..exporters.registry import (
     install_exporter, uninstall_exporter, list_exporters, get_exporter_plugin_type
 )
@@ -210,8 +212,8 @@ def setup_argparse() -> RichArgumentParser:
         "--exporter",
         type=lambda s: str(s).upper(),
         choices=LazyChoices(get_exporter_strategy_names),
-        default=TREE_PLAIN_TEXT_NAME,
-        help=f"Output exporter strategy (default: {TREE_PLAIN_TEXT_NAME})",
+        default=DEFAULT_EXPORTER_NAME,
+        help=f"Output exporter strategy (default: {DEFAULT_EXPORTER_NAME})",
     )
 
     plugin_group = parser.add_mutually_exclusive_group()

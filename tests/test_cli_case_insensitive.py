@@ -19,8 +19,8 @@ def test_cli_exporter_case_insensitive(tmp_path, monkeypatch, capsys, mock_confi
     output_dir.mkdir()
     monkeypatch.chdir(tmp_path)
     
-    # Use lowercase 'plain_text' which should be converted to 'PLAIN_TEXT'
-    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'plain_text']):
+    # Use lowercase 'text' which should be converted to 'TEXT'
+    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'text']):
         main()
     
     expected_output = output_dir / "merger.txt"

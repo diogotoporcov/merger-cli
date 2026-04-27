@@ -148,8 +148,8 @@ Merger uses **Git-style matching** with custom type qualifiers. Patterns are eva
 
 | Exporter Name     | File Extension | Description                                                                                    |
 |-------------------|----------------|------------------------------------------------------------------------------------------------|
-| `TREE_PLAIN_TEXT` | `.txt`         | Directory tree followed by plain-text merged file contents (**default**).                      |
-| `PLAIN_TEXT`      | `.txt`         | Plain-text merged contents with clear file delimiters.                                         |
+| `TREE_TEXT`       | `.txt`         | Directory tree followed by plain-text merged file contents (**default**).                      |
+| `TEXT`            | `.txt`         | Plain-text merged contents with clear file delimiters.                                         |
 | `TREE`            | `.txt`         | Directory tree structure only.                                                                 |
 | `JSON`            | `.json`        | Flat JSON mapping file paths to their parsed contents.                                         |
 | `JSON_TREE`       | `.json`        | Structured JSON representing the directory hierarchy with metadata and contents.               |

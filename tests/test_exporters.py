@@ -1,13 +1,12 @@
 import json
 
 import pytest
-from merger.exporters.impl.directory_tree_exporter import DirectoryTreeExporter
 from merger.exporters.impl.json_exporter import JsonExporter
 from merger.exporters.impl.json_tree_exporter import JsonTreeExporter
-from merger.exporters.impl.plain_text_exporter import PlainTextExporter
-from merger.exporters.impl.tree_with_plain_text_exporter import TreeWithPlainTextExporter
+from merger.exporters.impl.text import TextExporter
+from merger.exporters.impl.tree import TreeStructureExporter
+from merger.exporters.impl.tree_text import TreeTextExporter
 from merger.file_tree.scanner import FileTreeScanner
-from merger.models import FileTree
 
 
 @pytest.fixture
@@ -20,7 +19,7 @@ def complex_tree(tmp_path):
     return FileTreeScanner.scan(tmp_path, ignore_patterns=[])
 
 def test_plain_text_exporter(complex_tree):
-    output = PlainTextExporter.export(complex_tree).decode()
+    output = TextExporter.export(complex_tree).decode()
     assert "<<FILE_START: ./README.md>>" in output
     assert "# Project" in output
     assert "<<FILE_END: ./README.md>>" in output
@@ -28,7 +27,7 @@ def test_plain_text_exporter(complex_tree):
     assert "print('hello')" in output
 
 def test_directory_tree_exporter(complex_tree):
-    output = DirectoryTreeExporter.export(complex_tree).decode()
+    output = TreeStructureExporter.export(complex_tree).decode()
     # Current root name might be the tmp_path name
     assert "src/" in output
     assert "├── data/" in output or "└── data/" in output
@@ -53,7 +52,7 @@ def test_json_tree_exporter(complex_tree):
     assert data["children"]["src"]["type"] == "directory"
 
 def test_tree_with_plain_text_exporter(complex_tree):
-    output = TreeWithPlainTextExporter.export(complex_tree).decode()
+    output = TreeTextExporter.export(complex_tree).decode()
     assert "src/" in output
     assert "<<FILE_START: ./src/main.py>>" in output
 
@@ -64,7 +63,7 @@ def test_directory_tree_exporter_order(tmp_path):
     (tmp_path / "a_file.txt").touch()
     
     tree = FileTreeScanner.scan(tmp_path, ignore_patterns=[])
-    output = DirectoryTreeExporter.export(tree).decode()
+    output = TreeStructureExporter.export(tree).decode()
     
     lines = [line for line in output.splitlines() if line]
     # lines[0] is root (tmp_path name)

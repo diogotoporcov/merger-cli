@@ -49,7 +49,7 @@ def test_cli_merge_basic(tmp_path, monkeypatch, capsys, mock_config_dir):
     
     monkeypatch.chdir(tmp_path)
     
-    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'PLAIN_TEXT']):
+    with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'TEXT']):
         main()
     
     expected_output = output_dir / "merger.txt"
