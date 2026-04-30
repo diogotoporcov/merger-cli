@@ -1,11 +1,9 @@
 from abc import ABC
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Optional, TypeVar
+from typing import Dict, Optional
 
 from .enums import FileTreeEntryType
-
-T = TypeVar("T", bound="FileTree")
 
 
 class FileTreeEntry(ABC):

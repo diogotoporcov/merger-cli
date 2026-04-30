@@ -55,9 +55,6 @@ class TextParser(Parser):
         "application/vnd.github.v3.diff",
         "application/vnd.github.v3.patch",
 
-        # Edge but legit text configs
-        "application/graphql",
-
         # Empty files
         "application/x-empty",
         "inode/x-empty",
