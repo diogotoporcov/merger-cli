@@ -72,18 +72,26 @@ class TextParser(Parser):
         file_chunk: Union[bytes, bytearray],
         file_path: Path
     ) -> Optional[str]:
+        from ...logging import logger
+        mime = None
         try:
             mime = magic.from_buffer(file_chunk, mime=True)
-
-        except Exception:
-            from ...utils.magic import check_libmagic_availability
-            check_libmagic_availability()
-            raise
+        except Exception as e:
+            logger.debug(f"libmagic failed for {file_path}: {e}")
 
         if not mime or mime == "application/octet-stream":
-            guess, _ = mimetypes.guess_type(file_path)
-            if guess:
-                mime = guess
+            try:
+                guess, _ = mimetypes.guess_type(file_path)
+                if guess:
+                    mime = guess
+            except Exception as e:
+                logger.debug(f"mimetypes fallback failed for {file_path}: {e}")
+
+        if not mime or mime == "application/octet-stream":
+            if TextParser.looks_binary(file_chunk):
+                mime = "application/octet-stream"
+            else:
+                mime = "text/plain"
 
         return mime
 
