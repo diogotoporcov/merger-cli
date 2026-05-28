@@ -2,7 +2,7 @@ import importlib.util
 import shutil
 from pathlib import Path
 from types import ModuleType
-from typing import Type, Dict, List, Callable, Optional, TypeVar, Generic, Tuple
+from typing import Callable, Dict, Generic, List, Optional, Tuple, Type, TypeVar
 
 from .db import DatabaseManager, PluginRecord
 from .hash import hash_from_file
@@ -20,7 +20,7 @@ class PluginManager(Generic[T]):
         get_target_dir: Callable[[], Path],
         key_getter: Callable[[ModuleType, Type[T]], List[str]],
         validate_func: Optional[Callable[[Path, ModuleType, Type[T]], None]] = None,
-    ):
+    ) -> None:
         self.plugin_type_name = plugin_type_name
         self.base_class = base_class
         self.get_target_dir = get_target_dir
@@ -205,9 +205,9 @@ class PluginManager(Generic[T]):
             except Exception as e:
                 raise RuntimeError(f"Unexpected error validating {self.plugin_type_name} plugin '{plugin_id}': {e}") from e
 
-    def register(self, **metadata):
+    def register(self, **metadata: object) -> Callable[[Type[T]], Type[T]]:
         """Decorator to register a plugin class with metadata."""
-        def wrapper(cls):
+        def wrapper(cls: Type[T]) -> Type[T]:
             for key, value in metadata.items():
                 attr_name = key.upper()
                 if attr_name == "EXTENSION":

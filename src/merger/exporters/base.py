@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Type
+from typing import ClassVar, Type
 
 from ..models import FileTree
 
@@ -9,8 +9,8 @@ class TreeExporter(ABC):
     """
     Strategy interface for exporting a FileTree to a custom format.
     """
-    NAME: str
-    FILE_EXTENSION: str
+    NAME: ClassVar[str]
+    FILE_EXTENSION: ClassVar[str]
 
     @classmethod
     @abstractmethod

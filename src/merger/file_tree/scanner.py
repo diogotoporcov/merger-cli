@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional, Sequence
 
 from ..logging import logger
 from ..models import DirectoryEntry, FileTreeEntry, FileEntry, FileTree
@@ -16,7 +16,7 @@ class FileTreeScanner:
     def scan(
             cls,
             path: Path,
-            ignore_patterns: Optional[List[str]] = None
+            ignore_patterns: Optional[Sequence[str]] = None
     ) -> FileTree:
         if not path.is_dir():
             raise NotADirectoryError(f"{path} is not a directory")

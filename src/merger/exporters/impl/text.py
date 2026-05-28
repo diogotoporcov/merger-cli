@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ..base import TreeExporter
 from ..registry import exporter_registry
 from ...models import FileTree, DirectoryEntry, FileEntry, FileTreeEntry
@@ -16,6 +18,9 @@ class TextExporter(TreeExporter):
     def _serialize_entry(cls, entry: FileTreeEntry) -> bytes:
         if isinstance(entry, FileEntry):
             filepath = cls._serialize_path(entry.path)
+            if entry.content is None:
+                raise TypeError(f"File entry has no content: {entry.path}")
+
             return (
                     cls.PREFIX % filepath
                     + entry.content
@@ -31,6 +36,6 @@ class TextExporter(TreeExporter):
         raise TypeError(f"Unsupported entry type: {type(entry)}")
 
     @staticmethod
-    def _serialize_path(path):
+    def _serialize_path(path: Path) -> str:
         path = path.as_posix()
         return path if path.startswith("./") or path == "." else f"./{path}"

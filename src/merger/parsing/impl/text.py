@@ -1,6 +1,6 @@
 import mimetypes
 from pathlib import Path
-from typing import Union, Tuple, Optional
+from typing import ClassVar, FrozenSet, Optional, Tuple, Union
 
 import charset_normalizer
 import magic
@@ -9,12 +9,12 @@ from ..base import Parser
 
 
 class TextParser(Parser):
-    MAX_BYTES_FOR_VALIDATION: Optional[int] = 1024
+    MAX_BYTES_FOR_VALIDATION: ClassVar[Optional[int]] = 1024
 
-    TEXT_CONFIDENCE_THRESHOLD = 0.8
-    MAX_BINARY_RATIO = 0.30
+    TEXT_CONFIDENCE_THRESHOLD: ClassVar[float] = 0.8
+    MAX_BINARY_RATIO: ClassVar[float] = 0.30
 
-    TEXTUAL_APPLICATION_MIMES = {
+    TEXTUAL_APPLICATION_MIMES: ClassVar[FrozenSet[str]] = frozenset({
         # JSON (files)
         "application/json",
         "application/ld+json",
@@ -58,7 +58,7 @@ class TextParser(Parser):
         # Empty files
         "application/x-empty",
         "inode/x-empty",
-    }
+    })
 
     @staticmethod
     def guess_encoding(file_chunk: Union[bytes, bytearray]) -> Tuple[str, float]:

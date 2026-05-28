@@ -56,7 +56,12 @@ def test_tree_sorting(tmp_path):
     (tmp_path / "a_file.txt").touch()
     
     tree = FileTreeScanner.scan(tmp_path)
-    children_names = [p.name for p in tree.root.children.values()]
+    children = [
+        entry
+        for entry in tree.root.children.values()
+        if isinstance(entry, (DirectoryEntry, FileEntry))
+    ]
+    children_names = [entry.name for entry in children]
     
     # Expected: directories first, then alphabetical (case-insensitive)
     # a_dir, Z_dir, a_file.txt, B_file.txt
@@ -77,6 +82,7 @@ def test_tree_nested_ignore(tmp_path):
     # Ignore specific nested file
     tree2 = FileTreeScanner.scan(tmp_path, ignore_patterns=["src/utils.py"])
     src_dir = tree2.root.children[Path("src")]
+    assert isinstance(src_dir, DirectoryEntry)
     assert Path("src/main.py") in src_dir.children
     assert Path("src/utils.py") not in src_dir.children
 
@@ -87,7 +93,9 @@ def test_tree_double_wildcard_ignore(tmp_path):
     
     tree = FileTreeScanner.scan(tmp_path, ignore_patterns=["**/c/"])
     a_dir = tree.root.children[Path("a")]
+    assert isinstance(a_dir, DirectoryEntry)
     b_dir = a_dir.children[Path("a/b")]
+    assert isinstance(b_dir, DirectoryEntry)
     assert Path("a/b/c") not in b_dir.children
     assert Path("a/x.txt") in a_dir.children
 

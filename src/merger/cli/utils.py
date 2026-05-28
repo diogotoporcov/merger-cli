@@ -1,6 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
+from typing import Callable, Iterator, List, Optional, Sequence
 
 from ..exceptions import UnknownIgnoreTemplate
 from ..exporters.factory import get_exporter_strategy_names
@@ -23,22 +24,22 @@ class LazyChoices:
     A container for argparse choices that evaluates the list of choices 
     lazily only when needed (e.g., for validation or help generation).
     """
-    def __init__(self, loader):
+    def __init__(self, loader: Callable[[], Sequence[str]]) -> None:
         self._loader = loader
-        self._choices = None
+        self._choices: Optional[List[str]] = None
 
-    def _get_choices(self):
+    def _get_choices(self) -> List[str]:
         if self._choices is None:
-            self._choices = self._loader()
+            self._choices = list(self._loader())
         return self._choices
 
-    def __contains__(self, item):
+    def __contains__(self, item: object) -> bool:
         return item in self._get_choices()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._get_choices())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._get_choices())
 
 
@@ -47,13 +48,16 @@ class RichArgumentParser(argparse.ArgumentParser):
     A custom argument parser that uses rich for help formatting 
     and the logger for reporting errors.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: object, **kwargs: object) -> None:
         if "formatter_class" not in kwargs:
+            formatter_class = None
             try:
                 from rich_argparse import RichHelpFormatter
-                kwargs["formatter_class"] = RichHelpFormatter
+                formatter_class = RichHelpFormatter
             except ImportError:
                 pass
+            if formatter_class is not None:
+                kwargs["formatter_class"] = formatter_class
         super().__init__(*args, **kwargs)
 
     def error(self, message: str) -> None:

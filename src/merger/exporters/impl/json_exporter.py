@@ -1,5 +1,6 @@
 import json
-from typing import Dict
+from pathlib import Path
+from typing import Dict, Optional
 
 from ..base import TreeExporter
 from ..registry import exporter_registry
@@ -10,7 +11,7 @@ from ...models import FileTree, DirectoryEntry, FileEntry, FileTreeEntry
 class JsonExporter(TreeExporter):
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
-        data: Dict[str, str] = {}
+        data: Dict[str, Optional[str]] = {}
         cls._serialize_entry(tree.root, data)
 
         return json.dumps(
@@ -24,7 +25,7 @@ class JsonExporter(TreeExporter):
     def _serialize_entry(
         cls,
         entry: FileTreeEntry,
-        out: Dict[str, str],
+        out: Dict[str, Optional[str]],
     ) -> None:
         if isinstance(entry, FileEntry):
             out[cls._serialize_path(entry.path)] = entry.content
@@ -44,6 +45,6 @@ class JsonExporter(TreeExporter):
         raise TypeError(f"Unsupported entry type: {type(entry)}")
 
     @staticmethod
-    def _serialize_path(path) -> str:
+    def _serialize_path(path: Path) -> str:
         path = path.as_posix()
         return path if path.startswith("./") or path == "." else f"./{path}"

@@ -24,7 +24,7 @@ class XmlExporter(TreeExporter):
         return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
     @classmethod
-    def _to_xml(cls, entry: FileTreeEntry, parent: ET.Element):
+    def _to_xml(cls, entry: FileTreeEntry, parent: ET.Element) -> None:
         if isinstance(entry, FileEntry):
             file_el = ET.SubElement(parent, "file", {
                 "name": entry.name,
@@ -42,7 +42,7 @@ class XmlExporter(TreeExporter):
                 cls._to_xml(child, dir_el)
 
     @classmethod
-    def _indent(cls, elem: ET.Element, level: int = 0):
+    def _indent(cls, elem: ET.Element, level: int = 0) -> None:
         """
         Recursive function to indent XML elements while preserving text content.
         """

@@ -1,9 +1,19 @@
+import importlib
 from pathlib import Path
-from typing import Union, Optional
+from types import ModuleType
+from typing import List, Optional, Union
 
-import pymupdf
 from merger.parsing.base import Parser
 from merger.parsing.registry import parser_registry
+
+_pymupdf: Optional[ModuleType] = None
+
+
+def _get_pymupdf() -> ModuleType:
+    global _pymupdf
+    if _pymupdf is None:
+        _pymupdf = importlib.import_module("pymupdf")
+    return _pymupdf
 
 
 @parser_registry.register(extensions={".pdf"})
@@ -20,7 +30,9 @@ class PdfParser(Parser):
         Validate that the given file bytes represent a readable PDF document.
         """
         try:
-            with pymupdf.open(stream=file_chunk_bytes) as doc:
+            pymupdf = _get_pymupdf()
+            open_pdf = getattr(pymupdf, "open")
+            with open_pdf(stream=file_chunk_bytes) as doc:
                 _ = doc[0]
             return True
 
@@ -36,8 +48,10 @@ class PdfParser(Parser):
         """
         Extracts and concatenates text from all pages of a PDF file.
         """
-        texts = []
-        with pymupdf.open(stream=file_bytes) as doc:
+        pymupdf = _get_pymupdf()
+        texts: List[str] = []
+        open_pdf = getattr(pymupdf, "open")
+        with open_pdf(stream=file_bytes) as doc:
             for page in doc:
                 text = page.get_text()
                 if text:

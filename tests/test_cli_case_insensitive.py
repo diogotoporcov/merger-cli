@@ -38,7 +38,7 @@ def test_cli_create_ignore_case_insensitive(tmp_path, monkeypatch, mock_config_d
     content = (tmp_path / "merger.ignore").read_text()
     assert "__pycache__/" in content
 
-def test_cli_log_level_case_insensitive(tmp_path, monkeypatch, capsys, mock_config_dir):
+def test_cli_log_level_case_insensitive(tmp_path, monkeypatch, mock_config_dir):
     project_dir = tmp_path / "myproj"
     project_dir.mkdir()
     (tmp_path / "merger.ignore").touch()
@@ -48,5 +48,4 @@ def test_cli_log_level_case_insensitive(tmp_path, monkeypatch, capsys, mock_conf
     with patch.object(sys, 'argv', ['merger', str(project_dir), '--log-level', 'debug']):
         main()
     
-    captured = capsys.readouterr()
     # Verify no crash when 'debug' is passed as lowercase.

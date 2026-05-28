@@ -21,7 +21,7 @@ class MarkdownExporter(TreeExporter):
         return "\n".join(lines).encode("utf-8")
 
     @classmethod
-    def _to_markdown(cls, entry: FileTreeEntry, lines: List[str], level: int):
+    def _to_markdown(cls, entry: FileTreeEntry, lines: List[str], level: int) -> None:
         if isinstance(entry, FileEntry):
             lines.append(f"{'#' * level} File: `{entry.name}`")
             lines.append(f"Path: `{entry.path.as_posix()}`")

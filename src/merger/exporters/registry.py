@@ -8,7 +8,7 @@ from ..utils.config import get_or_create_exporters_dir
 from ..utils.plugin_loader import PluginManager
 
 
-def _validate_exporter_plugin(path: Path, module: ModuleType, cls: Type[TreeExporter]) -> None:
+def _validate_exporter_plugin(path: Path, _module: ModuleType, cls: Type[TreeExporter]) -> None:
     if not getattr(cls, "NAME", None):
         raise InvalidPlugin(path.as_posix(), "Exporter plugin class does not contain NAME attribute")
 
@@ -20,7 +20,7 @@ _manager = PluginManager[TreeExporter](
     plugin_type_name="exporter",
     base_class=TreeExporter,
     get_target_dir=get_or_create_exporters_dir,
-    key_getter=lambda module, cls: [cls.NAME.upper()],
+    key_getter=lambda _module, cls: [cls.NAME.upper()],
     validate_func=_validate_exporter_plugin,
 )
 

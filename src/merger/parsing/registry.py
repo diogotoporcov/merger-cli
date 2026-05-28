@@ -12,7 +12,7 @@ _EXTENSION_REGEX_STR = r"\.[a-z0-9.]+$"
 _EXTENSION_REGEX = re.compile(_EXTENSION_REGEX_STR, re.IGNORECASE)
 
 
-def _validate_parser_plugin(path: Path, module: ModuleType, cls: Type[Parser]) -> None:
+def _validate_parser_plugin(path: Path, _module: ModuleType, cls: Type[Parser]) -> None:
     extensions = getattr(cls, "EXTENSIONS", None)
     if extensions is None:
         raise InvalidPlugin(path.as_posix(), "Parser plugin class does not contain EXTENSIONS attribute")
@@ -34,7 +34,7 @@ _manager = PluginManager[Parser](
     plugin_type_name="parser",
     base_class=Parser,
     get_target_dir=get_or_create_parsers_dir,
-    key_getter=lambda module, cls: [ext.lower() for ext in cls.EXTENSIONS],
+    key_getter=lambda _module, cls: [ext.lower() for ext in cls.EXTENSIONS],
     validate_func=_validate_parser_plugin,
 )
 

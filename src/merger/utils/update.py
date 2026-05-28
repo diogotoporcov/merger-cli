@@ -5,14 +5,18 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Optional, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, Final, List, Optional, Tuple
 
 from .config import get_merger_dir
 from .version import get_version
 from ..logging.constants import LOG_COLORS
 
+if TYPE_CHECKING:
+    from rich.console import Console
+
 # Minimum interval between network requests to PyPI (in seconds)
-MIN_CHECK_INTERVAL = 3600
+MIN_CHECK_INTERVAL: Final[int] = 3600
 
 # Globals for asynchronous update check
 _pending_message: Optional[str] = None
@@ -36,7 +40,13 @@ def get_latest_version(package_name: str = "merger-cli", etag: Optional[str] = N
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.getcode() == 200:
                 data = json.loads(response.read().decode())
-                latest = data.get("info", {}).get("version")
+                latest = None
+                if isinstance(data, dict):
+                    info = data.get("info")
+                    if isinstance(info, dict):
+                        version = info.get("version")
+                        if isinstance(version, str):
+                            latest = version
                 new_etag = response.info().get("ETag")
                 return latest, new_etag, True
 
@@ -62,7 +72,11 @@ def get_latest_github_version(repo_url: str = "https://github.com/diogotoporcov/
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.getcode() == 200:
                 data = json.loads(response.read().decode())
-                tag = data.get("tag_name", "")
+                tag = ""
+                if isinstance(data, dict):
+                    raw_tag = data.get("tag_name")
+                    if isinstance(raw_tag, str):
+                        tag = raw_tag
                 # Remove 'v' prefix if present
                 if tag.startswith("v"):
                     tag = tag[1:]
@@ -78,9 +92,9 @@ def is_newer_version(latest: str, current: str) -> bool:
         return version.parse(latest) > version.parse(current)
 
     except (ImportError, Exception):
-        def parse(v):
+        def parse(v: str) -> List[int]:
             parts = re.split(r'([a-zA-Z]+|\d+)', v)
-            result = []
+            result: List[int] = []
             for p in parts:
                 p = p.strip('-._ ')
                 if not p:
@@ -128,7 +142,29 @@ def is_ci_environment() -> bool:
     ]
     return any(os.environ.get(var) for var in ci_vars)
 
-def check_for_updates():
+def _read_cache(cache_file: Path) -> Tuple[Optional[str], Optional[str], float]:
+    try:
+        with open(cache_file, "r") as file:
+            cache = json.load(file)
+
+    except (json.JSONDecodeError, OSError):
+        return None, None, 0.0
+
+    if not isinstance(cache, dict):
+        return None, None, 0.0
+
+    latest_version = cache.get("latest_version")
+    etag = cache.get("etag")
+    last_check = cache.get("last_check", 0)
+
+    return (
+        latest_version if isinstance(latest_version, str) else None,
+        etag if isinstance(etag, str) else None,
+        float(last_check) if isinstance(last_check, (int, float)) else 0.0,
+    )
+
+
+def check_for_updates() -> None:
     """
     Start the update check process. 
     It will check cache first, and if needed, start a background thread for network check.
@@ -152,12 +188,7 @@ def check_for_updates():
 
     try:
         if cache_file.exists():
-            with open(cache_file, "r") as file:
-                cache = json.load(file)
-            
-            cached_version = cache.get("latest_version")
-            cached_etag = cache.get("etag")
-            last_check = cache.get("last_check", 0)
+            cached_version, cached_etag, last_check = _read_cache(cache_file)
             
             if cached_version and is_newer_version(cached_version, current_version):
                 set_pending_update_message(current_version, cached_version)
@@ -176,7 +207,13 @@ def check_for_updates():
     )
     _update_thread.start()
 
-def _update_worker(current_version, cache_file, cache_dir, cached_version, cached_etag):
+def _update_worker(
+    current_version: str,
+    cache_file: Path,
+    cache_dir: Path,
+    cached_version: Optional[str],
+    cached_etag: Optional[str],
+) -> None:
     """Background worker to check for updates."""
     # Check PyPI (if it was installed via pip previously)
     latest_version, new_etag, changed = get_latest_version(etag=cached_etag)
@@ -210,7 +247,7 @@ def _update_worker(current_version, cache_file, cache_dir, cached_version, cache
     if is_newer_version(latest_version, current_version):
         set_pending_update_message(current_version, latest_version)
 
-def set_pending_update_message(current: str, latest: str):
+def set_pending_update_message(current: str, latest: str) -> None:
     """Prepare the update message to be displayed later."""
     global _pending_message
     
@@ -221,10 +258,10 @@ def set_pending_update_message(current: str, latest: str):
         f"{update_cmd}"
     )
 
-_update_console = None
+_update_console: Optional["Console"] = None
 
 
-def finalize_update_check():
+def finalize_update_check() -> None:
     """Display the update message if one is pending. Call this at the end of the program."""
     global _pending_message, _update_console
     if _pending_message:

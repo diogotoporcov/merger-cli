@@ -10,6 +10,9 @@ class FileTreeEntry(ABC):
     """
     Abstract base class for all file tree entries.
     """
+    name: str
+    path: Path
+    type: FileTreeEntryType
 
 
 @dataclass(frozen=True)

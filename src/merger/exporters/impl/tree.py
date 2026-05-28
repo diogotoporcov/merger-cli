@@ -8,7 +8,10 @@ class TreeStructureExporter(TreeExporter):
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
         def format_name(entry: FileTreeEntry) -> str:
-            return f"{entry.name}/" if isinstance(entry, DirectoryEntry) else entry.name
+            if isinstance(entry, DirectoryEntry):
+                return f"{entry.name}/"
+
+            return entry.name
 
         lines = [format_name(tree.root)]
 
