@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 from types import ModuleType
-from typing import Type, Dict
+from typing import Dict, List, Optional, Tuple, Type
 
 from .base import Parser
 from ..exceptions import InvalidPlugin
@@ -39,29 +39,53 @@ _manager = PluginManager[Parser](
 )
 
 parser_registry = _manager
-install_parser = _manager.install
-uninstall_parser = _manager.uninstall
 list_parsers = _manager.list
 load_parsers = _manager.load_all
 validate_parsers = _manager.validate_all
 get_parser_plugin_type = _manager.get_plugin_type
 
 _PARSER_CACHE: Dict[str, Type[Parser]] = {}
+_EXTENSION_TO_PLUGIN_ID_CACHE: Optional[Dict[str, str]] = None
+_SORTED_EXTENSIONS_CACHE: Optional[List[str]] = None
+
+
+def _clear_parser_caches() -> None:
+    global _EXTENSION_TO_PLUGIN_ID_CACHE, _SORTED_EXTENSIONS_CACHE
+    _PARSER_CACHE.clear()
+    _EXTENSION_TO_PLUGIN_ID_CACHE = None
+    _SORTED_EXTENSIONS_CACHE = None
+
+
+def install_parser(path: Path) -> None:
+    _manager.install(path)
+    _clear_parser_caches()
+
+
+def uninstall_parser(plugin_id: str) -> None:
+    _manager.uninstall(plugin_id)
+    _clear_parser_caches()
+
+
+def _get_extension_lookup() -> Tuple[Dict[str, str], List[str]]:
+    global _EXTENSION_TO_PLUGIN_ID_CACHE, _SORTED_EXTENSIONS_CACHE
+    if _EXTENSION_TO_PLUGIN_ID_CACHE is None or _SORTED_EXTENSIONS_CACHE is None:
+        ext_to_id: Dict[str, str] = {}
+        for meta in list_parsers():
+            for ext in meta.extensions:
+                ext_to_id[ext.lower()] = meta.id
+
+        _EXTENSION_TO_PLUGIN_ID_CACHE = ext_to_id
+        _SORTED_EXTENSIONS_CACHE = sorted(ext_to_id.keys(), key=len, reverse=True)
+
+    return _EXTENSION_TO_PLUGIN_ID_CACHE, _SORTED_EXTENSIONS_CACHE
 
 
 def get_parser(filename: str) -> Type[Parser]:
     from .impl.text import TextParser
     filename_lower = filename.lower()
-    parsers_meta = list_parsers()
-
-    # Map extension to plugin_id
-    ext_to_id: Dict[str, str] = {}
-    for meta in parsers_meta:
-        for ext in meta.extensions:
-            ext_to_id[ext.lower()] = meta.id
+    ext_to_id, sorted_extensions = _get_extension_lookup()
 
     # Try longest extensions first (e.g., .tar.gz before .gz)
-    sorted_extensions = sorted(ext_to_id.keys(), key=len, reverse=True)
     for extension in sorted_extensions:
         if filename_lower.endswith(extension):
             plugin_id = ext_to_id[extension]

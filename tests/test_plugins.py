@@ -1,5 +1,6 @@
 import pytest
 from merger.parsing.base import Parser
+from merger.parsing.impl.text import TextParser
 from merger.utils.db import PluginRecord
 from merger.utils.plugin_loader import PluginManager
 
@@ -103,3 +104,25 @@ def test_plugin_loader_load_all_with_broken_Plugin(Plugin_dir, mock_config_dir, 
     
     assert len(loaded) == 0
     assert any("Failed to load" in record.message for record in caplog.records)
+
+
+def test_get_parser_caches_plugin_metadata(monkeypatch):
+    from merger.parsing import registry
+
+    calls = 0
+
+    def list_parsers():
+        nonlocal calls
+        calls += 1
+        return []
+
+    registry._clear_parser_caches()
+    monkeypatch.setattr(registry, "list_parsers", list_parsers)
+
+    try:
+        assert registry.get_parser("one.py") is TextParser
+        assert registry.get_parser("two.java") is TextParser
+        assert calls == 1
+
+    finally:
+        registry._clear_parser_caches()
