@@ -53,7 +53,16 @@ instance/
 .flaskenv
 .DS_Store
 
-# Tool-specific output (when running tests)
+# AI / Assistant files
+.aiignore
+.aiassistant
+AGENTS.md
+README-CODEX-RULES.md
+.codex
+.agents
+docs/codex
+
+# Tool-specific output
 merger.txt
 merger.json
 merger.ignore
