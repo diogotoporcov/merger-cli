@@ -79,6 +79,20 @@ class TestMagicUtils(unittest.TestCase):
         with patch("charset_normalizer.from_bytes") as from_bytes:
             content = TextParser.parse("café".encode("utf-8"), Path("test.txt"))
 
+        self.assertEqual(content, "caf\u00e9")
+        from_bytes.assert_not_called()
+
+    def test_non_utf8_text_validation_skips_charset_detection(self):
+        with patch("charset_normalizer.from_bytes") as from_bytes:
+            valid = TextParser.validate(b"caf\xe9", Path("test.txt"))
+
+        self.assertTrue(valid)
+        from_bytes.assert_not_called()
+
+    def test_non_utf8_text_parse_skips_charset_detection(self):
+        with patch("charset_normalizer.from_bytes") as from_bytes:
+            content = TextParser.parse(b"caf\xe9", Path("test.txt"))
+
         self.assertEqual(content, "café")
         from_bytes.assert_not_called()
 

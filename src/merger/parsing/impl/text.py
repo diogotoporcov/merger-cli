@@ -13,6 +13,7 @@ class TextParser(Parser):
 
     TEXT_CONFIDENCE_THRESHOLD: ClassVar[float] = 0.8
     MAX_BINARY_RATIO: ClassVar[float] = 0.30
+    FALLBACK_ENCODINGS: ClassVar[Tuple[str, ...]] = ("cp1252", "latin-1")
 
     TEXT_EXTENSIONS: ClassVar[FrozenSet[str]] = frozenset({
         ".bat",
@@ -124,6 +125,23 @@ class TextParser(Parser):
             return result.encoding, result.coherence
         return "utf-8", 0.0
 
+    @classmethod
+    def decode_text(cls, file_bytes: Union[bytes, bytearray]) -> str:
+        try:
+            return file_bytes.decode("utf-8")
+
+        except UnicodeDecodeError:
+            pass
+
+        for encoding in cls.FALLBACK_ENCODINGS:
+            try:
+                return file_bytes.decode(encoding)
+
+            except (UnicodeDecodeError, LookupError):
+                continue
+
+        return file_bytes.decode("utf-8", errors="backslashreplace")
+
     @staticmethod
     def guess_mime_type(
         file_chunk: Union[bytes, bytearray],
@@ -191,16 +209,7 @@ class TextParser(Parser):
                 return False
 
         try:
-            file_chunk_bytes.decode("utf-8")
-            return True
-
-        except UnicodeDecodeError:
-            pass
-
-        encoding, _ = cls.guess_encoding(file_chunk_bytes)
-
-        try:
-            file_chunk_bytes.decode(encoding)
+            cls.decode_text(file_chunk_bytes)
             return True
 
         except (UnicodeDecodeError, LookupError):
@@ -212,16 +221,4 @@ class TextParser(Parser):
         file_bytes: Union[bytes, bytearray],
         file_path: Path
     ) -> str:
-        try:
-            return file_bytes.decode("utf-8")
-
-        except UnicodeDecodeError:
-            pass
-
-        encoding, _ = cls.guess_encoding(file_bytes[:2048])
-
-        try:
-            return file_bytes.decode(encoding)
-
-        except (UnicodeDecodeError, LookupError):
-            return file_bytes.decode("utf-8", errors="backslashreplace")
+        return cls.decode_text(file_bytes)
