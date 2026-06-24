@@ -69,32 +69,32 @@ class TestMagicUtils(unittest.TestCase):
         from_buffer.assert_not_called()
 
     def test_utf8_validation_skips_charset_detection(self):
-        with patch("charset_normalizer.from_bytes") as from_bytes:
+        with patch("chardet.detect") as detect:
             valid = TextParser.validate("café".encode("utf-8"), Path("test.txt"))
 
         self.assertTrue(valid)
-        from_bytes.assert_not_called()
+        detect.assert_not_called()
 
     def test_utf8_parse_skips_charset_detection(self):
-        with patch("charset_normalizer.from_bytes") as from_bytes:
+        with patch("chardet.detect") as detect:
             content = TextParser.parse("café".encode("utf-8"), Path("test.txt"))
 
         self.assertEqual(content, "caf\u00e9")
-        from_bytes.assert_not_called()
+        detect.assert_not_called()
 
-    def test_non_utf8_text_validation_skips_charset_detection(self):
-        with patch("charset_normalizer.from_bytes") as from_bytes:
+    def test_non_utf8_text_validation_uses_charset_detection(self):
+        with patch("chardet.detect", return_value={"encoding": "cp1252", "confidence": 0.73}) as detect:
             valid = TextParser.validate(b"caf\xe9", Path("test.txt"))
 
         self.assertTrue(valid)
-        from_bytes.assert_not_called()
+        detect.assert_called_once()
 
-    def test_non_utf8_text_parse_skips_charset_detection(self):
-        with patch("charset_normalizer.from_bytes") as from_bytes:
+    def test_non_utf8_text_parse_uses_charset_detection(self):
+        with patch("chardet.detect", return_value={"encoding": "cp1252", "confidence": 0.73}) as detect:
             content = TextParser.parse(b"caf\xe9", Path("test.txt"))
 
         self.assertEqual(content, "café")
-        from_bytes.assert_not_called()
+        detect.assert_called_once()
 
     def test_final_fallback_to_text(self):
         # If both magic and mimetypes fail, but it looks like text

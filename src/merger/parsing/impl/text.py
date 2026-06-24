@@ -2,7 +2,7 @@ import mimetypes
 from pathlib import Path
 from typing import ClassVar, FrozenSet, Optional, Tuple, Union
 
-import charset_normalizer
+import chardet
 import magic
 
 from ..base import Parser
@@ -120,9 +120,12 @@ class TextParser(Parser):
 
     @staticmethod
     def guess_encoding(file_chunk: Union[bytes, bytearray]) -> Tuple[str, float]:
-        result = charset_normalizer.from_bytes(file_chunk).best()
-        if result:
-            return result.encoding, result.coherence
+        result = chardet.detect(bytes(file_chunk))
+        encoding = result.get("encoding")
+        confidence = result.get("confidence", 0.0)
+        if isinstance(encoding, str):
+            return encoding, float(confidence)
+
         return "utf-8", 0.0
 
     @classmethod
@@ -131,6 +134,13 @@ class TextParser(Parser):
             return file_bytes.decode("utf-8")
 
         except UnicodeDecodeError:
+            pass
+
+        encoding, _ = cls.guess_encoding(file_bytes[:2048])
+        try:
+            return file_bytes.decode(encoding)
+
+        except (UnicodeDecodeError, LookupError):
             pass
 
         for encoding in cls.FALLBACK_ENCODINGS:
