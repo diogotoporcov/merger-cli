@@ -14,6 +14,48 @@ class TextParser(Parser):
     TEXT_CONFIDENCE_THRESHOLD: ClassVar[float] = 0.8
     MAX_BINARY_RATIO: ClassVar[float] = 0.30
 
+    TEXT_EXTENSIONS: ClassVar[FrozenSet[str]] = frozenset({
+        ".bat",
+        ".c",
+        ".cfg",
+        ".conf",
+        ".cpp",
+        ".cs",
+        ".css",
+        ".csv",
+        ".dockerignore",
+        ".env",
+        ".go",
+        ".gradle",
+        ".gradle.kts",
+        ".h",
+        ".hpp",
+        ".html",
+        ".ini",
+        ".java",
+        ".js",
+        ".json",
+        ".jsx",
+        ".kt",
+        ".kts",
+        ".log",
+        ".md",
+        ".pbtxt",
+        ".properties",
+        ".py",
+        ".rb",
+        ".rs",
+        ".sh",
+        ".sql",
+        ".toml",
+        ".ts",
+        ".tsx",
+        ".txt",
+        ".xml",
+        ".yaml",
+        ".yml",
+    })
+
     TEXTUAL_APPLICATION_MIMES: ClassVar[FrozenSet[str]] = frozenset({
         # JSON (files)
         "application/json",
@@ -60,6 +102,21 @@ class TextParser(Parser):
         "inode/x-empty",
     })
 
+    @classmethod
+    def is_text_mime(cls, mime_type: str) -> bool:
+        return (
+            mime_type.startswith("text/")
+            or mime_type in cls.TEXTUAL_APPLICATION_MIMES
+        )
+
+    @classmethod
+    def is_known_text_path(cls, file_path: Path) -> bool:
+        suffixes = [suffix.lower() for suffix in file_path.suffixes]
+        if any(suffix in cls.TEXT_EXTENSIONS for suffix in suffixes):
+            return True
+
+        return "".join(suffixes) in cls.TEXT_EXTENSIONS
+
     @staticmethod
     def guess_encoding(file_chunk: Union[bytes, bytearray]) -> Tuple[str, float]:
         result = charset_normalizer.from_bytes(file_chunk).best()
@@ -74,6 +131,16 @@ class TextParser(Parser):
     ) -> Optional[str]:
         from ...logging import logger
         mime = None
+        try:
+            guess, _ = mimetypes.guess_type(file_path)
+            if guess and TextParser.is_text_mime(guess):
+                return guess
+        except Exception as e:
+            logger.debug(f"mimetypes fallback failed for {file_path}: {e}")
+
+        if TextParser.is_known_text_path(file_path):
+            return "text/plain"
+
         try:
             mime = magic.from_buffer(file_chunk, mime=True)
         except Exception as e:
@@ -114,19 +181,14 @@ class TextParser(Parser):
         file_chunk_bytes: Union[bytes, bytearray],
         file_path: Path
     ) -> bool:
+        if cls.looks_binary(file_chunk_bytes):
+            return False
+
         mime_type = cls.guess_mime_type(file_chunk_bytes, file_path=file_path)
 
         if mime_type:
-            is_text_mime = (
-                mime_type.startswith("text/")
-                or mime_type in cls.TEXTUAL_APPLICATION_MIMES
-            )
-
-            if not is_text_mime:
+            if not cls.is_text_mime(mime_type):
                 return False
-
-        if cls.looks_binary(file_chunk_bytes):
-            return False
 
         encoding, _ = cls.guess_encoding(file_chunk_bytes)
 

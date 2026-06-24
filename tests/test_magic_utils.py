@@ -46,6 +46,28 @@ class TestMagicUtils(unittest.TestCase):
                 mime = TextParser.guess_mime_type(b"test content", Path("test.txt"))
                 self.assertEqual(mime, "text/plain")
 
+    def test_known_text_extension_skips_magic(self):
+        with patch("magic.from_buffer") as from_buffer:
+            valid = TextParser.validate(b"test content", Path("test.txt"))
+
+        self.assertTrue(valid)
+        from_buffer.assert_not_called()
+
+    def test_known_source_extension_skips_magic(self):
+        with patch("mimetypes.guess_type", return_value=(None, None)):
+            with patch("magic.from_buffer") as from_buffer:
+                valid = TextParser.validate(b"class Example {}", Path("Example.java"))
+
+        self.assertTrue(valid)
+        from_buffer.assert_not_called()
+
+    def test_binary_validation_skips_magic(self):
+        with patch("magic.from_buffer") as from_buffer:
+            valid = TextParser.validate(b"binary\x00content", Path("test.bin"))
+
+        self.assertFalse(valid)
+        from_buffer.assert_not_called()
+
     def test_final_fallback_to_text(self):
         # If both magic and mimetypes fail, but it looks like text
         with patch("magic.from_buffer", return_value=None):
