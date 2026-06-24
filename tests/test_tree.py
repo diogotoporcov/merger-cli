@@ -144,3 +144,15 @@ def test_scanner_reads_full_content_after_partial_validation_read(tmp_path):
     assert isinstance(entry, FileEntry)
     assert entry.content == "a" * 2048
     assert read_calls == [1024, None]
+
+
+def test_scanner_can_skip_file_content(tmp_path):
+    path = tmp_path / "file.txt"
+    path.write_text("content", encoding="utf-8")
+
+    with patch("merger.utils.files.read_file_bytes", side_effect=AssertionError("file content should not be read")):
+        tree = FileTreeScanner.scan(tmp_path, include_content=False)
+
+    entry = tree.root.children[Path("file.txt")]
+    assert isinstance(entry, FileEntry)
+    assert entry.content is None

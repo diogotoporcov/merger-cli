@@ -5,6 +5,8 @@ from ...models import FileTree, DirectoryEntry, FileTreeEntry
 
 @exporter_registry.register(name="TREE", extension=".txt")
 class TreeStructureExporter(TreeExporter):
+    REQUIRES_CONTENT = False
+
     @classmethod
     def export(cls, tree: FileTree) -> bytes:
         def format_name(entry: FileTreeEntry) -> str:

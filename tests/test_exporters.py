@@ -56,6 +56,13 @@ def test_tree_with_plain_text_exporter(complex_tree):
     assert "src/" in output
     assert "<<FILE_START: ./src/main.py>>" in output
 
+def test_exporter_content_requirements():
+    assert not TreeStructureExporter.REQUIRES_CONTENT
+    assert TextExporter.REQUIRES_CONTENT
+    assert TreeTextExporter.REQUIRES_CONTENT
+    assert JsonExporter.REQUIRES_CONTENT
+    assert JsonTreeExporter.REQUIRES_CONTENT
+
 def test_directory_tree_exporter_order(tmp_path):
     (tmp_path / "z_dir").mkdir()
     (tmp_path / "a_dir").mkdir()

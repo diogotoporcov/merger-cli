@@ -59,14 +59,20 @@ def main() -> None:
         # Normalize and deduplicate ignore patterns to use consistent forward slashes.
         ignore_patterns = list(set(pattern.replace("\\", "/") for pattern in ignore_patterns))
 
-        from ..utils.magic import check_libmagic_availability
-        check_libmagic_availability()
-
-        from ..file_tree.scanner import FileTreeScanner
         from ..exporters.factory import get_exporter_strategy
-        tree = FileTreeScanner.scan(args.input_dir, ignore_patterns)
         exporter_info = get_exporter_strategy(args.exporter)
         logger.info(f"Using {exporter_info.name} exporter.")
+
+        if exporter_info.cls.REQUIRES_CONTENT:
+            from ..utils.magic import check_libmagic_availability
+            check_libmagic_availability()
+
+        from ..file_tree.scanner import FileTreeScanner
+        tree = FileTreeScanner.scan(
+            args.input_dir,
+            ignore_patterns,
+            include_content=exporter_info.cls.REQUIRES_CONTENT,
+        )
 
         output_ext = exporter_info.file_extension
         if output_ext.startswith("."):

@@ -11,6 +11,7 @@ class TreeExporter(ABC):
     """
     NAME: ClassVar[str]
     FILE_EXTENSION: ClassVar[str]
+    REQUIRES_CONTENT: ClassVar[bool] = True
 
     @classmethod
     @abstractmethod

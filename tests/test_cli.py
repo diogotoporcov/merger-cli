@@ -132,3 +132,22 @@ def test_cli_merge_qualifier_file_only(tmp_path, monkeypatch, capsys, mock_confi
     
     content = (output_dir / "merger.txt").read_text()
     assert "data.txt" not in content
+
+def test_cli_tree_exporter_does_not_read_file_content(tmp_path, monkeypatch, mock_config_dir):
+    project_dir = tmp_path / "myproj"
+    project_dir.mkdir()
+    (project_dir / "file.txt").write_text("hello", encoding="utf-8")
+
+    output_dir = tmp_path / "out"
+    output_dir.mkdir()
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "merger.ignore").touch()
+
+    with patch("merger.utils.files.read_file_bytes", side_effect=AssertionError("file content should not be read")):
+        with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'TREE']):
+            main()
+
+    content = (output_dir / "merger.txt").read_text()
+    assert "file.txt" in content
+    assert "hello" not in content

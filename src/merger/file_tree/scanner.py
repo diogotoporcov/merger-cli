@@ -16,7 +16,8 @@ class FileTreeScanner:
     def scan(
             cls,
             path: Path,
-            ignore_patterns: Optional[Sequence[str]] = None
+            ignore_patterns: Optional[Sequence[str]] = None,
+            include_content: bool = True,
     ) -> FileTree:
         if not path.is_dir():
             raise NotADirectoryError(f"{path} is not a directory")
@@ -24,7 +25,7 @@ class FileTreeScanner:
         root_path = path.resolve()
         spec = compile_patterns(ignore_patterns or [])
 
-        root_entry = cls._scan_and_parse(root_path, root_path, spec)
+        root_entry = cls._scan_and_parse(root_path, root_path, spec, include_content)
 
         if not isinstance(root_entry, DirectoryEntry):
             raise RuntimeError(f"Failed to parse the root directory: {root_path}")
@@ -36,7 +37,8 @@ class FileTreeScanner:
             cls,
             path: Path,
             root: Path,
-            spec: PatternSpec
+            spec: PatternSpec,
+            include_content: bool,
     ) -> Optional[FileTreeEntry]:
         from ..utils.files import read_file_bytes
 
@@ -57,7 +59,7 @@ class FileTreeScanner:
                 entries = []
 
             for entry_path in entries:
-                child_entry = cls._scan_and_parse(entry_path, root, spec)
+                child_entry = cls._scan_and_parse(entry_path, root, spec, include_content)
                 if child_entry is not None:
                     children[child_entry.path] = child_entry
 
@@ -65,6 +67,12 @@ class FileTreeScanner:
                 name=path.name,
                 path=rel_path,
                 children=children
+            )
+
+        if not include_content:
+            return FileEntry(
+                name=path.name,
+                path=rel_path,
             )
 
         parser = get_parser(path.name)
