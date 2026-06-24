@@ -39,10 +39,12 @@ class FileTreeScanner:
             root: Path,
             spec: PatternSpec,
             include_content: bool,
+            is_dir: Optional[bool] = None,
     ) -> Optional[FileTreeEntry]:
         from ..utils.files import read_file_bytes
 
-        is_dir = path.is_dir()
+        if is_dir is None:
+            is_dir = path.is_dir()
 
         if path != root and matches_any_pattern(path, root, spec, is_dir=is_dir):
             return None
@@ -53,13 +55,22 @@ class FileTreeScanner:
             children: Dict[Path, FileTreeEntry] = {}
             try:
                 # Sort entries: directories first, then files
-                entries = sorted(path.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+                entries = sorted(
+                    ((entry_path, entry_path.is_dir()) for entry_path in path.iterdir()),
+                    key=lambda entry: (not entry[1], entry[0].name.lower())
+                )
             except PermissionError:
                 logger.warning(f"Permission denied: {path}")
                 entries = []
 
-            for entry_path in entries:
-                child_entry = cls._scan_and_parse(entry_path, root, spec, include_content)
+            for entry_path, entry_is_dir in entries:
+                child_entry = cls._scan_and_parse(
+                    entry_path,
+                    root,
+                    spec,
+                    include_content,
+                    is_dir=entry_is_dir,
+                )
                 if child_entry is not None:
                     children[child_entry.path] = child_entry
 

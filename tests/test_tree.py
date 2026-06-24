@@ -156,3 +156,21 @@ def test_scanner_can_skip_file_content(tmp_path):
     entry = tree.root.children[Path("file.txt")]
     assert isinstance(entry, FileEntry)
     assert entry.content is None
+
+
+def test_scanner_reuses_sorted_child_directory_state(tmp_path):
+    (tmp_path / "src").mkdir()
+    (tmp_path / "file.txt").write_text("content", encoding="utf-8")
+
+    original_is_dir = Path.is_dir
+    calls = []
+
+    def is_dir(path):
+        calls.append(path)
+        return original_is_dir(path)
+
+    with patch.object(Path, "is_dir", is_dir):
+        FileTreeScanner.scan(tmp_path, include_content=False)
+
+    assert calls.count(tmp_path / "src") == 1
+    assert calls.count(tmp_path / "file.txt") == 1
