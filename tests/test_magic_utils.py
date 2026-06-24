@@ -68,6 +68,20 @@ class TestMagicUtils(unittest.TestCase):
         self.assertFalse(valid)
         from_buffer.assert_not_called()
 
+    def test_utf8_validation_skips_charset_detection(self):
+        with patch("charset_normalizer.from_bytes") as from_bytes:
+            valid = TextParser.validate("café".encode("utf-8"), Path("test.txt"))
+
+        self.assertTrue(valid)
+        from_bytes.assert_not_called()
+
+    def test_utf8_parse_skips_charset_detection(self):
+        with patch("charset_normalizer.from_bytes") as from_bytes:
+            content = TextParser.parse("café".encode("utf-8"), Path("test.txt"))
+
+        self.assertEqual(content, "café")
+        from_bytes.assert_not_called()
+
     def test_final_fallback_to_text(self):
         # If both magic and mimetypes fail, but it looks like text
         with patch("magic.from_buffer", return_value=None):

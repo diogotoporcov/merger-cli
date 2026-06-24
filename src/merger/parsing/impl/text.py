@@ -190,6 +190,13 @@ class TextParser(Parser):
             if not cls.is_text_mime(mime_type):
                 return False
 
+        try:
+            file_chunk_bytes.decode("utf-8")
+            return True
+
+        except UnicodeDecodeError:
+            pass
+
         encoding, _ = cls.guess_encoding(file_chunk_bytes)
 
         try:
@@ -205,6 +212,12 @@ class TextParser(Parser):
         file_bytes: Union[bytes, bytearray],
         file_path: Path
     ) -> str:
+        try:
+            return file_bytes.decode("utf-8")
+
+        except UnicodeDecodeError:
+            pass
+
         encoding, _ = cls.guess_encoding(file_bytes[:2048])
 
         try:
