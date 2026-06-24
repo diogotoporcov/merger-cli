@@ -40,12 +40,14 @@ class FileTreeScanner:
     ) -> Optional[FileTreeEntry]:
         from ..utils.files import read_file_bytes
 
-        if path != root and matches_any_pattern(path, root, spec):
+        is_dir = path.is_dir()
+
+        if path != root and matches_any_pattern(path, root, spec, is_dir=is_dir):
             return None
 
         rel_path = path.relative_to(root) if path != root else Path(".")
 
-        if path.is_dir():
+        if is_dir:
             children: Dict[Path, FileTreeEntry] = {}
             try:
                 # Sort entries: directories first, then files

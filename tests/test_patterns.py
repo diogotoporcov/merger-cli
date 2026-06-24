@@ -1,7 +1,8 @@
 import platform
+from unittest.mock import patch
 
 import pytest
-from merger.utils.patterns import matches_pattern
+from merger.utils.patterns import compile_patterns, matches_any_pattern, matches_pattern
 
 
 @pytest.fixture
@@ -19,6 +20,14 @@ def test_directory_match(root):
     dir_path.mkdir()
     assert matches_pattern(dir_path, root, "src")
     assert matches_pattern(dir_path, root, "src/")
+
+def test_matches_any_pattern_uses_supplied_directory_state(root):
+    dir_path = root / "src"
+    dir_path.mkdir()
+    spec = compile_patterns(["src/"])
+
+    with patch.object(type(dir_path), "is_dir", side_effect=AssertionError("is_dir should not be called")):
+        assert matches_any_pattern(dir_path, root, spec, is_dir=True)
 
 def test_wildcard_one_segment(root):
     file_path = root / "src" / "main.py"

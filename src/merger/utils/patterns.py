@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 import pathspec
 
@@ -76,6 +76,7 @@ def matches_any_pattern(
     path: Path,
     root: Path,
     spec: PatternSpec,
+    is_dir: Optional[bool] = None,
 ) -> bool:
     """
     Determine whether a filesystem path matches at least one pattern from
@@ -87,7 +88,8 @@ def matches_any_pattern(
         return False
 
     path_str = relative_path.as_posix()
-    is_dir = path.is_dir()
+    if is_dir is None:
+        is_dir = path.is_dir()
 
     # Empty pattern matches only the root
     if spec.has_empty_pattern and path_str == ".":
