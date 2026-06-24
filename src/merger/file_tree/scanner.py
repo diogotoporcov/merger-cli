@@ -72,7 +72,7 @@ class FileTreeScanner:
             if not parser.validate(validation_bytes, path):
                 return None
 
-            if max_bytes is not None:
+            if max_bytes is not None and len(validation_bytes) == max_bytes:
                 file_bytes = read_file_bytes(path)
             else:
                 file_bytes = validation_bytes

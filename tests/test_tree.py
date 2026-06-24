@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from merger.file_tree.scanner import FileTreeScanner
@@ -102,3 +103,44 @@ def test_tree_double_wildcard_ignore(tmp_path):
 def test_tree_empty(tmp_path):
     tree = FileTreeScanner.scan(tmp_path)
     assert len(tree.root.children) == 0
+
+
+def test_scanner_reuses_validation_bytes_for_small_file(tmp_path):
+    path = tmp_path / "small.txt"
+    path.write_text("small file", encoding="utf-8")
+
+    read_calls = []
+
+    def read_file_bytes(filepath, chunk_size=None):
+        read_calls.append(chunk_size)
+        return path.read_bytes()
+
+    with patch("merger.utils.files.read_file_bytes", side_effect=read_file_bytes):
+        tree = FileTreeScanner.scan(tmp_path)
+
+    entry = tree.root.children[Path("small.txt")]
+    assert isinstance(entry, FileEntry)
+    assert entry.content == "small file"
+    assert read_calls == [1024]
+
+
+def test_scanner_reads_full_content_after_partial_validation_read(tmp_path):
+    path = tmp_path / "large.txt"
+    path.write_text("a" * 2048, encoding="utf-8")
+
+    read_calls = []
+
+    def read_file_bytes(filepath, chunk_size=None):
+        read_calls.append(chunk_size)
+        if chunk_size is None:
+            return path.read_bytes()
+
+        return path.read_bytes()[:chunk_size]
+
+    with patch("merger.utils.files.read_file_bytes", side_effect=read_file_bytes):
+        tree = FileTreeScanner.scan(tmp_path)
+
+    entry = tree.root.children[Path("large.txt")]
+    assert isinstance(entry, FileEntry)
+    assert entry.content == "a" * 2048
+    assert read_calls == [1024, None]
