@@ -1,13 +1,5 @@
 from pathlib import Path
-from typing import Optional, Set
-
-
-def read_file_bytes(filepath: Path, chunk_size: Optional[int] = None) -> bytes:
-    with open(filepath, "rb") as f:
-        if chunk_size is not None:
-            return f.read(chunk_size)
-
-        return f.read()
+from typing import Set
 
 
 def read_merger_ignore_file(filepath: Path) -> Set[str]:

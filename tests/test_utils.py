@@ -18,16 +18,8 @@ def test_read_ignore_template():
     
     with pytest.raises(UnknownIgnoreTemplate):
         read_ignore_template("NON_EXISTENT")
-from merger.utils.files import read_file_bytes, read_merger_ignore_file
+from merger.utils.files import read_merger_ignore_file
 from merger.utils.hash import hash_from_file
-
-def test_read_file_bytes(tmp_path):
-    file_path = tmp_path / "test.bin"
-    content = b"\x00\x01\x02\x03\x04\x05"
-    file_path.write_bytes(content)
-    
-    assert read_file_bytes(file_path) == content
-    assert read_file_bytes(file_path, chunk_size=3) == b"\x00\x01\x02"
 
 def test_read_merger_ignore_file(tmp_path):
     ignore_file = tmp_path / "merger.ignore"

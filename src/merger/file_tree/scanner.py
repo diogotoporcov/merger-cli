@@ -41,8 +41,6 @@ class FileTreeScanner:
             include_content: bool,
             is_dir: Optional[bool] = None,
     ) -> Optional[FileTreeEntry]:
-        from ..utils.files import read_file_bytes
-
         if is_dir is None:
             is_dir = path.is_dir()
 
@@ -89,14 +87,21 @@ class FileTreeScanner:
         parser = get_parser(path.name)
         max_bytes = getattr(parser, "MAX_BYTES_FOR_VALIDATION", 1024)
         try:
-            validation_bytes = read_file_bytes(path, max_bytes)
-            if not parser.validate(validation_bytes, path):
-                return None
+            with path.open("rb") as file:
+                if max_bytes is None:
+                    file_bytes = file.read()
+                    validation_bytes = file_bytes
+                else:
+                    validation_bytes = file.read(max_bytes)
 
-            if max_bytes is not None and len(validation_bytes) == max_bytes:
-                file_bytes = read_file_bytes(path)
-            else:
-                file_bytes = validation_bytes
+                if not parser.validate(validation_bytes, path):
+                    return None
+
+                if max_bytes is not None:
+                    if len(validation_bytes) == max_bytes:
+                        file_bytes = validation_bytes + file.read()
+                    else:
+                        file_bytes = validation_bytes
 
             content = parser.parse(file_bytes, path)
             return FileEntry(

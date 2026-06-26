@@ -144,7 +144,7 @@ def test_cli_tree_exporter_does_not_read_file_content(tmp_path, monkeypatch, moc
     monkeypatch.chdir(tmp_path)
     (tmp_path / "merger.ignore").touch()
 
-    with patch("merger.utils.files.read_file_bytes", side_effect=AssertionError("file content should not be read")):
+    with patch("merger.parsing.impl.text.TextParser.parse", side_effect=AssertionError("file content should not be read")):
         with patch.object(sys, 'argv', ['merger', str(project_dir), str(output_dir), '-e', 'TREE']):
             main()
 

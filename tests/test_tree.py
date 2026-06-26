@@ -109,48 +109,51 @@ def test_scanner_reuses_validation_bytes_for_small_file(tmp_path):
     path = tmp_path / "small.txt"
     path.write_text("small file", encoding="utf-8")
 
-    read_calls = []
+    original_open = Path.open
+    open_calls = []
 
-    def read_file_bytes(filepath, chunk_size=None):
-        read_calls.append(chunk_size)
-        return path.read_bytes()
+    def open_path(open_path, *args, **kwargs):
+        if open_path == path:
+            open_calls.append(args)
 
-    with patch("merger.utils.files.read_file_bytes", side_effect=read_file_bytes):
+        return original_open(open_path, *args, **kwargs)
+
+    with patch.object(Path, "open", open_path):
         tree = FileTreeScanner.scan(tmp_path)
 
     entry = tree.root.children[Path("small.txt")]
     assert isinstance(entry, FileEntry)
     assert entry.content == "small file"
-    assert read_calls == [1024]
+    assert open_calls == [("rb",)]
 
 
 def test_scanner_reads_full_content_after_partial_validation_read(tmp_path):
     path = tmp_path / "large.txt"
     path.write_text("a" * 2048, encoding="utf-8")
 
-    read_calls = []
+    original_open = Path.open
+    open_calls = []
 
-    def read_file_bytes(filepath, chunk_size=None):
-        read_calls.append(chunk_size)
-        if chunk_size is None:
-            return path.read_bytes()
+    def open_path(open_path, *args, **kwargs):
+        if open_path == path:
+            open_calls.append(args)
 
-        return path.read_bytes()[:chunk_size]
+        return original_open(open_path, *args, **kwargs)
 
-    with patch("merger.utils.files.read_file_bytes", side_effect=read_file_bytes):
+    with patch.object(Path, "open", open_path):
         tree = FileTreeScanner.scan(tmp_path)
 
     entry = tree.root.children[Path("large.txt")]
     assert isinstance(entry, FileEntry)
     assert entry.content == "a" * 2048
-    assert read_calls == [1024, None]
+    assert open_calls == [("rb",)]
 
 
 def test_scanner_can_skip_file_content(tmp_path):
     path = tmp_path / "file.txt"
     path.write_text("content", encoding="utf-8")
 
-    with patch("merger.utils.files.read_file_bytes", side_effect=AssertionError("file content should not be read")):
+    with patch.object(Path, "open", side_effect=AssertionError("file content should not be read")):
         tree = FileTreeScanner.scan(tmp_path, include_content=False)
 
     entry = tree.root.children[Path("file.txt")]
