@@ -104,6 +104,23 @@ class TestMagicUtils(unittest.TestCase):
                 self.assertTrue(valid)
                 from_buffer.assert_not_called()
 
+    def test_final_binary_wrapper_suffix_is_not_known_text(self):
+        paths = [
+            Path("common-passwords.txt.gz"),
+            Path("fixture.json.bz2"),
+            Path("fixture.json.xz"),
+            Path("project_template.tgz"),
+            Path("archive.tar"),
+            Path("fixture.json.zip"),
+        ]
+
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertFalse(TextParser.is_known_text_path(path))
+
+    def test_inner_binary_wrapper_suffix_does_not_block_text_extension(self):
+        self.assertTrue(TextParser.is_known_text_path(Path("something.gz.txt")))
+
     def test_binary_validation_skips_magic(self):
         with patch("magic.from_buffer") as from_buffer:
             valid = TextParser.validate(b"binary\x00content", Path("test.bin"))
@@ -125,9 +142,17 @@ class TestMagicUtils(unittest.TestCase):
         self.assertEqual(content, "caf\u00e9")
         detect.assert_not_called()
 
-    def test_non_utf8_text_validation_uses_charset_detection(self):
+    def test_known_non_utf8_text_validation_skips_charset_detection(self):
         with patch("chardet.detect", return_value={"encoding": "cp1252", "confidence": 0.73}) as detect:
             valid = TextParser.validate(b"caf\xe9", Path("test.txt"))
+
+        self.assertTrue(valid)
+        detect.assert_not_called()
+
+    def test_unknown_non_utf8_text_validation_uses_charset_detection(self):
+        with patch.object(TextParser, "guess_mime_type", return_value="text/plain"):
+            with patch("chardet.detect", return_value={"encoding": "cp1252", "confidence": 0.73}) as detect:
+                valid = TextParser.validate(b"caf\xe9", Path("unknown_file"))
 
         self.assertTrue(valid)
         detect.assert_called_once()

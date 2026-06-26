@@ -14,6 +14,15 @@ class TextParser(Parser):
     TEXT_CONFIDENCE_THRESHOLD: ClassVar[float] = 0.8
     MAX_BINARY_RATIO: ClassVar[float] = 0.30
     FALLBACK_ENCODINGS: ClassVar[Tuple[str, ...]] = ("cp1252", "latin-1")
+    TEXT_WHITESPACE_CHARS: ClassVar[Tuple[str, ...]] = ("\t", "\n", "\v", "\f", "\r")
+    TEXT_WHITESPACE_BYTES: ClassVar[Tuple[int, ...]] = tuple(
+        ord(char) for char in TEXT_WHITESPACE_CHARS
+    )
+    PRINTABLE_BYTE_RANGE: ClassVar[range] = range(ord(" "), 256)
+    TEXT_BYTE_VALUES: ClassVar[bytes] = bytes([
+        *TEXT_WHITESPACE_BYTES,
+        *PRINTABLE_BYTE_RANGE,
+    ])
 
     TEXT_EXTENSIONS: ClassVar[FrozenSet[str]] = frozenset({
         ".bat",
@@ -84,6 +93,24 @@ class TextParser(Parser):
         "spelling_wordlist",
     })
 
+    BINARY_WRAPPER_EXTENSIONS: ClassVar[FrozenSet[str]] = frozenset({
+        ".7z",
+        ".br",
+        ".bz2",
+        ".gz",
+        ".lzma",
+        ".rar",
+        ".tar",
+        ".tbz",
+        ".tbz2",
+        ".tgz",
+        ".txz",
+        ".xz",
+        ".zip",
+        ".zst",
+        ".zstd",
+    })
+
     TEXTUAL_APPLICATION_MIMES: ClassVar[FrozenSet[str]] = frozenset({
         # JSON (files)
         "application/json",
@@ -143,6 +170,9 @@ class TextParser(Parser):
             return True
 
         suffixes = [suffix.lower() for suffix in file_path.suffixes]
+        if suffixes and suffixes[-1] in cls.BINARY_WRAPPER_EXTENSIONS:
+            return False
+
         if any(suffix in cls.TEXT_EXTENSIONS for suffix in suffixes):
             return True
 
@@ -222,16 +252,13 @@ class TextParser(Parser):
 
     @staticmethod
     def looks_binary(file_chunk: Union[bytes, bytearray]) -> bool:
-        if b"\x00" in file_chunk:
+        chunk = bytes(file_chunk)
+        if b"\x00" in chunk:
             return True
 
-        # Count non-printable ASCII characters (excluding standard whitespaces like tab, LF, FF, CR).
-        non_printable = sum(
-            byte < 9 or (13 < byte < 32)
-            for byte in file_chunk
-        )
+        non_printable = len(chunk.translate(None, TextParser.TEXT_BYTE_VALUES))
 
-        return (non_printable / max(len(file_chunk), 1)) > TextParser.MAX_BINARY_RATIO
+        return (non_printable / max(len(chunk), 1)) > TextParser.MAX_BINARY_RATIO
 
     @classmethod
     def validate(
@@ -241,6 +268,9 @@ class TextParser(Parser):
     ) -> bool:
         if cls.looks_binary(file_chunk_bytes):
             return False
+
+        if cls.is_known_text_path(file_path):
+            return True
 
         mime_type = cls.guess_mime_type(file_chunk_bytes, file_path=file_path)
 
