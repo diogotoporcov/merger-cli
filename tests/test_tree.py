@@ -161,7 +161,7 @@ def test_scanner_can_skip_file_content(tmp_path):
     assert entry.content is None
 
 
-def test_scanner_reuses_sorted_child_directory_state(tmp_path):
+def test_scanner_uses_scandir_child_directory_state(tmp_path):
     (tmp_path / "src").mkdir()
     (tmp_path / "file.txt").write_text("content", encoding="utf-8")
 
@@ -175,5 +175,5 @@ def test_scanner_reuses_sorted_child_directory_state(tmp_path):
     with patch.object(Path, "is_dir", is_dir):
         FileTreeScanner.scan(tmp_path, include_content=False)
 
-    assert calls.count(tmp_path / "src") == 1
-    assert calls.count(tmp_path / "file.txt") == 1
+    assert tmp_path / "src" not in calls
+    assert tmp_path / "file.txt" not in calls

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Dict, Optional, Sequence
 
@@ -51,15 +52,18 @@ class FileTreeScanner:
 
         if is_dir:
             children: Dict[Path, FileTreeEntry] = {}
+            entries = []
             try:
-                # Sort entries: directories first, then files
-                entries = sorted(
-                    ((entry_path, entry_path.is_dir()) for entry_path in path.iterdir()),
-                    key=lambda entry: (not entry[1], entry[0].name.lower())
-                )
-            except PermissionError:
-                logger.warning(f"Permission denied: {path}")
-                entries = []
+                with os.scandir(path) as directory_entries:
+                    for entry in directory_entries:
+                        try:
+                            entries.append((Path(entry.path), entry.is_dir()))
+                        except OSError as e:
+                            logger.warning(f"Could not inspect directory entry {entry.path}: {e}")
+
+                entries.sort(key=lambda entry: (not entry[1], entry[0].name.lower()))
+            except OSError as e:
+                logger.warning(f"Could not list directory {path}: {e}")
 
             for entry_path, entry_is_dir in entries:
                 child_entry = cls._scan_and_parse(
