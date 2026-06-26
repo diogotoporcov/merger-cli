@@ -42,12 +42,17 @@ class TextParser(Parser):
         ".log",
         ".md",
         ".pbtxt",
+        ".po",
+        ".pot",
         ".properties",
+        ".py-tpl",
         ".py",
         ".rb",
+        ".rst",
         ".rs",
         ".sh",
         ".sql",
+        ".svg",
         ".toml",
         ".ts",
         ".tsx",
@@ -55,6 +60,28 @@ class TextParser(Parser):
         ".xml",
         ".yaml",
         ".yml",
+        ".djtpl",
+        ".eml",
+        ".geojson",
+        ".in",
+        ".jsonl",
+        ".kml",
+        ".prj",
+        ".sample",
+        ".thtml",
+        ".tpl",
+        ".vrt",
+    })
+
+    TEXT_FILENAMES: ClassVar[FrozenSet[str]] = frozenset({
+        ".gitkeep",
+        ".keep",
+        "django_bash_completion",
+        "license",
+        "makefile",
+        "procfile",
+        "readme",
+        "spelling_wordlist",
     })
 
     TEXTUAL_APPLICATION_MIMES: ClassVar[FrozenSet[str]] = frozenset({
@@ -112,6 +139,9 @@ class TextParser(Parser):
 
     @classmethod
     def is_known_text_path(cls, file_path: Path) -> bool:
+        if file_path.name.lower() in cls.TEXT_FILENAMES:
+            return True
+
         suffixes = [suffix.lower() for suffix in file_path.suffixes]
         if any(suffix in cls.TEXT_EXTENSIONS for suffix in suffixes):
             return True

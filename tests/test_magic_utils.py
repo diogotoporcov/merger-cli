@@ -61,6 +61,49 @@ class TestMagicUtils(unittest.TestCase):
         self.assertTrue(valid)
         from_buffer.assert_not_called()
 
+    def test_known_repository_text_extensions_skip_magic(self):
+        paths = [
+            Path("locale/django.po"),
+            Path("README.rst"),
+            Path("template.py-tpl"),
+            Path("icon.svg"),
+            Path("shape.prj"),
+            Path("MANIFEST.in"),
+            Path("data.jsonl"),
+            Path("template.tpl"),
+            Path("sample.geojson"),
+        ]
+
+        for path in paths:
+            with self.subTest(path=path):
+                with patch("mimetypes.guess_type", return_value=(None, None)):
+                    with patch("magic.from_buffer") as from_buffer:
+                        valid = TextParser.validate(b"plain text content", path)
+
+                self.assertTrue(valid)
+                from_buffer.assert_not_called()
+
+    def test_known_repository_text_filenames_skip_magic(self):
+        paths = [
+            Path("LICENSE"),
+            Path("Makefile"),
+            Path("Procfile"),
+            Path("README"),
+            Path(".gitkeep"),
+            Path(".keep"),
+            Path("django_bash_completion"),
+            Path("spelling_wordlist"),
+        ]
+
+        for path in paths:
+            with self.subTest(path=path):
+                with patch("mimetypes.guess_type", return_value=(None, None)):
+                    with patch("magic.from_buffer") as from_buffer:
+                        valid = TextParser.validate(b"plain text content", path)
+
+                self.assertTrue(valid)
+                from_buffer.assert_not_called()
+
     def test_binary_validation_skips_magic(self):
         with patch("magic.from_buffer") as from_buffer:
             valid = TextParser.validate(b"binary\x00content", Path("test.bin"))
